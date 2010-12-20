@@ -1,0 +1,7 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhist_cnt =5
+let g:netrw_dirhist_1='C:/cvsproject/GGAG/Source/Common/Flex/Module/System/Game'
+let g:netrw_dirhist_2='C:\cvsproject\GGAG\Source\Common\Flex\Msg\nsOptionMsg'
+let g:netrw_dirhist_3='C:/Program Files/Adobe/Adobe Flash Builder 4/sdks/4.1.0/frameworks/rsls'
+let g:netrw_dirhist_4='C:/cvsproject/GGAG/Source/Common/PHP/CVS'
+let g:netrw_dirhist_5='C:/cvsproject/GGAG/Deploy/PlayerService'
