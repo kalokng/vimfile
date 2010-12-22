@@ -17,6 +17,11 @@ filetype plugin indent on
 "php
 let g:PHP_default_indenting = 1
 
+"haskell
+au BufEnter *.hs compiler ghc
+let g:haddock_browser="C:\\Users\\Lok\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe"
+let g:haddock_docdir="C:\\Program Files (x86)\\Haskell Platform\\2010.2.0.0\\doc\\html"
+
 let g:zip_unzipcmd= "7z"
 
 "map <F5> :syn sync fromstart<CR>
@@ -235,8 +240,8 @@ vnoremap <S-Right> l
 vnoremap <S-Up> k
 vnoremap <S-Down> j
 
-noremap <C-k> gk
-noremap <C-j> gj
+nnoremap <C-J> gj
+nnoremap <C-k> gk
 
 map [9 [(
 map ]0 ])
@@ -325,12 +330,12 @@ endfunction
 
 function! Auto_Highlight_Toggle()
   if exists("#CursorHold#*")
-	au! CursorHold *
-	let @/=''
+    au! CursorHold *
+    let @/=''
   else
-	set hlsearch
-	set updatetime=500
-	au! CursorHold * nested call Auto_Highlight_Cword()
+    set hlsearch
+    set updatetime=500
+    au! CursorHold * nested call Auto_Highlight_Cword()
   endif
 endfunction
 
@@ -374,10 +379,10 @@ function! GuiTabLabel()
 
   " Add '*' if one of the buffers in the tab page is modified
   for bufnr in bufnrlist
-	if getbufvar(bufnr, "&modified")
-	  let label = '*'
-	  break
-	endif
+    if getbufvar(bufnr, "&modified")
+      let label = '*'
+      break
+    endif
   endfor
 
   " Append the number of windows in the tab page if more than one
@@ -447,20 +452,20 @@ set spellsuggest=double
 nnoremap <C-LeftMouse> <LeftMouse>:Utl ol<CR>
 
 "mark.vba
-highlight def MarkWord1   ctermbg=Cyan		   ctermfg=Black  guibg=#FF7FBF    guifg=Black
-highlight def MarkWord2   ctermbg=Green		   ctermfg=Black  guibg=#BFFF7F    guifg=Black
-highlight def MarkWord3   ctermbg=Yellow	   ctermfg=Black  guibg=#7FBFFF    guifg=Black
-highlight def MarkWord4   ctermbg=Red		   ctermfg=Black  guibg=#FFBFBF    guifg=Black
-highlight def MarkWord5   ctermbg=Magenta	   ctermfg=Black  guibg=#BFFFBF    guifg=Black
-highlight def MarkWord6   ctermbg=Blue		   ctermfg=Black  guibg=#BFBFFF    guifg=Black
-highlight def MarkWord7   ctermbg=DarkCyan	   ctermfg=Black  guibg=#FFFFBF    guifg=Black
+highlight def MarkWord1   ctermbg=Cyan         ctermfg=Black  guibg=#FF7FBF    guifg=Black
+highlight def MarkWord2   ctermbg=Green        ctermfg=Black  guibg=#BFFF7F    guifg=Black
+highlight def MarkWord3   ctermbg=Yellow       ctermfg=Black  guibg=#7FBFFF    guifg=Black
+highlight def MarkWord4   ctermbg=Red          ctermfg=Black  guibg=#FFBFBF    guifg=Black
+highlight def MarkWord5   ctermbg=Magenta      ctermfg=Black  guibg=#BFFFBF    guifg=Black
+highlight def MarkWord6   ctermbg=Blue         ctermfg=Black  guibg=#BFBFFF    guifg=Black
+highlight def MarkWord7   ctermbg=DarkCyan     ctermfg=Black  guibg=#FFFFBF    guifg=Black
 highlight def MarkWord8   ctermbg=DarkGreen    ctermfg=Black  guibg=#BFFFFF    guifg=Black
 highlight def MarkWord9   ctermbg=DarkYellow   ctermfg=Black  guibg=#FFBFFF    guifg=Black
-highlight def MarkWord10  ctermbg=DarkRed	   ctermfg=Black  guibg=#FFBF7F    guifg=Black
+highlight def MarkWord10  ctermbg=DarkRed      ctermfg=Black  guibg=#FFBF7F    guifg=Black
 highlight def MarkWord11  ctermbg=DarkMagenta  ctermfg=Black  guibg=#7FFFBF    guifg=Black
-highlight def MarkWord12  ctermbg=DarkBlue	   ctermfg=Black  guibg=#BF7FFF    guifg=Black
-highlight def MarkWord13  ctermbg=Grey		   ctermfg=Black  guibg=#BF7F7F    guifg=Black
-highlight def MarkWord14  ctermbg=LightRed	   ctermfg=Black  guibg=#7FBF7F    guifg=Black
+highlight def MarkWord12  ctermbg=DarkBlue     ctermfg=Black  guibg=#BF7FFF    guifg=Black
+highlight def MarkWord13  ctermbg=Grey         ctermfg=Black  guibg=#BF7F7F    guifg=Black
+highlight def MarkWord14  ctermbg=LightRed     ctermfg=Black  guibg=#7FBF7F    guifg=Black
 highlight def MarkWord15  ctermbg=LightYellow  ctermfg=Black  guibg=#7F7FBF    guifg=Black
 
 "DoxygenToolkit
@@ -475,13 +480,13 @@ let g:easytags_cmd='c:\luke\ctags58\ctags.exe'
 let g:easytags_on_cursorhold=0
 
 "blockinsert
-vmap <leader>i	<plug>blockinsert-i
-vmap <leader>a	<plug>blockinsert-a
+vmap <leader>i  <plug>blockinsert-i
+vmap <leader>a  <plug>blockinsert-a
 vmap <leader>qi <plug>blockinsert-qi
 vmap <leader>qa <plug>blockinsert-qa
 
-nmap <leader>i	<plug>blockinsert-i
-nmap <leader>a	<plug>blockinsert-a
+nmap <leader>i  <plug>blockinsert-i
+nmap <leader>a  <plug>blockinsert-a
 nmap <leader>qi <plug>blockinsert-qi
 nmap <leader>qa <plug>blockinsert-qa
 
@@ -550,11 +555,11 @@ au BufRead,BufNewFile *.wikipedia.org*	setfiletype wiki
 "function! InsertTabWrapper(direction)
   "let col = col('.') - 1
   "if !col || getline('.')[col - 1] !~ '\k'
-	"return "\<tab>"
+    "return "\<tab>"
   "elseif "backward" == a:direction
-	"return "\<c-p>"
+    "return "\<c-p>"
   "else
-	"return "\<c-n>"
+    "return "\<c-n>"
   "endif
 "endfunction
 
@@ -567,7 +572,7 @@ au BufRead,BufNewFile *.wikipedia.org*	setfiletype wiki
 "
 "Arguments: --servername gmain --remote-silent +"call cursor($(CurLine),$(CurCol))" +"normal zz" "$(FilePath)"
 "
-"	 ----- For Replacement in Objective C -----
+"    ----- For Replacement in Objective C -----
 "set nomore
 "^-\s*(id)\s*init\>\_.\{-}\zs.*\(NSLog([^)]*);$\n\)\{1}\ze\_.*return self;
 "argdo %s/^-\s*(id)\s*init\>\_.\{-}\zs.*\(NSLog([^)]*);$\n\)\{1}\ze\_.*return self;//e | update
