@@ -5,6 +5,7 @@ if exists('*plug#begin')
 	Plug 'tpope/vim-sensible'
 	Plug 'fatih/vim-go', { 'for': 'go' }
 	Plug 'junegunn/vim-easy-align'
+	Plug 'jreybert/vimagit'
 	Plug '~/vimfiles/fa'
 	call plug#end()
 
@@ -419,7 +420,6 @@ function! <SID>IsRoot(name)
 	if ! l:win
 		return 0
 	endif
-	echo a:name
 	return match(a:name, ':[/\\]') >= 0
 endfunction
 
@@ -462,7 +462,7 @@ function! <SID>SaveF(name,bang)
 	let dir = p[1]
 	let name = p[2]
 
-	if filewritable(dir) == 0 && !filereadable(dir) && !isdirectory(path)
+	if filewritable(dir) == 0 && !filereadable(dir) && !isdirectory(dir) && !isdirectory(path)
 		"Try to create the folder
 		call <SID>Warn('"Directory '.dir.'" not exists, press Y to create.')
 		let l:reply = nr2char(getchar())
