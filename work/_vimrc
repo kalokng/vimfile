@@ -3,7 +3,7 @@ set nocp
 sil! call plug#begin()
 if exists('*plug#begin')
 	Plug 'tpope/vim-sensible'
-	Plug 'fatih/vim-go', { 'for': 'go' }
+	Plug 'fatih/vim-go', { 'for': ['go', 'gohtmltmpl'] }
 	Plug 'junegunn/vim-easy-align'
 	Plug 'jreybert/vimagit'
 	Plug '~/vimfiles/fa'
@@ -686,21 +686,52 @@ function! Rand(...)
 endfunction
 
 function! GenPasswd(...)
-	if a:0 == 1 && a:1 > 5
-		let pwdlen = a:1
-	else
-		let pwdlen = 8
+	let pwdlen = 8
+	let pwdcon = ""
+	if a:0 > 0
+		if a:1 > 5
+			let pwdlen = a:1
+		endif
+		if a:0 > 1
+			let pwdcon = a:2
+		endif
 	endif
-	let pword=map(range(pwdlen-4),'nr2char(Rand(33,126))')
-	"let pword=map(range(pwdlen-4),'"passwordPASSWORD"[v:val]')
-	call add(pword,'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Rand(26)])
-	call add(pword,'abcdefghijklmnopqrstuvwxyz'[Rand(26)])
-	call add(pword,'0123456789'[Rand(10)])
-	call add(pword,'!"#$%&''()*+,-./:;<=>?@[\]^_`{|}~'[Rand(32)])
-	"call add(pword,'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[-1:])
-	"call add(pword,'abcdefghijklmnopqrstuvwxyz'[-1:])
-	"call add(pword,'0123456789'[-1:])
-	"call add(pword,'!"#$%&''()*+,-./:;<=>?@{|}~'[-1:])
+	if strlen(pwdcon) == 0
+		let pwdcon = "aA1!"
+	endif
+	let cap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	let small = 'abcdefghijklmnopqrstuvwxyz'
+	let num = '0123456789'
+	let spec = '!"#$%&''()*+,-./:;<=>?@[\]^_`{|}~'
+
+	let n = 0
+	let pword = []
+	let seed = ""
+	if pwdcon =~ '['.cap.']\C'
+		call add(pword,cap[Rand(strlen(cap))])
+		let seed = seed.cap
+		let n = n+1
+	endif
+	if pwdcon =~ '['.small.']\C'
+		call add(pword,small[Rand(strlen(small))])
+		let seed = seed.small
+		let n = n+1
+	endif
+	if pwdcon =~ '['.num.']'
+		call add(pword,num[Rand(strlen(num))])
+		let seed = seed.num
+		let n = n+1
+	endif
+	if pwdcon =~ '['.spec.']'
+		call add(pword,spec[Rand(strlen(spec))])
+		let seed = seed.spec
+		let n = n+1
+	endif
+	if n == 0
+		echoerr "Unknown input"
+	endif
+	let seed = '"'.escape(seed,'"').'"[Rand('.printf('%d',strlen(seed)).')]'
+	call extend(pword,map(range(pwdlen-n), seed))
 	let i = 1
 	while i < pwdlen
 		let j=Rand(i+1)
