@@ -1,0 +1,161 @@
+set guioptions-=T
+set guioptions-=m
+set guioptions+=b
+"set guitablabel=%N\ %t
+
+source $VIMRUNTIME/delmenu.vim
+set langmenu=none
+source $VIMRUNTIME/menu.vim
+
+"set guifont=DotumChe:cHANGEUL
+"set guifont=NSimsun:h9:cDEFAULT
+set guifont=
+	\Source_Code_Pro_Semibold:h9:cANSI,
+	\DejaVu_Sans_Mono:h10:cANSI,
+	\Consolas:h10:cANSI,
+	\Monaco:h9:cANSI,
+	\Meslo_LG_S:h9:cANSI,
+	\GulimChe:h9:cARABIC,
+	\Bitstream_Vera_Sans_Mono:h8:cANSI,
+	\Courier_New:h9:cANSI
+"GulimChe:h9:cHANGEUL
+set guifontwide=NSimsun:h9
+"set guifontwide=GulimChe:h9
+"set guifontset=-misc-msgothic-medium-r-normal--9-*-*-*-c-140-ksx1001-0
+
+"se cursorline
+hi LineNr guibg=#F0F0FF guifg=Brown
+hi CursorLine guibg=LightCyan
+hi DiffText guibg=#FF7F7F
+hi StatusLineNC	guibg=darkgrey guifg=white gui=none
+hi User1	guibg=cyan guifg=black gui=none
+hi ColorColumn guibg=LightGrey
+"color default
+"color desert
+hi WarningMsg guifg=black guibg=green
+hi NonText gui=bold guifg=#9F9FDF
+hi SpecialKey gui=bold guifg=#7FDF7F
+
+inoremap <C-S> <C-G>u<C-C>:W<CR>
+nnoremap <C-S> :W<CR>
+
+function! ShowMenu()
+	if (&guioptions =~ 'm')
+		set guioptions-=m
+	else
+		set guioptions+=m
+		"simalt f
+	endif
+endfunction
+
+if !exists('s:isEnlarge')
+	"set lines=27 columns=85
+	set columns=85
+endif
+"fullscreen
+noremap <silent> <M-]> :call EnlargeWin()<CR>
+noremap <silent> <M-Space> :simalt ~<CR>
+"normal
+let defaultLines=&lines
+let defaultColumns=&columns
+noremap <silent> <M-[> :<C-U>call DefaultWinSize()<CR>
+function! DefaultWinSize()
+	if &lines==g:defaultLines && &columns==g:defaultColumns
+		let &lines=g:defaultLines+20
+		let &columns=g:defaultColumns+40
+	else
+		let &lines=g:defaultLines
+		let &columns=g:defaultColumns
+	endif
+endfunction
+
+"vertical maximize
+noremap <silent> <M-\> :set lines=999<CR>
+noremap <silent> <M-Bar> :set columns=999<CR>
+
+let s:isEnlarge = 0
+function! EnlargeWin()
+	let l:bW = &columns
+	let l:bH = &lines
+	let l:bX = getwinposx()
+	let l:bY = getwinposy()
+	call s:ToggleEnlarge()
+	if (l:bW == &columns && l:bH == &lines && l:bX == getwinposx() && l:bY == getwinposy())
+		call s:ToggleEnlarge()
+	endif
+endfunction
+function! s:ToggleEnlarge()
+	if s:isEnlarge == 0
+		let s:isEnlarge = 1
+		simalt ~x
+	else
+		let s:isEnlarge = 0
+		simalt ~r
+	endif
+endfunction
+
+set guitablabel=%N:%{GuiTabLabel()}%t
+set guitabtooltip=%{GuiTabTooltip()}
+
+function! GuiTabLabel()
+  let label = ''
+  let bufnrlist = tabpagebuflist(v:lnum)
+
+  " Add '*' if one of the buffers in the tab page is modified
+  for bufnr in bufnrlist
+	if getbufvar(bufnr, "&modified")
+	  let label = '*'
+	  break
+	endif
+  endfor
+
+  " Append the number of windows in the tab page if more than one
+  let wincount = tabpagewinnr(v:lnum, '$')
+  if wincount > 1
+	let label .= '('.wincount.')'
+  endif
+
+  " Append the buffer name
+  return label
+endfunction
+
+function! GuiTabTooltip()
+  let label = ''
+  let bufnrlist = tabpagebuflist(v:lnum)
+
+  " Add '*' if one of the buffers in the tab page is modified
+  for bufnr in bufnrlist
+	let label .= "\n".bufnr
+	if getbufvar(bufnr, "&modified")
+	  let label .= '*'
+	endif
+	if getbufvar(bufnr, '&buftype') == 'quickfix'
+		let label .= ' - [Quickfix]'
+	elseif bufname(bufnr) == ''
+		let label .= ' - [No Name]'
+	else
+		let label .= ' - '.fnamemodify(bufname(bufnr),':t')
+	endif
+  endfor
+
+  " Append the buffer name
+  return label[1:-1]
+endfunction
+
+"mark.vba
+highlight def MarkWord1   ctermbg=Cyan		   ctermfg=Black  guibg=#FF7FBF    guifg=Black
+highlight def MarkWord2   ctermbg=Green		   ctermfg=Black  guibg=#BFFF7F    guifg=Black
+highlight def MarkWord3   ctermbg=Yellow	   ctermfg=Black  guibg=#7FBFFF    guifg=Black
+highlight def MarkWord4   ctermbg=Red		   ctermfg=Black  guibg=#FFBFBF    guifg=Black
+highlight def MarkWord5   ctermbg=Magenta	   ctermfg=Black  guibg=#BFFFBF    guifg=Black
+highlight def MarkWord6   ctermbg=Blue		   ctermfg=Black  guibg=#BFBFFF    guifg=Black
+highlight def MarkWord7   ctermbg=DarkCyan	   ctermfg=Black  guibg=#EFEF8F    guifg=Black
+highlight def MarkWord8   ctermbg=DarkGreen    ctermfg=Black  guibg=#BFFFFF    guifg=Black
+highlight def MarkWord9   ctermbg=DarkYellow   ctermfg=Black  guibg=#FFBFFF    guifg=Black
+highlight def MarkWord10  ctermbg=DarkRed	   ctermfg=Black  guibg=#FFBF7F    guifg=Black
+highlight def MarkWord11  ctermbg=DarkMagenta  ctermfg=Black  guibg=#7FFFBF    guifg=Black
+highlight def MarkWord12  ctermbg=DarkBlue	   ctermfg=Black  guibg=#BF7FFF    guifg=Black
+highlight def MarkWord13  ctermbg=Grey		   ctermfg=Black  guibg=#BF7F7F    guifg=Black
+highlight def MarkWord14  ctermbg=LightRed	   ctermfg=Black  guibg=#7FBF7F    guifg=Black
+highlight def MarkWord15  ctermbg=LightYellow  ctermfg=Black  guibg=#7F7FBF    guifg=Black
+highlight def MarkWord16  ctermbg=LightYellow  ctermfg=Black  guibg=#7F7F7F    guifg=White

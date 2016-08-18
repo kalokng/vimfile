@@ -2,44 +2,69 @@
 "#1506 LargeFile
 "#1238 Mark
 
-set guioptions-=T
-set guioptions-=m
-set guioptions+=b
-"set guitablabel=%N\ %t
+set nocp
 
-source $VIMRUNTIME/delmenu.vim
-set langmenu=none
-source $VIMRUNTIME/menu.vim
+call plug#begin()
+Plug 'tpope/vim-sensible'
+Plug 'fatih/vim-go'
+Plug 'junegunn/vim-easy-align'
+call plug#end()
+
+vmap <Enter> <Plug>(LiveEasyAlign)
+
+nmap <leader>gr <Plug>MarkRegex
 
 source $VIMRUNTIME/macros/matchit.vim
 filetype plugin indent on
+"set shellslash
+set grepprg=grep\ -nH\ $*
+let g:tex_flavor='latex'
+let g:Tex_HotKeyMappings='eqnarray*,eqnarray,bmatrix,mbox'
 
 "php
 let g:PHP_default_indenting = 1
 
-"haskell
-au BufEnter *.hs compiler ghc
-let g:haddock_browser="C:\\Users\\Lok\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe"
-let g:haddock_docdir="C:\\Program Files (x86)\\Haskell Platform\\2010.2.0.0\\doc\\html"
-
 let g:zip_unzipcmd= "7z"
 
+"java
+let java_allow_cpp_keywords = 1
+
+if has('mouse')
+  set mouse=a
+endif
+
+"go
+au filetype go nmap <leader>r <Plug>(go-run)
+au filetype go nmap <leader>b <Plug>(go-build)
+au filetype go nmap <leader>ds <Plug>(go-def-split)
+au filetype go nmap <leader>gd <Plug>(go-doc)
+au filetype go nmap <leader>s <Plug>(go-implements)
+au filetype go nmap <leader>i <Plug>(go-info)
+let g:go_fmt_command = "goimports"
+"let g:go_auto_type_info = 1
+
 "map <F5> :syn sync fromstart<CR>
-nnoremap <S-F5> zfaB
-nnoremap <F5> "=strftime("%Y-%m-%d %H:%M:%S")<CR>p
-inoremap <F5> =strftime("%Y-%m-%d %H:%M:%S")<CR>
-cnoremap <F5> =strftime("%Y%m%d_%H%M%S")<CR>
-nnoremap <F9> :set wrap!<CR>
-inoremap <F9> <C-O>:set wrap!<CR>
+nnoremap <silent> <S-F5> zfaB
+nnoremap <silent> <F5> "=strftime("%Y-%m-%d %H:%M:%S")<CR>p
+nnoremap <silent> <M-F5> "=strftime("%Y%m%d%H%M%S")<CR>p
+inoremap <silent> <F5> <C-R>=strftime("%Y-%m-%d %H:%M:%S")<CR>
+inoremap <silent> <S-F5> <C-R>=strftime("%Y-%m-%d")<CR>
+inoremap <silent> <M-F5> <C-R>=strftime("%Y%m%d%H%M%S")<CR>
+cnoremap <F5> <C-R>=strftime("%Y%m%d_%H%M%S")<CR>
+cnoremap <S-F5> <C-R>=strftime("%Y%m%d")<CR>
+nnoremap <silent> <F9> :<C-U>set wrap!\|if &wrap \| echo "Word wrap ON" \| else \| echo "Word wrap OFF"\|endif<CR>
+inoremap <silent> <F9> <C-O>:set wrap!<CR>
 
 set ts=4
 set sw=4
-set guifont=DotumChe:cHANGEUL
-set guifont=DejaVu_Sans_Mono:h9,Consolas:h9,Bitstream_Vera_Sans_Mono:h8,Courier_New:h9
-"set guifontset=-*-Consolas-medium-r-normal--9-*-*-*-c-*-*-*
+"set nolbr
+set showcmd
+set display=lastline
+set noea
+
+set noswf
 
 syn on
-let g:load_doxygen_syntax=1
 "set fdm=syntax
 "set nofen
 
@@ -47,17 +72,10 @@ set nu
 set cin
 set ai
 set hidden
+"set virtualedit=block
 "set si
 "set showmatch
 "set cpoptions-=m
-
-"se cursorline
-hi LineNr guibg=LightGray guifg=Brown
-hi CursorLine guibg=LightCyan
-hi StatusLineNC	guibg=darkgrey guifg=white gui=none
-"color default
-"color desert
-hi WarningMsg guifg=black guibg=green
 
 set hls is
 set ignorecase smartcase
@@ -67,48 +85,93 @@ set nowrap
 set linebreak
 
 set so=4
+set siso=3
 
 "let g:netrw_browse_split=3
 let g:netrw_winsize=30
-let g:netrw_liststyle= 3
+let g:netrw_liststyle= 1
 
-function! AliasEncoding(flag)
-	if a:flag =~ "cp950"
-		return "Big5"
-	elseif a:flag =~ "cp936"
-		return "GB"
-	elseif a:flag =~ "cp932"
-		return "Japan"
-	elseif a:flag =~ "^$"
-		return "--"
-	else
-		return a:flag
+function! AliasEnc(...)
+	let isFenc = (a:0 > 0 && (a:1 == 'f' || a:1 == 'F'))
+	let lenc = (isFenc ? &fenc : &enc)
+	if lenc =~ "cp950"
+		let lenc = "B5"
+	elseif lenc =~ "cp936"
+		let lenc = "GB"
+	elseif lenc =~ "cp932"
+		let lenc = "Jp"
+	elseif lenc =~ "utf-8"
+		let lenc = "U8"
+	elseif lenc =~ "^$"
+		let lenc = "--"
+		if isFenc && &binary
+			return "bin"
+		endif
 	endif
+	if isFenc && &bomb
+		return lenc."m"
+	endif
+	return lenc
 endfunction
 
-set statusline=%<%f\ %h%m%r\ (%{strftime(\"%H:%M\ %d/%m/%Y\",getftime(expand(\"%:p\")))})%=[%{&ff.','.AliasEncoding(&enc).','.AliasEncoding(&fenc)}]\ %-5.(%l,%c%V%)\ %P
+au BufRead,BufNewFile,BufFilePost,BufWritePost *			call CacheBufPara()
+function! CacheBufPara()
+	let Ftime = getftime(expand('%:p'))
+	let b:FtimeStr = (Ftime > 0 ? ' '.strftime('(%Y-%m-%d %H:%M:%S)',Ftime) : '')
+	"let b:FPath = expand('%:p:~:h')
+endfunction
+
+function! GetCacheFTime()
+	"let l:time = getftime(expand('%:p'))
+	if !exists('b:FtimeStr')
+		if expand('%:p') ==# '' || !&ma
+			let b:FtimeStr = ''
+		else
+			let Ftime = getftime(expand('%:p'))
+			let b:FtimeStr = (Ftime > 0 ? ' '.strftime('(%Y-%m-%d %H:%M:%S)',Ftime) : '')
+		endif
+		"return ' (Invalid)'
+	endif
+	return b:FtimeStr
+endfunction
+
+function! GetCachePath()
+	if exists('b:FPath')
+		return b:FPath
+	endif
+	return ''
+endfunction
+
+function! GetFF()
+	return &binary?"bin":&ff
+endfunction
+
+"set titlestring=%t%(\ %M%)%(\ %{GetCacheFTime()}%)%<%(\ (%{GetCachePath()})%)%a%(\ -\ %{v:servername}%)
+"set statusline=%(\ %1*%r%*\ %)%(%Y\|%)\ %<%{getcwd()==expand('%:p:h')?'':'.../'}%t\ %m%{GetCacheFTime()}%=%k[%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ [0x%02B]\ %-5.(%l,%c%V%)\ %P
+"set statusline=%(\ %1*%r%*\ %)%(%Y\|%)%<\ %f%(\ %m%)%{GetCacheFTime()}%=%k[%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ [0x%02B]\ %-5.(%l,%c%V%)\ %P
+set statusline=%(\ %1*%r%*\ %)%(%Y\|%)%(%M\|%)\ %{expand('%')==expand('%:t')?'':'.../'}%t%<%{&key==''?'':'\ ['.&cm.']'}%{GetCacheFTime()}%=%k[0x%02B]\ [%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ %-5.(%l,%c%V%)\ %P
 set laststatus=2
 
 set backspace=2
 
 function! Comment()
-	let save_cursor = getpos(".")
+	let save_col = col(".")
 	let myline = getline(".")
-	let mycol = matchend(myline, "\^[ \t]*")
-	call setline(".", strpart(myline, 0, mycol) . "//" . strpart(myline, mycol))
-	let save_cursor[1:2] += [0, 2]
-	call setpos(".", save_cursor)
+	"let mycol = matchend(myline, "\^[ \t]*")
+	"call setline(".", strpart(myline, 0, mycol) . "//" . strpart(myline, mycol))
+	call setline(".", "//" . myline)
+	call cursor(0, save_col+2)
 endfunction
 
 function! Uncomment()
-	let save_cursor = getpos(".")
+	let save_col = col(".")
 	let myline = getline(".")
 	let mycol = matchend(myline, "\^[ \t]*\/\/")
 	if mycol != -1
 		call setline(".", strpart(myline, 0, mycol - 2) . strpart(myline, mycol))
-		let save_cursor[1:2] -= [0, 2]
+		let save_col -= 2
 	endif
-	call setpos(".", save_cursor)
+	call cursor(0, save_col)
 endfunction
 
 function! Myfunc()
@@ -118,17 +181,24 @@ function! Myfunc()
 	let @/='\V'.SearchStr
 endfunction
 
-function! DecToBin(dex)
+function! Nr2Bin(num,...)
 	let l:result = ""
-	let l:dex = a:dex
-	while l:dex > 0
-		let l:result = (l:dex % 2) . l:result
-		let l:dex = l:dex / 2
+	if type(a:num) == type(0.0)
+		let l:num = float2nr(a:num)
+	else
+		let l:num = a:num
+	endif
+	while l:num > 0
+		let l:result = (l:num % 2) . l:result
+		let l:num = l:num / 2
 	endwhile
+	if (a:0 > 0 && strlen(l:result) < a:1)
+		let l:result=printf('%0'.(a:1-strlen(l:result)).'d',0).l:result
+	endif
 	return l:result
 endfunction
 
-function! BinToDec(bin)
+function! Bin2Nr(bin)
 	if type(a:bin) == 0
 		echoerr "Input must be string"
 		return -1
@@ -137,7 +207,7 @@ function! BinToDec(bin)
 	let l:bin = matchstr(a:bin, "^[01]*")
 	while strlen(l:bin) > 0
 		let l:result = l:result * 2
-		let l:result += l:bin[0]
+		let l:result = l:result + l:bin[0]
 		let l:bin = l:bin[1:]
 	endwhile
 	return l:result
@@ -146,204 +216,479 @@ endfunction
 if has("multi_byte")
 	set encoding=utf8
 	"change load file encoding
-	nnoremap Zj :e ++enc=japan ++bad=keep<CR>
-	nnoremap Zs :e ++enc=cp936 ++bad=keep<CR>
-	nnoremap Zt :e ++enc=cp950 ++bad=keep<CR>
-	nnoremap Zu :e ++enc=utf-8 ++bad=keep<CR>
-	nnoremap Zl :e ++enc=latin1 ++bad=keep<CR>
-	nnoremap Zb :e ++bin<CR>
-	nnoremap ZJ :e ++enc=japan ++bad=keep<CR>
-	nnoremap ZS :e ++enc=cp936 ++bad=keep<CR>
-	nnoremap ZT :e ++enc=cp950 ++bad=keep<CR>
-	nnoremap ZU :e ++enc=utf-8 ++bad=keep<CR>
-	nnoremap ZL :e ++enc=latin1 ++bad=keep<CR>
-	nnoremap ZB :e ++nobin<CR>
+	nnoremap <silent> Zj :e ++enc=japan ++bad=keep<CR>
+	nnoremap <silent> Zs :e ++enc=cp936 ++bad=keep<CR>
+	nnoremap <silent> Zt :e ++enc=cp950 ++bad=keep<CR>
+	nnoremap <silent> Zu :e ++enc=utf-8 ++bad=keep<CR>
+	nnoremap <silent> Zl :e ++enc=latin1 ++bad=keep<CR>
+	nnoremap <silent> Zb :e ++bin<CR>
+	nnoremap <silent> ZJ :e ++enc=japan ++bad=keep<CR>
+	nnoremap <silent> ZS :e ++enc=cp936 ++bad=keep<CR>
+	nnoremap <silent> ZT :e ++enc=cp950 ++bad=keep<CR>
+	nnoremap <silent> ZU :e ++enc=utf-8 ++bad=keep<CR>
+	nnoremap <silent> ZL :e ++enc=latin1 ++bad=keep<CR>
+	nnoremap <silent> ZB :e ++nobin<CR>
 	"change save file encoding
-	nnoremap <C-p><C-j> :set fenc=japan<CR>
-	nnoremap <C-p><C-s> :set fenc=cp936<CR>
-	nnoremap <C-p><C-t> :set fenc=cp950<CR>
-	nnoremap <C-p><C-u> :set fenc=utf-8<CR>
-	nnoremap <C-p><C-l> :set fenc=latin1<CR>
-	nnoremap <C-p><C-b> :set bin<CR>
-	nnoremap <C-p><C-B> :set bin<CR>
-	nnoremap <C-p>j :set fenc=japan<CR>
-	nnoremap <C-p>s :set fenc=cp936<CR>
-	nnoremap <C-p>t :set fenc=cp950<CR>
-	nnoremap <C-p>u :set fenc=utf-8<CR>
-	nnoremap <C-p>l :set fenc=latin1<CR>
-	nnoremap <C-p>b :set nobin<CR>
-	nnoremap <C-p>B :set nobin<CR>
+	nnoremap <silent> <C-p><C-j> :set fenc=japan<CR>
+	nnoremap <silent> <C-p><C-s> :set fenc=cp936<CR>
+	nnoremap <silent> <C-p><C-t> :set fenc=cp950<CR>
+	nnoremap <silent> <C-p><C-u> :set fenc=utf-8<CR>
+	nnoremap <silent> <C-p><C-l> :set fenc=latin1<CR>
+	nnoremap <silent> <C-p><C-b> :set bin<CR>
+	nnoremap <silent> <C-p><C-B> :set bin<CR>
+	nnoremap <silent> <C-p><C-m> :set bomb<CR>
+	nnoremap <silent> <C-p><C-M> :set bomb<CR>
+	nnoremap <silent> <C-p>j :set fenc=japan<CR>
+	nnoremap <silent> <C-p>s :set fenc=cp936<CR>
+	nnoremap <silent> <C-p>t :set fenc=cp950<CR>
+	nnoremap <silent> <C-p>u :set fenc=utf-8<CR>
+	nnoremap <silent> <C-p>l :set fenc=latin1<CR>
+	nnoremap <silent> <C-p>b :set nobin<CR>
+	nnoremap <silent> <C-p>B :set nobin<CR>
+	nnoremap <silent> <C-p>m :set nobomb<CR>
+	nnoremap <silent> <C-p>M :set nobomb<CR>
 	"change encoding
-	nnoremap <C-H><C-j> :set enc=japan<CR>
-	nnoremap <C-H><C-s> :set enc=cp936<CR>
-	nnoremap <C-H><C-t> :set enc=cp950<CR>
-	nnoremap <C-H><C-u> :set enc=utf-8<CR>
-	nnoremap <C-H><C-l> :set enc=latin1<CR>
-	nnoremap <C-H>j :set enc=japan<CR>
-	nnoremap <C-H>s :set enc=cp936<CR>
-	nnoremap <C-H>t :set enc=cp950<CR>
-	nnoremap <C-H>u :set enc=utf-8<CR>
-	nnoremap <C-H>l :set enc=latin1<CR>
+	nnoremap <silent> <C-H><C-j> :set enc=japan<CR>
+	nnoremap <silent> <C-H><C-s> :set enc=cp936<CR>
+	nnoremap <silent> <C-H><C-t> :set enc=cp950<CR>
+	nnoremap <silent> <C-H><C-u> :set enc=utf-8<CR>
+	nnoremap <silent> <C-H><C-l> :set enc=latin1<CR>
+	nnoremap <silent> <C-H>j :set enc=japan<CR>
+	nnoremap <silent> <C-H>s :set enc=cp936<CR>
+	nnoremap <silent> <C-H>t :set enc=cp950<CR>
+	nnoremap <silent> <C-H>u :set enc=utf-8<CR>
+	nnoremap <silent> <C-H>l :set enc=latin1<CR>
 else
 	echoerr "Sorry, this version of (g)vim was not compiled with multi_byte"
 endif
 
 " CTRL-Tab is Next window
-noremap <C-Tab> <C-W>w
-inoremap <C-Tab> <C-O><C-W>w
-cnoremap <C-Tab> <C-C><C-W>w
-onoremap <C-Tab> <C-C><C-W>w
+noremap <silent> <C-Tab> <C-W>w
+inoremap <silent> <C-Tab> <C-O><C-W>w
+cnoremap <silent> <C-Tab> <C-C><C-W>w
+onoremap <silent> <C-Tab> <C-C><C-W>w
+"noremap <Tab> <C-W>w
+noremap <silent> <S-Tab> <C-W>w
 
-inoremap <C-U> <C-G>u<C-U>
-inoremap <C-W> <C-G>u<C-W>
+nnoremap <C-G> 2<C-G>
+inoremap <silent> <C-U> <C-G>u<C-U>
+"inoremap <silent> <C-W> <C-G>u<C-W>
+"inoremap <silent> <C-G><C-W> <ESC>"_ciW
+inoremap <silent> <C-G><C-W> <C-O>:let oldve=&ve<CR><C-O>:set ve=onemore<CR><C-O>"_dB<C-O>:set ve=<C-R>=oldve<CR><CR>
+cnoremap <C-G><C-W> <C-\>eReplaceCmd(getcmdline(),getcmdpos())<CR>
 
-map <F6> :call Comment()<CR>
-map <S-F6> :call Uncomment()<CR>
-imap <F6> <C-O>:call Comment()<CR>
-imap <S-F6> <C-O>:call Uncomment()<CR>
+"nnoremap <leader><bar> :set cc=<C-R>=
+nnoremap <silent> <leader><bar> :set cc=<C-R>=(&cc=~'\<'.virtcol('.').'\>'?substitute(','.&cc.',',','.virtcol('.').',',',','')[1:-2]:(&cc==''?'':&cc.',').virtcol('.'))<CR><CR>
+inoremap <C-L> <C-X><C-L>
+inoremap <C-R>/ <c-r>=substitute(getreg('/'),'^\\<\\|\\>$','','g')<CR>
 
-nmap <F7> :diffthis<CR>
-nmap <F8> :diffoff<CR>
+function! ReplaceCmd(cmdline, pos)
+	if a:pos < 2
+		return a:cmdline
+	endif
+	call setcmdpos(match(a:cmdline[0:a:pos-2],'^.\{-}\zs\S\+\s*$')+1)
+	return matchstr(a:cmdline[0:a:pos-2],'^.\{-}\ze\S\+\s*$').a:cmdline[a:pos-1:-1]
+endfunction
 
-imap <C-S> <ESC>:w<CR>
-nmap <C-S> :w<CR>
-inoremap <C-V> <C-G>u<C-R><C-P>+
+map <silent> <F6> :call Comment()<CR>
+map <silent> <S-F6> :call Uncomment()<CR>
+imap <silent> <F6> <C-O>:call Comment()<CR>
+imap <silent> <S-F6> <C-O>:call Uncomment()<CR>
+
+nmap <silent> <F7> :if &diff \| diffoff \| else \| diffthis \| endif<CR>
+
+command! -nargs=? -bang -complete=file W :call <SID>SaveF("<args>","<bang>")
+
+function! <SID>ExtName(name)
+	if len(a:name) == 0
+		return [expand('%:p'),expand('%:p:h'), expand('%:t')]
+	endif
+	return [a:name,"",a:name]
+	let p = getcwd()
+endfunction
+
+function! <SID>SaveF(name,bang)
+	let p = <SID>ExtName(a:name)
+	let path = p[0]
+	let dir = p[1]
+	let name = p[2]
+
+	let v:errmsg = ""
+	try
+		exe "w".a:bang." " . path
+	catch /\<E13\>/
+		echohl WarningMsg
+		echo '"'.name.'" exists, press Y to save.'
+		echohl None
+		let l:reply = nr2char(getchar())
+		if l:reply == "y" || l:reply == "Y"
+			call <SID>SaveF(a:name,"!")
+		else
+			echo "Cancelled"
+		endif
+	catch /\<\%(E45\|E505\)\>/
+		echohl WarningMsg
+		echo '"'.name.'" is read-only, press Y to save.'
+		echohl None
+		let l:reply = nr2char(getchar())
+		"if l:reply == "\<CR>" || l:reply == "y" || l:reply == "Y"
+		if l:reply == "y" || l:reply == "Y"
+			try
+				exe "w! " . a:name
+			catch
+				echon 'cannot be written.'
+				echohl ErrorMsg
+				echo substitute(v:exception,'^Vim\%((\a\+)\)\=:',"","")
+				echohl None
+			endtry
+		else
+			echo "Cancelled"
+		endif
+	catch /\<E139\>/
+		if filewritable(path) == 2
+			if isdirectory(path)
+				echohl ErrorMsg
+				echo '"'.name.'" is a directory'
+				echohl None
+			else
+				echohl ErrorMsg
+				echo '"'.name.'" is not writable'
+				echohl None
+			endif
+		else
+			echohl WarningMsg
+			echo '"'.name.'" is loaded in another buffer, press Y to save.'
+			echohl None
+			let l:reply = nr2char(getchar())
+			if l:reply == "y" || l:reply == "Y"
+				try
+					let l:curfile = bufnr('%')
+					let l:nextfile = bufnr('#')
+					let l:count = 0
+					while bufnr(path . l:count) > 0
+						let l:count += 1
+					endwhile
+					silent! exe "b ".bufnr(path)
+					silent! exe "f ".path . l:count
+					silent! exe "b ".l:curfile
+					exe "w! " . path
+				catch
+					echo 'cannot be written.'
+					echohl ErrorMsg
+					echo substitute(v:exception,'^Vim\%((\a\+)\)\=:',"","")
+					echohl None
+				endtry
+				silent! exe "b ".bufnr(path . l:count)
+				silent! exe "f ".path
+				silent! exe "e! ".path
+				silent! exe "b ".l:nextfile
+				silent! exe "b ".l:curfile
+			else
+				echo "Cancelled"
+			endif
+		endif
+	catch /\<E32\>/
+		exe "confirm bro w ".getcwd()
+	catch /\<E212\>/
+		"Try to create the folder
+		if isdirectory(path)
+			echohl ErrorMsg
+			echo '"'.name.'" is a directory'
+			echohl None
+		else
+			echohl WarningMsg
+			echo '"Directory '.dir.'" not exists, press Y to create.'
+			echohl None
+			let l:reply = nr2char(getchar())
+			"if l:reply == "\<CR>" || l:reply == "y" || l:reply == "Y"
+			if l:reply == "y" || l:reply == "Y"
+				call mkdir(dir, 'p')
+				if isdirectory(dir)
+					call <SID>SaveF(a:name,a:bang)
+				else
+					echohl ErrorMsg
+					echo '"'.dir.'" cannot be created'
+					echohl None
+				endif
+			else
+				echo "Cancelled"
+			endif
+		endif
+	catch
+		echohl ErrorMsg
+		echo substitute(v:exception,'^Vim\%((\a\+)\)\=:',"","")
+		echohl None
+	endtry
+endfunction
+
+map <MiddleMouse> <NOP>
+inoremap <C-V> <C-G>u<C-R>+
 nnoremap <C-V> "+gp
 cnoremap <C-V> <MiddleMouse>
-vnoremap <C-V> "+p
-nnoremap <C-C> "+y$
-vnoremap <C-C> "+y
-vnoremap <C-X> "+d
+vnoremap <C-V> "+gp
+nnoremap <silent> <C-C> "+y$
+vnoremap <silent> <C-C> "+y
+vnoremap <silent> <C-X> "+d
 
-nnoremap Y y$
-nnoremap y% :let @+=expand("%:p")<CR>
+nnoremap <silent> Y y$
+nnoremap <silent> y% :let @+=expand('%:p')<CR>:echo @+<CR>
+nnoremap <silent> y<C-R>% :let @+=expand('%:t')<CR>:echo @+<CR>
+nnoremap <silent> y<C-R><C-R>% :let @+=@%<CR>:echo @+<CR>
 
-nmap <F2> :set scb<CR>
-nmap <C-F2> :sil! explorer /e,=getcwd()<CR> /select,%<CR>
-nmap <F3> :set noscb<CR>
-nmap <F4> @@
+nmap <silent> <F2> :set scb!<CR>
+nmap <silent> <F3> :set is!<CR>
+nmap <silent> <C-F2> :!start explorer <c-r>=(expand('%')!=''?'/select,'.expand('%:p'):getcwd())<CR><CR>
+nmap <silent> <F4> @@
 
-nmap <C-N> :tab split<CR>
+nnoremap <silent> <C-W><C-^> :vs #<CR>
+nnoremap <silent> <M-6> :call SwapC('e ')<CR>
+nnoremap <silent> <C-W><M-6> :call SwapC('vs ')<CR>
+function! SwapC(cmd)
+	if &ft =~ 'cpp'
+		if expand('%:p:e') =~ 'cpp'
+			exe a:cmd . fnameescape(expand('%:p:r').'.h')
+		elseif expand('%:p:e') =~ 'h'
+			exe a:cmd . fnameescape(expand('%:p:r').'.cpp')
+		endif
+	elseif &ft =~ 'c'
+		if expand('%:p:e') =~ 'c'
+			exe a:cmd . fnameescape(expand('%:p:r').'.h')
+		elseif expand('%:p:e') =~ 'h'
+			exe a:cmd . fnameescape(expand('%:p:r').'.c')
+		endif
+	endif
+endfunction
 
-nnoremap <C-S-Left> vb
-nnoremap <C-S-Right> ve
-nnoremap <S-Left> vh
-nnoremap <S-Right> vl
-nnoremap <S-Up> vk
-nnoremap <S-Down> vj
-inoremap <S-Left> <C-O>vh
-inoremap <S-Right> <C-O>vl
-inoremap <S-Up> <C-O>vk
-inoremap <S-Down> <C-O>vj
-vnoremap <S-Left> h
-vnoremap <S-Right> l
-vnoremap <S-Up> k
-vnoremap <S-Down> j
+nnoremap <silent> <C-N> :tab split<CR>
 
-nnoremap <C-J> gj
-nnoremap <C-k> gk
+nnoremap <silent> <C-S-Left> vb
+nnoremap <silent> <C-S-Right> ve
+nnoremap <silent> <S-Left> vh
+nnoremap <silent> <S-Right> vl
+nnoremap <silent> <S-Up> vk
+nnoremap <silent> <S-Down> vj
+inoremap <silent> <S-Left> <C-O>vh
+inoremap <silent> <S-Right> <C-O>vl
+inoremap <silent> <S-Up> <C-O>vk
+inoremap <silent> <S-Down> <C-O>vj
+vnoremap <silent> <S-Left> h
+vnoremap <silent> <S-Right> l
+vnoremap <silent> <S-Up> k
+vnoremap <silent> <S-Down> j
 
-map [9 [(
-map ]0 ])
-nnoremap <silent> [) @=":call\ search(')', 'sWb')\n"<CR>
-nnoremap <silent> ]( @=":call\ search('(', 'sW')\n"<CR>
-nnoremap <silent> [0 @=":call\ search(')', 'sWb')\n"<CR>
-nnoremap <silent> ]9 @=":call\ search('(', 'sW')\n"<CR>
-nnoremap <silent> [} @=":call\ search('}', 'sWb')\n"<CR>
-nnoremap <silent> ]{ @=":call\ search('{', 'sW')\n"<CR>
+nnoremap <silent> <C-J> gj
+nnoremap <silent> <C-k> gk
 
-nnoremap <silent> <M-;> ;
-nnoremap <silent> <M-,> ,
-vnoremap <silent> <M-;> ;
-vnoremap <silent> <M-,> ,
-nnoremap <silent> ; @=':call search(''[A-Z]\+\\|_\+\zs[A-Z]*'', '''', line(''.''))'."\n"<CR>
-nnoremap <silent> , @=':call search(''[A-Z]\+\\|_\+\zs[A-Z]*'', ''b'', line(''.''))'."\n"<CR>
-vnoremap <silent> ; <ESC>@=':call search(''[A-Z]\+\\|_\+\zs[A-Z]*'', '''', line(''.''))'."\n"<CR>mugv`u
-vnoremap <silent> , <ESC>@=':call search(''[A-Z]\+\\|_\+\zs[A-Z]*'', ''b'', line(''.''))'."\n"<CR>mugv`u
+"nnoremap <silent> <M-;> ;
+"nnoremap <silent> <M-,> ,
+"vnoremap <silent> <M-;> ;
+"vnoremap <silent> <M-,> ,
+nnoremap <silent> <M-;> @=':call search(''\u\+\\|_\+\zs\u*'', '''', line(''.''))'."\n"<CR>1<ESC>
+nnoremap <silent> <M-,> @=':call search(''\u\+\\|_\+\zs\u*'', ''b'', line(''.''))'."\n"<CR>1<ESC>
+"vnoremap <silent> ; <ESC>@=':call search(''\u\+\\|_\+\zs\u*'', '''', line(''.''))'."\n"<CR>mugv`u
+"vnoremap <silent> , <ESC>@=':call search(''\u\+\\|_\+\zs\u*'', ''b'', line(''.''))'."\n"<CR>mugv`u
+vnoremap <silent> <M-;> :<C-U>exe "normal! gv"<Bar>call search('\u\+\\|_\+\zs\u*', '', line('.'))<CR>
+vnoremap <silent> <M-,> :<C-U>exe "normal! gv"<Bar>call search('\u\+\\|_\+\zs\u*', 'b', line('.'))<CR>
+onoremap <silent> <M-;> :call search('\u\+\\|_\+\zs\u*', '', line('.'))<CR>
+onoremap <silent> <M-,> :call search('\u\+\\|_\+\zs\u*', 'b', line('.'))<CR>
 
 vnoremap <M-/> <Esc>/\%><C-R>=line("'<")-1<CR>l\%<<C-R>=line("'>")+1<CR>l
 vnoremap <M-?> <Esc>?\%><C-R>=line("'<")-1<CR>l\%<<C-R>=line("'>")+1<CR>l
 
-"nmap <F11> :set fdm=sync
-"vmap { @=":call\ search('^[[:blank:]]*$', 'Wb')\n"<CR>
-"vmap } @=":call\ search('^[[:blank:]]*$', 'W')\n"<CR>
-"nmap { @=":call\ search('^[[:blank:]]*$', 'Wb')\n"<CR>
-"nmap } @=":call\ search('^[[:blank:]]*$', 'W')\n"<CR>
+nnoremap <silent> <F10> :call ShowMenu()<CR>
+nnoremap <silent> <F11> :set guifont=*<CR>
 
-augroup myau
-	au!
-	au BufEnter * lcd %:p:h
-	"au BufEnter * set nocul
-	"au BufLeave * set cul
-	"autocmd InsertLeave * hi CursorLine guibg=LightCyan
-	"autocmd InsertEnter * hi CursorLine guibg=LightGray
-augroup END
+map <silent> [9 [(
+map <silent> ]0 ])
+map <silent> ]9 ](
+map <silent> [0 [)
 
-nmap <F1> :call Auto_Highlight_Cword()<CR>
-vmap <F1> :call setreg("/", GetSelectionEscaped("enV"))<CR>
-nmap <C-Space> :call Auto_Highlight_Cword()<CR>
-vmap <C-Space> :call setreg("/", GetSelectionEscaped("enV"))<CR>
+let s:c=localtime()%65537+1
+let s:xa=localtime()
+let s:xb=localtime()*65537+2147483648
+"RANDMAX = 2147483647 (2^31-1)
+function! MyRandd()
+	let l:a=2147483085
+	let l:b=2147483648
+	"echo printf('c=%d x=%d', s:c, s:x)
+	let l:xx=s:xa*l:a+s:c
+	if (l:xx < 0)
+		let l:xx=l:xx+l:b
+	endif
+	let l:xx=l:b-1-l:xx
+	let s:c=float2nr((0.0+l:a*s:xa+s:c)/(0.0+l:b))
+	let s:xa=s:xb
+	let s:xb=l:xx
+	return s:xb
+endfunction
+
+function! MyRandf()
+	return (MyRandd()/2147483648.0)
+endfunction
+
+function! Rand(...)
+	if a:0 == 1
+		return float2nr(MyRandf()*a:1)
+	elseif a:0 == 2
+		let max = (a:1 > a:2 ? a:1 : a:2)
+		let min = (a:1 > a:2 ? a:2 : a:1)
+		return float2nr(MyRandf()*(max-min+1))+min
+	endif
+	return MyRandd()
+endfunction
+
+function! GenPwd(...)
+	let l:len = 12
+	if a:0 > 0
+		if a:1 >= 4
+			let l:len = a:1
+		endif
+	endif
+
+	let l:lalpha = "abcdefghijklmnopqrstuvwxyz"
+	let l:ualpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	let l:num = "0123456789"
+	let l:sym = "`-=~!@#$%^&*()_+[]\{}|;':\",./<>?"
+
+	let l:all = l:lalpha . l:ualpha . l:num . l:sym
+
+	let l:pwd = []
+	let l:pwd += [l:lalpha[Rand(len(l:lalpha))]]
+	let l:pwd += [l:ualpha[Rand(len(l:ualpha))]]
+	let l:pwd += [l:num[Rand(len(l:num))]]
+	let l:pwd += [l:sym[Rand(len(l:sym))]]
+
+	let i=4
+	while i < l:len
+		let l:pwd += [l:all[Rand(len(l:all))]]
+		let i+=1
+	endwhile
+	let i=0
+	while i < l:len
+		let r = Rand(i,l:len-1)
+		if r != i
+			let tmp = l:pwd[i]
+			let l:pwd[i] = l:pwd[r]
+			let l:pwd[r] = tmp
+		endif
+		let i+=1
+	endwhile
+	return join(l:pwd,'')
+endfunction
+
+set autochdir
+"augroup myau
+"	au!
+"	au BufEnter * lcd %:p:h
+"	"au BufEnter * set nocul
+"	"au BufLeave * set cul
+"	"autocmd InsertLeave * hi CursorLine guibg=LightCyan
+"	"autocmd InsertEnter * hi CursorLine guibg=LightGray
+"augroup END
+
+map <silent> Q gq
+nnoremap <silent> <F1> :call Auto_Highlight_Cword()\|set hls<CR>
+vnoremap <silent> <F1> :call SelectionHighlight()<CR>
+nnoremap <silent> <C-Space> :call Auto_Highlight_Cword()\|set hls<CR>
+vnoremap <silent> <C-Space> :call SelectionHighlight()<CR>
+
+function! SelectionHighlight()
+	let word = GetSelectionEscaped("enV")
+	call histadd('/', word)
+	call setreg('/', word)
+endfunction
+
+nmap <silent> <F12> :exe '0,$!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
+vmap <silent> <F12> :<C-U>exe '''<,''>!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
 
 nnoremap <M-/> :vimgrep /
-cnoremap <M-/> <SPACE><C-R>=fnameescape(getcwd())<CR>
-cnoremap <M-?> <SPACE><C-R>=fnameescape(expand("%:p:h"))<CR>
-nmap <M-n> :cn<CR>
-nmap <M-N> :cN<CR>
+nnoremap <M-?> :1vimgrep /
+cnoremap <M-/> <SPACE><C-R>=fnameescape(getcwd())<CR>/
+cnoremap <M-?> <SPACE><C-R>=fnameescape(expand("%:p:h"))<CR>/
+cnoremap <M-5> <SPACE><C-R>=fnameescape(expand('%:p'))<CR>
+inoremap <M-/> <C-R>=fnameescape(expand("%:p:t"))<CR>
+nmap <silent> <M-n> :cn<CR>
+nmap <silent> <M-N> :cN<CR>
+nnoremap m/ :lad expand('%').':'.line('.').':'.getline('.')<CR>
+cnoremap <C-R>^ <C-R>=fnameescape(expand('%:p:h'))<CR>/
+inoremap <C-R>^ <C-R>=expand('%:p:h')<CR>/
+cnoremap <C-R><C-L> <C-R>=getline('.')<CR>
 
-"fullscreen
-noremap <M-]> :set lines=999 columns=999<CR>
-"normal
-noremap <M-[> :set lines=24 columns=80<CR>
-"vertical maximize
-noremap <M-\> :set lines=999<CR>
-
-inoremap <S-F7> <C-O>:set spell!<CR>
-inoremap <S-F8> <C-O>:set list!<CR>
-nnoremap <S-F7> :set spell!<CR>
-nnoremap <S-F8> :set list!<CR>
-nnoremap <M-F8> :let @z=@/<CR>:%s/\s\+$//<CR><C-O>:let @/=@z<CR>
+inoremap <silent> <S-F7> <C-O>:set spell!<CR>
+inoremap <silent> <F8> <C-O>:set list!<CR>
+nnoremap <silent> <S-F7> :set spell!<CR>
+nnoremap <silent> <F8> :set list!<CR>
+nnoremap <silent> <M-F8> :let @z=@/<CR>:%s/\s\+$//<CR><C-O>:let @/=@z<CR>
 
 function! LineCount(...)
 	if (a:0 == 0)
 		return line('$')
 	endif
-	let linec = 0
-	let curMore = &more
-	let curHid = &hidden
+	let l:curFile = expand('%:p')
+	let l:linec = 0
+	let l:curMore = &more
+	let l:curHid = &hidden
 	set nomore
 	set nohidden
 	exec "args " . a:1
-	argdo let linec=linec+line('$')
+	argdo let l:linec=l:linec+line('$')
 	if (curMore == 1)
 		set more
 	endif
 	if (curHid == 1)
 		set hidden
 	endif
-	return linec
+	exe "e ".fnameescape(l:curFile)
+	return l:linec
 endfunction
 
 function! Auto_Highlight_Cword()
-  set hls
-  exe "let @/='\\<".expand("<cword>")."\\>'"
+	let word="\\<".expand("<cword>")."\\>"
+	call histadd('/', word)
+	"exe "let @/='\\<".expand("<cword>")."\\>'"
+	let @/=word
 endfunction
 
 function! Auto_Highlight_Toggle()
   if exists("#CursorHold#*")
-    au! CursorHold *
-    let @/=''
+	au! CursorHold *
+	let @/=''
   else
-    set hlsearch
-    set updatetime=500
-    au! CursorHold * nested call Auto_Highlight_Cword()
+	set hlsearch
+	set updatetime=500
+	au! CursorHold * nested call Auto_Highlight_Cword()
   endif
 endfunction
 
-nmap <C-PageDown> G:sleep 1000m<CR>:call Auto_Scroll_Down()<CR><C-PageDown>
-function! Auto_Scroll_Down()
+"nmap <C-PageDown> G:sleep 1000m<CR>:call Auto_Scroll_Down()<CR><C-PageDown>
+command! -nargs=? AutoScroll :call Auto_Scroll_Down('<args>')
+function! Auto_Scroll_Down(time)
+	let l:time = str2nr(a:time)
+	if l:time < 1
+		let l:time = 1
+	endif
+	keepjumps normal G
+	let l:line=line('$')
+	e
+	if l:line != line('$')
+		keepjumps normal VG
+	endif
+	let l:prevUndoLvl=&undolevels
+	" no undo for refreshing
+	set undolevels=-1
 	try
-		e
+		while 1
+			redraw
+			exe 'sleep '.l:time
+			let l:line=line('$')
+			e
+			if l:line != line('$')
+				keepjumps normal VG
+			endif
+		endwhile
 	catch
+		let &undolevels=l:prevUndoLvl
+		return
 	endtry
 endfunction
 
@@ -371,28 +716,6 @@ function! GetSelectionEscaped(flags)
 		let i = i + 1
 	endwhile
 	return result
-endfunction
-
-function! GuiTabLabel()
-  let label = ''
-  let bufnrlist = tabpagebuflist(v:lnum)
-
-  " Add '*' if one of the buffers in the tab page is modified
-  for bufnr in bufnrlist
-    if getbufvar(bufnr, "&modified")
-      let label = '*'
-      break
-    endif
-  endfor
-
-  " Append the number of windows in the tab page if more than one
-  let wincount = tabpagewinnr(v:lnum, '$')
-  if wincount > 1
-	let label .= ' ' . wincount
-  endif
-
-  " Append the buffer name
-  return label
 endfunction
 
 function! GetCard(str)
@@ -438,35 +761,126 @@ function! GetCard(str)
 	return l:result
 endfunction
 
-set guitablabel=%N:%{GuiTabLabel()}\ %t
+function! Range(start, ...)
+	let l:result = []
+	if a:0 == 2
+		let l:lcount = float2nr(ceil((a:1-a:start)/a:2))
+		let l:result = map(range(l:lcount>0 ? l:lcount : 0),'v:key*' . string(a:2) . '+' . string(a:start))
+	elseif a:0 == 1
+		let l:lcount = float2nr(ceil(a:1-a:start))
+		let l:result = map(range(l:lcount>0 ? l:lcount : 0),'v:key+' . string(a:start))
+	elseif a:0 == 0
+		let l:lcount = float2nr(ceil(a:start))
+		let l:result = map(range(l:lcount>0 ? l:lcount : 0),'v:key')
+	else
+		echoe "Too many arguments"
+	endif
+	return l:result
+endfunction
 
-set lcs=tab:¦¨,eol:¶,nbsp:§,trail:»
+function! Nr2str(num, ...)
+	let l:symbol = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+	if a:0 > 0
+		if a:1 >= 2 && a:1 <= 62
+			let l:base = float2nr(a:1)
+		else
+			return ""
+		endif
+	else
+		let l:base = 10
+	endif
+	if a:0 > 1
+		let l:digit = a:2
+	else
+		let l:digit = float2nr(36.736801/log(l:base)+1)
+	endif
+	if type(a:num) == type(0)
+		return (a:num > 0? _Nr2str(a:num, l:base, l:symbol) : '-' . _Nr2str(-a:num, l:base, l:symbol))
+	elseif type(a:num) == type(0.1)
+		return (a:num > 0? _Float2str(a:num, l:base, l:symbol, l:digit) : '-' . _Float2str(-a:num, l:base, l:symbol, l:digit))
+	endif
+endfunction
 
-syn match trailingWhite display "[[:space:]]\+$"
-hi link trailingWhite Error
+function! _Nr2str(num, base, symbol)
+	let l:num = a:num
+	let l:result = ''
+	while l:num >= a:base
+		let l:result = a:symbol[l:num % a:base] . l:result
+		let l:num = l:num / a:base
+	endwhile
+	return a:symbol[l:num] . l:result
+endfunction
+
+function! _Float2str(num, base, symbol, digit)
+	"let l:floor = float2nr(a:num)
+	let l:num = floor(a:num)
+
+	let l:result = ''
+	while l:num >= a:base
+		let l:result = a:symbol[float2nr(fmod(l:num, a:base))] . l:result
+		let l:num = floor(l:num / a:base)
+	endwhile
+	let l:result = a:symbol[float2nr(l:num)] . l:result
+
+	let l:num = a:num - floor(a:num)
+	let l:dig = len(l:result)
+	if l:dig < a:digit && l:num != 0
+		let l:result = l:result . '.'
+		while l:dig < a:digit && l:num != 0
+			let l:floor = float2nr(l:num * a:base)
+			let l:result = l:result . a:symbol[l:floor]
+			let l:num = l:num * a:base - l:floor
+			let l:dig += 1
+		endwhile
+	endif
+	return l:result
+endfunction
+
+function! ParseFloat(str, base)
+	if a:base < 2 || a:base > 62
+		throw 'Base must be between 2 and 62'
+	endif
+	let l:symbol = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'[:float2nr(a:base) -1]
+	let l:str = (a:base > 36 ? a:str : toupper(a:str))
+	if str[0] == '-'
+		return -1*_ParseFloat(toupper(l:str[1:]), a:base, l:symbol)
+	else
+		return _ParseFloat(toupper(l:str), a:base, l:symbol)
+	endif
+endfunction
+
+function! _ParseFloat(str, base, symbol)
+	if a:base < 2 || a:base > len(a:symbol)
+		throw 'Base must be between 2 and '.len(a:symbol)
+	endif
+	let l:str = substitute(a:str, '\C^[^-.'.a:symbol.']*', '', '')
+	let l:str = substitute(l:str, '\C^[-.'.a:symbol.']*\zs.*', '','')
+	let intstr = matchstr(l:str, '[^.]*')
+	let decstr = matchstr(l:str, '\.\zs[^.]*')
+	let result = 0.0
+	let decimal = 0.0
+	while len(l:intstr) > 0
+		let l:result = stridx(a:symbol, l:intstr[0]) + l:result * a:base
+		let l:intstr = l:intstr[1:]
+	endwhile
+	while len(l:decstr) > 0
+		let l:decimal = stridx(a:symbol, l:decstr[-1:]) + l:decimal / a:base
+		let l:decstr = l:decstr[:-2]
+	endwhile
+	return l:result + l:decimal / a:base
+endfunction
+
+set lcs=tab:\|`,eol:$,nbsp:@,trail:#,extends:>
+
+"syn match trailingWhite display "[[:space:]]\+$"
+"hi link trailingWhite WarningMsg
+"highlight def TrailingWhite   ctermbg=DarkRed		   ctermfg=Black  guibg=#BFFFFF    guifg=Black
 
 "set spell spelllang=en
 set spellsuggest=double
 
 "utl.vba
-nnoremap <C-LeftMouse> <LeftMouse>:Utl ol<CR>
-
-"mark.vba
-highlight def MarkWord1   ctermbg=Cyan         ctermfg=Black  guibg=#FF7FBF    guifg=Black
-highlight def MarkWord2   ctermbg=Green        ctermfg=Black  guibg=#BFFF7F    guifg=Black
-highlight def MarkWord3   ctermbg=Yellow       ctermfg=Black  guibg=#7FBFFF    guifg=Black
-highlight def MarkWord4   ctermbg=Red          ctermfg=Black  guibg=#FFBFBF    guifg=Black
-highlight def MarkWord5   ctermbg=Magenta      ctermfg=Black  guibg=#BFFFBF    guifg=Black
-highlight def MarkWord6   ctermbg=Blue         ctermfg=Black  guibg=#BFBFFF    guifg=Black
-highlight def MarkWord7   ctermbg=DarkCyan     ctermfg=Black  guibg=#FFFFBF    guifg=Black
-highlight def MarkWord8   ctermbg=DarkGreen    ctermfg=Black  guibg=#BFFFFF    guifg=Black
-highlight def MarkWord9   ctermbg=DarkYellow   ctermfg=Black  guibg=#FFBFFF    guifg=Black
-highlight def MarkWord10  ctermbg=DarkRed      ctermfg=Black  guibg=#FFBF7F    guifg=Black
-highlight def MarkWord11  ctermbg=DarkMagenta  ctermfg=Black  guibg=#7FFFBF    guifg=Black
-highlight def MarkWord12  ctermbg=DarkBlue     ctermfg=Black  guibg=#BF7FFF    guifg=Black
-highlight def MarkWord13  ctermbg=Grey         ctermfg=Black  guibg=#BF7F7F    guifg=Black
-highlight def MarkWord14  ctermbg=LightRed     ctermfg=Black  guibg=#7FBF7F    guifg=Black
-highlight def MarkWord15  ctermbg=LightYellow  ctermfg=Black  guibg=#7F7FBF    guifg=Black
+"nnoremap <silent> <C-LeftMouse> <LeftMouse>:Utl ol<CR>
 
 "DoxygenToolkit
 let g:DoxygenToolkit_compactOneLineDoc = ""
@@ -479,31 +893,31 @@ let Tlist_Ctags_Cmd='c:\luke\ctags58\ctags.exe'
 let g:easytags_cmd='c:\luke\ctags58\ctags.exe'
 let g:easytags_on_cursorhold=0
 
-"blockinsert
-vmap <leader>i  <plug>blockinsert-i
-vmap <leader>a  <plug>blockinsert-a
-vmap <leader>qi <plug>blockinsert-qi
-vmap <leader>qa <plug>blockinsert-qa
-
-nmap <leader>i  <plug>blockinsert-i
-nmap <leader>a  <plug>blockinsert-a
-nmap <leader>qi <plug>blockinsert-qi
-nmap <leader>qa <plug>blockinsert-qa
-
-vmap <leader>[]  <plug>blockinsert-b
-vmap <leader>[[  <plug>blockinsert-ub
-vmap <leader>]]  <plug>blockinsert-ub
-vmap <leader>q[] <plug>blockinsert-qb
-vmap <leader>q[[ <plug>blockinsert-uqb
-vmap <leader>q]] <plug>blockinsert-uqb
-
-nmap <leader>[]  <plug>blockinsert-b
-nmap <leader>[[  <plug>blockinsert-ub
-nmap <leader>]]  <plug>blockinsert-ub
-nmap <leader>q[] <plug>blockinsert-qb
-nmap <leader>q[[ <plug>blockinsert-uqb
-nmap <leader>q]] <plug>blockinsert-uqb
-"blockinsert
+""blockinsert
+"vmap <leader>i	<plug>blockinsert-i
+"vmap <leader>a	<plug>blockinsert-a
+"vmap <leader>qi <plug>blockinsert-qi
+"vmap <leader>qa <plug>blockinsert-qa
+"
+"nmap <leader>i	<plug>blockinsert-i
+"nmap <leader>a	<plug>blockinsert-a
+"nmap <leader>qi <plug>blockinsert-qi
+"nmap <leader>qa <plug>blockinsert-qa
+"
+"vmap <leader>[]  <plug>blockinsert-b
+"vmap <leader>[[  <plug>blockinsert-ub
+"vmap <leader>]]  <plug>blockinsert-ub
+"vmap <leader>q[] <plug>blockinsert-qb
+"vmap <leader>q[[ <plug>blockinsert-uqb
+"vmap <leader>q]] <plug>blockinsert-uqb
+"
+"nmap <leader>[]  <plug>blockinsert-b
+"nmap <leader>[[  <plug>blockinsert-ub
+"nmap <leader>]]  <plug>blockinsert-ub
+"nmap <leader>q[] <plug>blockinsert-qb
+"nmap <leader>q[[ <plug>blockinsert-uqb
+"nmap <leader>q]] <plug>blockinsert-uqb
+""blockinsert
 
 let g:user_zen_settings = {
 \  'php' : {
@@ -520,20 +934,74 @@ let g:user_zen_settings = {
 
 nnoremap <silent> <C-F11> :TlistToggle<CR>
 
-map <C-F12> :!c:\luke\ctags58\ctags -R --c++-kinds=+p --fields=+iaS --extra=+q .<CR>
-
-set path+=C:\cvsproject\GGAG\Source\Common\CPP\Code\Common
+"map <C-F12> :!c:\luke\ctags58\ctags -R --c++-kinds=+p --fields=+iaS --extra=+q .<CR>
 
 :dig sS 9828
 :dig sH 9829
 :dig sC 9831
 :dig sD 9830
-
-set noswf
+:dig *. 8729
 
 au BufRead,BufNewFile *.wiki			setfiletype wiki
 au BufRead,BufNewFile *.wikipedia.org*	setfiletype wiki
 
+let g:netrw_cygwin = 0
+let g:netrw_silent = 1
+let g:netrw_scp_cmd = 'c:\"Program Files (x86)"\PuTTY\pscp.exe -q'
+let g:netrw_sftp_cmd= 'c:\"Program Files (x86)"\PuTTY\psftp.exe'
+
+if exists(':TOhtml') == 2
+	function! MyConvert2HTML(line1, line2)
+		"add the matchadd to syntax highlight
+		let l:mList = getmatches()
+		for l:mi in l:mList
+			exe "syntax match ".l:mi['group']." /".escape(l:mi['pattern'],'/')."/ containedin=.*"
+		endfor
+		"[{'group': 'MarkWord1', 'pattern': '\c\<highlight\>', 'priority': -24, 'id': 4}]
+		return tohtml#Convert2HTML(a:line1, a:line2)
+	endfunction
+	command! -nargs=0 -range=% TOhtml :call MyConvert2HTML(<line1>, <line2>)
+	"command! -nargs=0 TOhtml :call MyConvert2HTML(<line1>, <line2>)
+endif
+
+"set diffexpr=MyDiff()
+"function! MyDiff()
+"	let opt=""
+"	if &diffopt =~ "icase"
+"		let opt = opt . "-i "
+"	endif
+"	if &diffopt =~ "iwhite"
+"		let opt = opt. "-b "
+"	endif
+"	silent execute '!""D:\\vim\\vim73\\diff"" -a '.opt.v:fname_in.'	'.v:fname_new.' > '.v:fname_out
+"endfunction
+
+set directory^=$HOME/tmp
+set backupdir^=$HOME/tmp
+
+"set path+="C:\\Program\ Files\ (x86)\\boost\\boost_1_47"
+
+command! -nargs=? -complete=file Admin :exec "silent !elevate ".$VIMRUNTIME."\\gvim <args>"
+
+"==== elevate.js START HERE ====
+"// elevate.js -- runs target command line elevated
+"if (WScript.Arguments.Length >= 1) {
+"    Application = WScript.Arguments(0);
+"    Arguments = "";
+"    for (Index = 1; Index < WScript.Arguments.Length; Index += 1) {
+"        if (Index > 1) {
+"            Arguments += " ";
+"        }
+"        Arguments += WScript.Arguments(Index);
+"    }
+"    new ActiveXObject("Shell.Application").ShellExecute(Application, Arguments, "", "runas");
+"} else {
+"    WScript.Echo("Usage:");
+"    WScript.Echo("elevate Application Arguments");
+"}
+"==== elevate.js END HERE ====
+"Save a file with sudo under POSIX system
+"cnoremap w!! w !sudo tee %
 " Go to last file(s) if invoked without arguments.
 "autocmd VimLeave * nested if (!isdirectory($HOME . "/.vim")) |
 "	\ call mkdir($HOME . "/.vim") |
@@ -544,40 +1012,42 @@ au BufRead,BufNewFile *.wikipedia.org*	setfiletype wiki
 "	\ execute "call rename('".$HOME . "/.vim/Session.vim','" . $HOME . "/.vim/Session.vim.bak')" |
 "	\ execute "source " . $HOME . "/.vim/Session.vim.bak" |
 "	\ execute "call delete('"$HOME . "/.vim/Session.vim')"
-
+"
 "dw:call setline(2, getline(2).printf("%c", 0x"))
 "%s,\v\<([^<>]+)\>[^<>]+\</\1\>|\<[^<>]+/\>,&\r,g
 "%s,\v\<([^<>]+)\>((\<.{-}\>)|)\</\1\>,<\1>\r\2</\1>\r,g
 "call setline('$', getline('$') . printf("%c", 0x
 "%s,<[^>]\+>\zs\ze<[^>]\+>,\r,g
 "g//let b:a=b:a+1|exe "normal 0i".(-1+b:a)
-
+"
 "function! InsertTabWrapper(direction)
   "let col = col('.') - 1
   "if !col || getline('.')[col - 1] !~ '\k'
-    "return "\<tab>"
+	"return "\<tab>"
   "elseif "backward" == a:direction
-    "return "\<c-p>"
+	"return "\<c-p>"
   "else
-    "return "\<c-n>"
+	"return "\<c-n>"
   "endif
 "endfunction
-
+"
 "inoremap <TAB> <C-R>=InsertTabWrapper("forward")<CR>
 "inoremap <S-TAB> <C-R>=InsertTabWrapper("backward")<CR>
-
+"
 "C:\Program Files\vim\vim71\gvim.exe
 "--servername gmain --remote-silent +$(CurLine) +"normal zz" $(FileName)$(FileExt)
 "(none)
 "
 "Arguments: --servername gmain --remote-silent +"call cursor($(CurLine),$(CurCol))" +"normal zz" "$(FilePath)"
 "
-"    ----- For Replacement in Objective C -----
+"	 ----- For Replacement in Objective C -----
 "set nomore
 "^-\s*(id)\s*init\>\_.\{-}\zs.*\(NSLog([^)]*);$\n\)\{1}\ze\_.*return self;
 "argdo %s/^-\s*(id)\s*init\>\_.\{-}\zs.*\(NSLog([^)]*);$\n\)\{1}\ze\_.*return self;//e | update
 "argdo %s/^-\s*(id)\s*init\>\_.\{-}\zs\ze.*return self;/NSLog(@"Object init : %@", self);\r/e | update
 "argdo g/^NSL/exe "normal ==" | update
-
+"
 "Search no XXX
 "^.*\(XXX.*\)\@<!$
+"go no gui
+"--ldflags -H=windowsgui
