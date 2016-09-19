@@ -3,7 +3,7 @@ set nocp
 sil! call plug#begin()
 if exists('*plug#begin')
 	Plug 'tpope/vim-sensible'
-	Plug 'fatih/vim-go', { 'for': ['go', 'gohtmltmpl'] }
+	Plug 'fatih/vim-go'
 	Plug 'junegunn/vim-easy-align'
 	Plug 'jreybert/vimagit'
 	Plug '~/vimfiles/fa'
@@ -23,6 +23,10 @@ if exists('*plug#begin')
 	au filetype go nmap <leader>i <Plug>(go-info)
 	"let g:go_auto_type_info = 1
 	let g:go_textobj_enabled = 0
+	let g:go_highlight_build_constraints = 1
+	let g:go_template_autocreate = 0
+	let g:go_fmt_command = "goimports"
+	let g:go_gocode_socket_type = 'tcp'
 endif
 au filetype go set makeprg=go\ build\ -ldflags=\"-s\"
 
@@ -651,27 +655,45 @@ function! ShowMenu()
 	endif
 endfunction
 
-let s:c=localtime()%65537+1
-let s:xa=localtime()
-let s:xb=localtime()*65537+2147483648
-"RANDMAX = 2147483647 (2^31-1)
+let s:state = 5573589319906701683+localtime()
+let s:inc = 2891336453
+"algorithm from http://www.pcg-random.org/
+let s:shiftDict = {
+\0:1, 1:2, 2:4, 3:8, 4:16, 5:32, 6:64, 7:128, 8:256, 9:512, 10:1024, 11:2048,
+\12:4096, 13:8192, 14:16384, 15:32768, 16:65536, 17:131072, 18:262144,
+\19:524288, 20:1048576, 21:2097152, 22:4194304, 23:8388608, 24:16777216,
+\25:33554432, 26:67108864, 27:134217728, 28:268435456, 29:536870912,
+\30:1073741824, 31:2147483648, 32:4294967296, 33:8589934592, 34:17179869184,
+\35:34359738368, 36:68719476736, 37:137438953472, 38:274877906944,
+\39:549755813888, 40:1099511627776, 41:2199023255552, 42:4398046511104,
+\43:8796093022208, 44:17592186044416, 45:35184372088832, 46:70368744177664,
+\47:140737488355328, 48:281474976710656, 49:562949953421312,
+\50:1125899906842624, 51:2251799813685248, 52:4503599627370496,
+\53:9007199254740992, 54:18014398509481984, 55:36028797018963968,
+\56:72057594037927936, 57:144115188075855872, 58:288230376151711744,
+\59:576460752303423488, 60:1152921504606846976, 61:2305843009213693952,
+\62:4611686018427387904,
+\}
+function! <SID>Pow2(in)
+	return s:shiftDict[a:in]
+endfunction
+	
 function! MyRandd()
-	let l:a=2147483085
-	let l:b=2147483648
-	"echo printf('c=%d x=%d', s:c, s:x)
-	let l:xx=s:xa*l:a+s:c
-	if (l:xx < 0)
-		let l:xx=l:xx+l:b
+	let oldstate = s:state
+	let s:state = oldstate * 6364136223846793005 + or(s:inc,1)
+	let xorshifted = and(xor(oldstate/262144, oldstate) / 134217728, 4294967295)
+	let delta = 0
+	if oldstate < 0
+		let delta = 16
+		let oldstate = and(oldstate, 9223372036854775807)
 	endif
-	let l:xx=l:b-1-l:xx
-	let s:c=float2nr((0.0+l:a*s:xa+s:c)/(0.0+l:b))
-	let s:xa=s:xb
-	let s:xb=l:xx
-	return s:xb
+	let rot = and(oldstate/576460752303423488 + delta, 4294967295)
+	return and(or(xorshifted/<SID>Pow2(rot), (xorshifted*and(4294967296-rot,31))),4294967295)
 endfunction
 
+let g:MYRANDMAX = 4294967296.0
 function! MyRandf()
-	return (MyRandd()/2147483648.0)
+	return (MyRandd()/g:MYRANDMAX)
 endfunction
 
 function! Rand(...)
