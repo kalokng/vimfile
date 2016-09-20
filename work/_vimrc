@@ -655,8 +655,8 @@ function! ShowMenu()
 	endif
 endfunction
 
-let g:state = 1753877967969059832
-let g:inc = 109
+let s:state = 0
+let s:inc = 109
 "algorithm from http://www.pcg-random.org/
 let s:shiftDict = {
 \0:1, 1:2, 2:4, 3:8, 4:16, 5:32, 6:64, 7:128, 8:256, 9:512, 10:1024, 11:2048,
@@ -698,9 +698,9 @@ function! UintDiv(large, x)
 endfunction
 
 function! MyRandd()
-	let oldstate = g:state
+	let oldstate = s:state
 	let msb = 0
-	let g:state = UintMul(oldstate,6364136223846793005) + or(g:inc,1)
+	let s:state = UintMul(oldstate,6364136223846793005) + or(g:inc,1)
 	let xorshifted = and(UintDiv(xor(UintDiv(oldstate,262144), oldstate), 134217728), 4294967295)
 	let delta = 0
 	if oldstate < 0
@@ -710,6 +710,9 @@ function! MyRandd()
 	let rot = and(UintDiv(oldstate,576460752303423488) + delta, 4294967295)
 	return and(or(xorshifted/<SID>Pow2(rot),(xorshifted*<SID>Pow2(and(4294967296-rot,31)))),4294967295)
 endfunction
+call MyRandd()
+let s:state = s:state + localtime()
+call MyRandd()
 
 let g:MYRANDMAX = 4294967296.0
 function! MyRandf()
