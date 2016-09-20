@@ -700,14 +700,9 @@ endfunction
 function! MyRandd()
 	let oldstate = s:state
 	let msb = 0
-	let s:state = UintMul(oldstate,6364136223846793005) + or(g:inc,1)
+	let s:state = UintMul(oldstate,6364136223846793005) + or(s:inc,1)
 	let xorshifted = and(UintDiv(xor(UintDiv(oldstate,262144), oldstate), 134217728), 4294967295)
-	let delta = 0
-	if oldstate < 0
-		let delta = 16
-		let oldstate = and(oldstate, 9223372036854775807)
-	endif
-	let rot = and(UintDiv(oldstate,576460752303423488) + delta, 4294967295)
+	let rot = and(UintDiv(oldstate,576460752303423488), 4294967295)
 	return and(or(xorshifted/<SID>Pow2(rot),(xorshifted*<SID>Pow2(and(4294967296-rot,31)))),4294967295)
 endfunction
 call MyRandd()
