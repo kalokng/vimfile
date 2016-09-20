@@ -706,7 +706,7 @@ function! MyRandd()
 	return and(or(xorshifted/<SID>Pow2(rot),(xorshifted*<SID>Pow2(and(4294967296-rot,31)))),4294967295)
 endfunction
 call MyRandd()
-let s:state = s:state + 42
+let s:state = s:state + localtime()
 call MyRandd()
 
 let g:MYRANDMAX = 4294967296.0
