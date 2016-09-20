@@ -677,27 +677,37 @@ let s:shiftDict = {
 function! <SID>Pow2(in)
 	return s:shiftDict[a:in]
 endfunction
-function! Multiple(large, x)
+
+function! UintMul(large, x)
 	if a:large >= 0
 		return a:large * a:x
 	endif
+	let msb = -9223372036854775808 * and(a:x,1)
+	let large = and(a:large, 9223372036854775807) * a:x
+	return large + msb
 endfunction
-function! Divide(large, x)
+
+function! UintDiv(large, x)
 	if a:large >= 0
 		return a:large / a:x
 	endif
+	let mod = (2*(4611686018427387904 % a:x))/ a:x
+	let msb = 4611686018427387904 / a:x
+	let large = and(a:large, 9223372036854775807) / a:x
+	return large + 2*msb + mod
 endfunction
+
 function! MyRandd()
 	let oldstate = g:state
 	let msb = 0
-	let g:state = Multiple(oldstate,6364136223846793005) + or(g:inc,1)
-	let xorshifted = and(xor(oldstate/262144, oldstate) / 134217728, 4294967295)
+	let g:state = UintMul(oldstate,6364136223846793005) + or(g:inc,1)
+	let xorshifted = and(UintDiv(xor(UintDiv(oldstate,262144), oldstate), 134217728), 4294967295)
 	let delta = 0
 	if oldstate < 0
 		let delta = 16
 		let oldstate = and(oldstate, 9223372036854775807)
 	endif
-	let rot = and(oldstate/576460752303423488 + delta, 4294967295)
+	let rot = and(UintDiv(oldstate,576460752303423488) + delta, 4294967295)
 	return and(or(xorshifted/<SID>Pow2(rot),(xorshifted*<SID>Pow2(and(4294967296-rot,31)))),4294967295)
 endfunction
 
