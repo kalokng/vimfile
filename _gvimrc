@@ -28,6 +28,7 @@ hi LineNr guibg=#F0F0FF guifg=Brown
 hi CursorLine guibg=LightCyan
 hi DiffText guibg=#FF7F7F
 hi StatusLineNC	guibg=darkgrey guifg=white gui=none
+"hi ModeMsg guibg=Purple guifg=white
 hi User1	guibg=cyan guifg=black gui=none
 hi ColorColumn guibg=LightGrey
 "color default
@@ -35,6 +36,14 @@ hi ColorColumn guibg=LightGrey
 hi WarningMsg guifg=black guibg=green
 hi NonText gui=bold guifg=#9F9FDF
 hi SpecialKey gui=bold guifg=#7FDF7F
+
+let g:seoul256_background = 234
+color seoul256
+"color dracula
+"hi Search guifg=black guibg=#d1ca8c gui=underline
+hi WarningMsg guifg=black guibg=#79ffc6
+"hi ModeMsg guibg=Purple guifg=white
+"hi LineNr guifg=#909194 guibg=#181a26
 
 inoremap <C-S> <C-G>u<C-C>:W<CR>
 nnoremap <C-S> :W<CR>
