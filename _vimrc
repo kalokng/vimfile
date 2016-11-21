@@ -49,6 +49,7 @@ let g:go_fmt_command = "goimports"
 let g:go_gocode_socket_type = 'tcp'
 let g:go_textobj_enabled = 0
 let g:go_template_autocreate = 0
+let g:go_gocode_unimported_packages = 1
 
 "map <F5> :syn sync fromstart<CR>
 nnoremap <silent> <S-F5> zfaB
@@ -337,12 +338,48 @@ nmap <silent> <F7> :if &diff \| diffoff \| else \| diffthis \| endif<CR>
 
 command! -nargs=? -bang -complete=file W :call <SID>SaveF("<args>","<bang>")
 
-function! <SID>ExtName(name)
-	if len(a:name) == 0
-		return [expand('%:p'),expand('%:p:h'), expand('%:t')]
+function! <SID>IsRoot(name)
+	if a:name[0] == '/' || a:name[0] =='\'
+		return 1
 	endif
-	return [a:name,"",a:name]
-	let p = getcwd()
+	let l:win = has("win16")||has("win32")||has("win64")
+	if ! l:win
+		return 0
+	endif
+	return match(a:name, ':[/\\]') >= 0
+endfunction
+
+function! <SID>ExtName(name)
+	let l:path = a:name
+	if len(a:name) == 0
+		let l:path = expand('%:p')
+	endif
+	"return [a:name,"",a:name]
+	if !<SID>IsRoot(l:path)
+		let l:path = getcwd()."/".l:path
+	endif
+	let l:path = expand(l:path)
+	let idx = match(l:path, '[^/\\]*$')
+	if idx < 0
+		return [l:path,"",l:path]
+	endif
+	return [l:path,l:path[:idx-1],l:path[idx :]]
+endfunction
+
+function! <SID>Warn(string)
+	echohl WarningMsg
+	echo a:string
+	echohl None
+endfunction
+
+function! <SID>Error(string)
+	echohl ErrorMsg
+	echo a:string
+	echohl None
+endfunction
+
+function! <SID>OK(string)
+	return "y"==a:string || "Y"==a:string
 endfunction
 
 function! <SID>SaveF(name,bang)
@@ -351,112 +388,86 @@ function! <SID>SaveF(name,bang)
 	let dir = p[1]
 	let name = p[2]
 
-	let v:errmsg = ""
-	try
-		exe "w".a:bang." " . path
-	catch /\<E13\>/
-		echohl WarningMsg
-		echo '"'.name.'" exists, press Y to save.'
-		echohl None
-		let l:reply = nr2char(getchar())
-		if l:reply == "y" || l:reply == "Y"
-			call <SID>SaveF(a:name,"!")
-		else
-			echo "Cancelled"
-		endif
-	catch /\<\%(E45\|E505\)\>/
-		echohl WarningMsg
-		echo '"'.name.'" is read-only, press Y to save.'
-		echohl None
-		let l:reply = nr2char(getchar())
-		"if l:reply == "\<CR>" || l:reply == "y" || l:reply == "Y"
-		if l:reply == "y" || l:reply == "Y"
-			try
-				exe "w! " . a:name
-			catch
-				echon 'cannot be written.'
-				echohl ErrorMsg
-				echo substitute(v:exception,'^Vim\%((\a\+)\)\=:',"","")
-				echohl None
-			endtry
-		else
-			echo "Cancelled"
-		endif
-	catch /\<E139\>/
-		if filewritable(path) == 2
-			if isdirectory(path)
-				echohl ErrorMsg
-				echo '"'.name.'" is a directory'
-				echohl None
-			else
-				echohl ErrorMsg
-				echo '"'.name.'" is not writable'
-				echohl None
-			endif
-		else
-			echohl WarningMsg
-			echo '"'.name.'" is loaded in another buffer, press Y to save.'
-			echohl None
-			let l:reply = nr2char(getchar())
-			if l:reply == "y" || l:reply == "Y"
-				try
-					let l:curfile = bufnr('%')
-					let l:nextfile = bufnr('#')
-					let l:count = 0
-					while bufnr(path . l:count) > 0
-						let l:count += 1
-					endwhile
-					silent! exe "b ".bufnr(path)
-					silent! exe "f ".path . l:count
-					silent! exe "b ".l:curfile
-					exe "w! " . path
-				catch
-					echo 'cannot be written.'
-					echohl ErrorMsg
-					echo substitute(v:exception,'^Vim\%((\a\+)\)\=:',"","")
-					echohl None
-				endtry
-				silent! exe "b ".bufnr(path . l:count)
-				silent! exe "f ".path
-				silent! exe "e! ".path
-				silent! exe "b ".l:nextfile
-				silent! exe "b ".l:curfile
-			else
-				echo "Cancelled"
-			endif
-		endif
-	catch /\<E32\>/
-		exe "confirm bro w ".getcwd()
-	catch /\<E212\>/
+	if filewritable(dir) == 0 && !filereadable(dir) && !isdirectory(dir) && !isdirectory(path)
 		"Try to create the folder
-		if isdirectory(path)
-			echohl ErrorMsg
-			echo '"'.name.'" is a directory'
-			echohl None
-		else
-			echohl WarningMsg
-			echo '"Directory '.dir.'" not exists, press Y to create.'
-			echohl None
-			let l:reply = nr2char(getchar())
-			"if l:reply == "\<CR>" || l:reply == "y" || l:reply == "Y"
-			if l:reply == "y" || l:reply == "Y"
-				call mkdir(dir, 'p')
-				if isdirectory(dir)
-					call <SID>SaveF(a:name,a:bang)
-				else
-					echohl ErrorMsg
-					echo '"'.dir.'" cannot be created'
-					echohl None
-				endif
-			else
-				echo "Cancelled"
-			endif
+		call <SID>Warn('"Directory '.dir.'" not exists, press Y to create.')
+		let l:reply = nr2char(getchar())
+		if !<SID>OK(l:reply)
+			echo "Cancelled"
+			return
 		endif
-	catch
-		echohl ErrorMsg
-		echo substitute(v:exception,'^Vim\%((\a\+)\)\=:',"","")
-		echohl None
-	endtry
+		sil! call mkdir(dir, 'p')
+		if !isdirectory(dir)
+			call <SID>Error('"'.dir.'" cannot be created')
+			return
+		endif
+	endif
+
+	let v:errmsg = ""
+	let bang = a:bang
+	while 1
+		try
+			exe "w".bang." " . path
+		catch /\<\%(E13\|E45\|E505\)\>/
+			"File exists | read only
+			if exists("l:E13")
+				call <SID>Error(substitute(v:exception,'^Vim\%((\a\+)\)\=:',"",""))
+				break
+			endif
+			let l:E13 = 1
+			if isdirectory(path)
+				call <SID>Error('"'.name.'" is a directory')
+				break
+			endif
+			if match(v:exception, '\<E13\>') >= 0
+				call <SID>Warn('"'.name.'" exists, press Y to save.')
+			else
+				call <SID>Warn('"'.name.'" is read-only, press Y to save.')
+			endif
+			let l:reply = nr2char(getchar())
+			if !<SID>OK(l:reply)
+				echo "Cancelled"
+				break
+			endif
+			let bang = "!"
+			continue
+		catch /\<E139\>/
+			if exists("l:E139")
+				call <SID>Error(substitute(v:exception,'^Vim\%((\a\+)\)\=:',"",""))
+				break
+			endif
+			call <SID>Warn('"'.name.'" is loaded in another buffer, press Y to save.')
+			let l:reply = nr2char(getchar())
+			if !<SID>OK(l:reply)
+				echo "Cancelled"
+				break
+			endif
+			let l:E139 = 1
+			let l:curfile = bufnr('%')
+			let l:nextfile = bufnr('#')
+			let l:count = 0
+			while bufnr(path . l:count) > 0
+				let l:count += 1
+			endwhile
+			let l:extbuf = bufnr(path)
+			silent! exe "b ".l:extbuf
+			silent! exe "f ".path . l:count
+			silent! exe "b ".l:curfile
+			continue
+		catch /\<E32\>/
+			exe "confirm bro w ".getcwd()
+		catch
+			call <SID>Error(substitute(v:exception,'^Vim\%((\a\+)\)\=:',"",""))
+		endtry
+		break
+	endwhile
+	if exists("l:E139")
+		silent! exe "b ".l:extbuf
+		silent! exe "f ".path
+		silent! exe "e! ".path
+		silent! exe "b ".l:nextfile
+		silent! exe "b ".l:curfile
+	endif
 endfunction
 
 map <MiddleMouse> <NOP>

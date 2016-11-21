@@ -10,7 +10,7 @@ source $VIMRUNTIME/menu.vim
 "set guifont=DotumChe:cHANGEUL
 "set guifont=NSimsun:h9:cDEFAULT
 set guifont=
-	\Source_Code_Pro_Semibold:h9:cANSI,
+	\Source_Code_Pro:h9:w6:cANSI:qCLEARTYPE,
 	\DejaVu_Sans_Mono:h10:cANSI,
 	\Consolas:h10:cANSI,
 	\Monaco:h9:cANSI,
