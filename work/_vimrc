@@ -6,7 +6,8 @@ if exists('*plug#begin')
 	Plug 'fatih/vim-go'
 	Plug 'junegunn/vim-easy-align'
 	Plug 'jreybert/vimagit'
-	Plug '~/vimfiles/fa'
+	Plug 'junegunn/seoul256.vim'
+	Plug 'fatih/molokai'
 	call plug#end()
 
 	vmap <CR> <Plug>(LiveEasyAlign)
@@ -27,8 +28,13 @@ if exists('*plug#begin')
 	let g:go_template_autocreate = 0
 	let g:go_fmt_command = "goimports"
 	let g:go_gocode_socket_type = 'tcp'
+	let g:go_gocode_unimported_packages = 1
+	let g:go_highlight_build_constraints = 1
 endif
+
 au filetype go set makeprg=go\ build\ -ldflags=\"-s\"
+"au filetype go set guifont=Go_Mono:h9:w6:cDEFAULT:qCLEARTYPE
+au BufWritePre *.ptxt set undofile
 
 nmap <leader>gr <Plug>MarkRegex
 
@@ -112,11 +118,12 @@ set noequalalways
 set swapsync=
 "set ambw=double
 
+set undoreload=50000
 set noswf
 "set guifont=DotumChe:cHANGEUL
 "set guifont=NSimsun:h9:cDEFAULT
 set guifont=
-	\Source_Code_Pro_Semibold:h9:cANSI,
+	\Source_Code_Pro:h10:w6:cDEFAULT:qCLEARTYPE,
 	\DejaVu_Sans_Mono:h10:cANSI,
 	\Consolas:h10:cANSI,
 	\Consolas:h11:cANSI,
@@ -126,7 +133,7 @@ set guifont=
 	\Bitstream_Vera_Sans_Mono:h8:cANSI,
 	\Courier_New:h9:cANSI
 "GulimChe:h9:cHANGEUL
-set guifontwide=MingLiU:h10
+"set guifontwide=MingLiU:h10
 "set guifontwide=GulimChe:h9
 "set guifontset=-misc-msgothic-medium-r-normal--9-*-*-*-c-140-ksx1001-0
 
@@ -144,7 +151,7 @@ set hidden
 "set showmatch
 "set cpoptions-=m
 
-"se cursorline
+se cursorline
 hi LineNr guibg=#F0F0FF guifg=Brown
 hi VertSplit guibg=Black
 "hi CursorLine guibg=LightCyan
@@ -156,9 +163,13 @@ hi User1	guibg=cyan guifg=black gui=none
 hi ColorColumn guibg=LightGrey
 "color default
 "color desert
-hi WarningMsg guifg=black guibg=green
 hi NonText gui=bold guifg=#9F9FDF
 hi SpecialKey gui=bold guifg=#7FDF7F
+
+let g:seoul256_background = 234
+color seoul256
+
+hi WarningMsg guifg=black guibg=green
 
 set hls is
 set ignorecase smartcase
@@ -239,6 +250,7 @@ let myMode["s"]      = 'SELECT'
 let myMode["S"]      = 'S-LINE'
 let myMode["\<C-S>"] = 'S-BLOCK'
 let myMode["i"]      = 'INS'
+let myMode["ic"]     = 'INS-CMD'
 let myMode["Rv"]     = 'V-REPLACE'
 let myMode["R"]      = 'REPLACE'
 let myMode["c"]      = 'COMMAND'
@@ -253,7 +265,14 @@ function! GetMode()
 	if g:myFocus != winnr()
 		return ""
 	endif
-	return g:myMode[mode(" ")]
+	let l:k = mode(" ")
+	while !has_key(g:myMode, l:k)
+		let l:k = l:k[0:-2]
+		if len(l:k) == 0
+			return ""
+		endif
+	endwhile
+	return g:myMode[l:k]
 endfunction
 
 let g:myFocus = 1
@@ -547,6 +566,10 @@ function! <SID>SaveF(name,bang)
 		silent! exe "b ".l:curfile
 	endif
 endfunction
+
+
+command! Bash :!start bash
+command! Cmd :!start cmd
 
 inoremap <C-V> <C-G>u<C-R>+
 nnoremap <C-V> "+gp
@@ -1348,7 +1371,8 @@ set grepformat=%f:%l:%m
 "	\ execute "source " . $HOME . "/.vim/Session.vim.bak" |
 "	\ execute "call delete('"$HOME . "/.vim/Session.vim')"
 "
-"dw:call setline(2, getline(2).printf("%c", 0x"))
+"dw:call setline(2, getline(2).printf("%c", 0x"))
+
 "%s,\v\<([^<>]+)\>[^<>]+\</\1\>|\<[^<>]+/\>,&\r,g
 "%s,\v\<([^<>]+)\>((\<.{-}\>)|)\</\1\>,<\1>\r\2</\1>\r,g
 "call setline('$', getline('$') . printf("%c", 0x
@@ -1382,7 +1406,6 @@ set grepformat=%f:%l:%m
 "argdo %s/^-\s*(id)\s*init\>\_.\{-}\zs\ze.*return self;/NSLog(@"Object init : %@", self);\r/e | update
 "argdo g/^NSL/exe "normal ==" | update
 "
-"Search no XXX
-"^.*\(XXX.*\)\@<!$
 "go no gui
 "--ldflags -H=windowsgui
+"go build --ldflags '-extldflags "-static"'
