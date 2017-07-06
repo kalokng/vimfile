@@ -267,10 +267,10 @@ function! GetMode()
 	endif
 	let l:k = mode(" ")
 	while !has_key(g:myMode, l:k)
-		let l:k = l:k[0:-2]
-		if len(l:k) == 0
+		if len(l:k) <= 1
 			return ""
 		endif
+		let l:k = l:k[0:-2]
 	endwhile
 	return g:myMode[l:k]
 endfunction
