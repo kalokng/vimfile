@@ -50,6 +50,7 @@ let g:go_gocode_socket_type = 'tcp'
 let g:go_textobj_enabled = 0
 let g:go_template_autocreate = 0
 let g:go_gocode_unimported_packages = 1
+let g:go_highlight_build_constraints = 1
 
 "map <F5> :syn sync fromstart<CR>
 nnoremap <silent> <S-F5> zfaB
@@ -164,6 +165,7 @@ let myMode["s"]      = 'SELECT'
 let myMode["S"]      = 'S-LINE'
 let myMode["\<C-S>"] = 'S-BLOCK'
 let myMode["i"]      = 'INS'
+let myMode["ic"]     = 'INS-CMD'
 let myMode["Rv"]     = 'V-REPLACE'
 let myMode["R"]      = 'REPLACE'
 let myMode["c"]      = 'COMMAND'
@@ -178,7 +180,16 @@ function! GetMode()
 	if g:myFocus != winnr()
 		return ""
 	endif
-	return g:myMode[mode(" ")]
+	let l:k = mode(" ")
+	let l:m = ""
+	while !has_key(g:myMode, l:k)
+		if len(l:k) <= 1
+			return ""
+		endif
+		let l:k = l:k[0:-2]
+		let l:m = "?"
+	endwhile
+	return l:m . g:myMode[l:k]
 endfunction
 
 let g:myFocus = 1
@@ -336,6 +347,9 @@ imap <silent> <S-F6> <C-O>:call Uncomment()<CR>
 
 nmap <silent> <F7> :if &diff \| diffoff \| else \| diffthis \| endif<CR>
 
+command! Bash :!start bash
+command! Cmd :!start cmd
+
 command! -nargs=? -bang -complete=file W :call <SID>SaveF("<args>","<bang>")
 
 function! <SID>IsRoot(name)
@@ -388,7 +402,7 @@ function! <SID>SaveF(name,bang)
 	let dir = p[1]
 	let name = p[2]
 
-	if filewritable(dir) == 0 && !filereadable(dir) && !isdirectory(dir) && !isdirectory(path)
+	if !filewritable(dir) && !filereadable(dir) && !isdirectory(dir) && !isdirectory(path)
 		"Try to create the folder
 		call <SID>Warn('"Directory '.dir.'" not exists, press Y to create.')
 		let l:reply = nr2char(getchar())
@@ -415,6 +429,10 @@ function! <SID>SaveF(name,bang)
 				break
 			endif
 			let l:E13 = 1
+			if a:name == ""
+				exe "confirm bro w ".getcwd()
+				break
+			endif
 			if isdirectory(path)
 				call <SID>Error('"'.name.'" is a directory')
 				break
