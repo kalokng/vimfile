@@ -10,6 +10,7 @@ Plug 'fatih/vim-go'
 Plug 'junegunn/vim-easy-align'
 Plug 'jreybert/vimagit'
 Plug 'junegunn/seoul256.vim'
+Plug 'mbbill/undotree'
 call plug#end()
 
 vmap <Enter> <Plug>(LiveEasyAlign)
@@ -44,6 +45,8 @@ au filetype go nmap <leader>gd <Plug>(go-doc)
 au filetype go nmap <leader>s <Plug>(go-implements)
 au filetype go nmap <leader>i <Plug>(go-info)
 au filetype go nmap <leader>t <Plug>(go-test)
+au filetype go nmap <leader>f <Plug>(go-referrers)
+au filetype go nmap <leader>l :GoSameIds<CR>
 let g:go_fmt_command = "goimports"
 "let g:go_auto_type_info = 1
 let g:go_gocode_socket_type = 'tcp'
@@ -429,7 +432,7 @@ function! <SID>SaveF(name,bang)
 				break
 			endif
 			let l:E13 = 1
-			if a:name == ""
+			if name == ""
 				exe "confirm bro w ".getcwd()
 				break
 			endif
@@ -561,9 +564,6 @@ onoremap <silent> <M-,> :call search('\u\+\\|_\+\zs\u*', 'b', line('.'))<CR>
 
 vnoremap <M-/> <Esc>/\%><C-R>=line("'<")-1<CR>l\%<<C-R>=line("'>")+1<CR>l
 vnoremap <M-?> <Esc>?\%><C-R>=line("'<")-1<CR>l\%<<C-R>=line("'>")+1<CR>l
-
-nnoremap <silent> <F10> :call ShowMenu()<CR>
-nnoremap <silent> <F11> :set guifont=*<CR>
 
 map <silent> [9 [(
 map <silent> ]0 ])
@@ -701,8 +701,14 @@ function! SelectionHighlight()
 	call setreg('/', word)
 endfunction
 
-nmap <silent> <F12> :exe '0,$!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
-vmap <silent> <F12> :<C-U>exe '''<,''>!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
+"nmap <silent> <F12> :exe '0,$!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
+"vmap <silent> <F12> :<C-U>exe '''<,''>!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
+nnoremap <F12> :UndotreeToggle<CR>
+
+if has("persistent_undo")
+	set undodir=~/.undodir/
+	set undofile
+endif
 
 nnoremap <M-/> :vimgrep /
 nnoremap <M-?> :1vimgrep /

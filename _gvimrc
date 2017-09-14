@@ -1,6 +1,6 @@
 set guioptions-=T
 set guioptions-=m
-set guioptions+=b
+"set guioptions+=b
 "set guitablabel=%N\ %t
 
 source $VIMRUNTIME/delmenu.vim
@@ -8,9 +8,9 @@ set langmenu=none
 source $VIMRUNTIME/menu.vim
 
 "set guifont=DotumChe:cHANGEUL
-"set guifont=NSimsun:h9:cDEFAULT
+set linespace=0
 set guifont=
-	\Source_Code_Pro:h9:w6:cANSI:qCLEARTYPE,
+	\Source_Code_Pro:h11:w6:cANSI:qCLEARTYPE,
 	\DejaVu_Sans_Mono:h10:cANSI,
 	\Consolas:h10:cANSI,
 	\Monaco:h9:cANSI,
@@ -19,11 +19,11 @@ set guifont=
 	\Bitstream_Vera_Sans_Mono:h8:cANSI,
 	\Courier_New:h9:cANSI
 "GulimChe:h9:cHANGEUL
-set guifontwide=NSimsun:h9
-"set guifontwide=GulimChe:h9
+"set guifontwide=NSimsun:h9
+"set guifontwide=Noto_Mono:h9
 "set guifontset=-misc-msgothic-medium-r-normal--9-*-*-*-c-140-ksx1001-0
 
-"se cursorline
+se cursorline
 hi LineNr guibg=#F0F0FF guifg=Brown
 hi CursorLine guibg=LightCyan
 hi DiffText guibg=#FF7F7F
@@ -37,8 +37,10 @@ hi WarningMsg guifg=black guibg=green
 hi NonText gui=bold guifg=#9F9FDF
 hi SpecialKey gui=bold guifg=#7FDF7F
 
+hi goSameId gui=bold guifg=yellow
+
 let g:seoul256_background = 234
-color seoul256
+sil! color seoul256
 "color dracula
 "hi Search guifg=black guibg=#d1ca8c gui=underline
 hi WarningMsg guifg=black guibg=#79ffc6
@@ -48,11 +50,15 @@ hi WarningMsg guifg=black guibg=#79ffc6
 inoremap <C-S> <C-G>u<C-C>:W<CR>
 nnoremap <C-S> :W<CR>
 
-function! ShowMenu()
-	if (&guioptions =~ 'm')
-		set guioptions-=m
+nnoremap <silent> <F10> :call ShowGUI('m')<CR>
+nnoremap <silent> <S-F10> :call ShowGUI('b')<CR>
+nnoremap <silent> <F11> :set guifont=*<CR>
+
+function! ShowGUI(itm)
+	if (&guioptions =~ a:itm)
+		exe "set guioptions-=".a:itm
 	else
-		set guioptions+=m
+		exe "set guioptions+=".a:itm
 		"simalt f
 	endif
 endfunction
