@@ -7,7 +7,9 @@ if exists('*plug#begin')
 	Plug 'junegunn/vim-easy-align'
 	Plug 'jreybert/vimagit'
 	Plug 'junegunn/seoul256.vim'
+	Plug 'mbbill/undotree'
 	Plug 'fatih/molokai'
+	Plug 'moorereason/vim-markdownfmt'
 	call plug#end()
 
 	vmap <CR> <Plug>(LiveEasyAlign)
@@ -22,6 +24,9 @@ if exists('*plug#begin')
 	au filetype go nmap <leader>gd <Plug>(go-doc)
 	au filetype go nmap <leader>s <Plug>(go-implements)
 	au filetype go nmap <leader>i <Plug>(go-info)
+	au filetype go nmap <leader>f <Plug>(go-referrers)
+	au filetype go nmap <leader>t <Plug>(go-test)
+	au filetype go nmap <leader>l :GoSameIds<CR>
 	"let g:go_auto_type_info = 1
 	let g:go_textobj_enabled = 0
 	let g:go_highlight_build_constraints = 1
@@ -30,6 +35,9 @@ if exists('*plug#begin')
 	let g:go_gocode_socket_type = 'tcp'
 	let g:go_gocode_unimported_packages = 1
 	let g:go_highlight_build_constraints = 1
+	"let g:go_auto_sameids = 1
+
+	let g:markdownfmt_autosave = 1
 endif
 
 au filetype go set makeprg=go\ build\ -ldflags=\"-s\"
@@ -40,7 +48,7 @@ nmap <leader>gr <Plug>MarkRegex
 
 set guioptions-=T
 set guioptions-=m
-set guioptions+=b
+"set guioptions+=b
 "set guitablabel=%N\ %t
 
 source $VIMRUNTIME/delmenu.vim
@@ -122,8 +130,11 @@ set undoreload=50000
 set noswf
 "set guifont=DotumChe:cHANGEUL
 "set guifont=NSimsun:h9:cDEFAULT
+set linespace=1
 set guifont=
-	\Source_Code_Pro:h10:w6:cDEFAULT:qCLEARTYPE,
+	\InputMono_Light:h11:w6:cANSI:qCLEARTYPE,
+	\Source_Code_Pro:h11:w6:cDEFAULT:qCLEARTYPE,
+	\Go_Mono:h10:cDEFAULT:qCLEARTYPE,
 	\DejaVu_Sans_Mono:h10:cANSI,
 	\Consolas:h10:cANSI,
 	\Consolas:h11:cANSI,
@@ -167,9 +178,11 @@ hi NonText gui=bold guifg=#9F9FDF
 hi SpecialKey gui=bold guifg=#7FDF7F
 
 let g:seoul256_background = 234
-color seoul256
+sil! color seoul256
 
 hi WarningMsg guifg=black guibg=green
+
+hi goSameId gui=bold guifg=yellow
 
 set hls is
 set ignorecase smartcase
@@ -266,13 +279,15 @@ function! GetMode()
 		return ""
 	endif
 	let l:k = mode(" ")
+	let l:m = ""
 	while !has_key(g:myMode, l:k)
 		if len(l:k) <= 1
 			return ""
 		endif
 		let l:k = l:k[0:-2]
+		let l:m = "?"
 	endwhile
-	return g:myMode[l:k]
+	return l:m . g:myMode[l:k]
 endfunction
 
 let g:myFocus = 1
@@ -504,7 +519,11 @@ function! <SID>SaveF(name,bang)
 	let bang = a:bang
 	while 1
 		try
-			exe "w".bang." " . path
+			if name == ""
+				exe "confirm bro w ".dir
+			else
+				exe "w".bang." " . path
+			endif
 		catch /\<\%(E13\|E45\|E505\)\>/
 			"File exists | read only
 			if exists("l:E13")
@@ -661,7 +680,8 @@ onoremap <silent> <M-,> :call search('\u\+\\|_\+\zs\u*', 'b', line('.'))<CR>
 vnoremap <M-/> <Esc>/\%><C-R>=line("'<")-1<CR>l\%<<C-R>=line("'>")+1<CR>l
 vnoremap <M-?> <Esc>?\%><C-R>=line("'<")-1<CR>l\%<<C-R>=line("'>")+1<CR>l
 
-nnoremap <silent> <F10> :call ShowMenu()<CR>
+nnoremap <silent> <F10> :call ShowGUI('m')<CR>
+nnoremap <silent> <S-F10> :call ShowGUI('b')<CR>
 nnoremap <silent> <F11> :set guifont=*<CR>
 
 map <silent> [9 [(
@@ -669,11 +689,11 @@ map <silent> ]0 ])
 map <silent> ]9 ](
 map <silent> [0 [)
 
-function! ShowMenu()
-	if (&guioptions =~ 'm')
-		set guioptions-=m
+function! ShowGUI(itm)
+	if (&guioptions =~ a:itm)
+		exe "set guioptions-=".a:itm
 	else
-		set guioptions+=m
+		exe "set guioptions+=".a:itm
 		"simalt f
 	endif
 endfunction
@@ -828,8 +848,14 @@ function! SelectionHighlight()
 	call setreg('/', word)
 endfunction
 
-nmap <silent> <F12> :exe '0,$!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
-vmap <silent> <F12> :<C-U>exe '''<,''>!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
+"nmap <silent> <F12> :exe '0,$!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
+"vmap <silent> <F12> :<C-U>exe '''<,''>!"'.$VIMRUNTIME.'\tidy" -q -i -xml --char-encoding utf8 --tab-size 4 -f '.$HOME.'\tidyError.txt'<CR>:cfile $HOME\tidyError.txt<CR>
+nnoremap <F12> :UndotreeShow<CR>:UndotreeFocus<CR>
+
+if has("persistent_undo")
+	set undodir=~/.undodir/
+	set undofile
+endif
 
 nnoremap <M-/> :vimgrep /
 nnoremap <M-?> :noauto vimgrep /
@@ -944,14 +970,11 @@ endfunction
 
 "nmap <C-PageDown> G:sleep 1000m<CR>:call Auto_Scroll_Down()<CR><C-PageDown>
 command! -nargs=? AutoScroll :call Auto_Scroll_Down('<args>')
-function! Auto_Scroll_Down(time)
-	let l:time = str2nr(a:time)
-	if l:time < 200
-		let l:time = 200
-	endif
+function! Auto_Scroll_Down(arg)
+	let l:time = 200
 	keepjumps normal G
 	let l:line=line('$')
-	e
+	exe "e ".a:arg
 	if l:line != line('$')
 		keepjumps exe "normal \eG"
 	endif
@@ -964,7 +987,7 @@ function! Auto_Scroll_Down(time)
 			redraw
 			exe 'sleep '.l:waittime.'m'
 			let l:line=line('$')
-			e
+			exe "e ".a:arg
 			if l:line != line('$')
 				let l:waittime = l:time
 				keepjumps exe "normal \eG"
