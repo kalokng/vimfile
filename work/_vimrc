@@ -10,7 +10,10 @@ if exists('*plug#begin')
 	Plug 'mbbill/undotree'
 	Plug 'fatih/molokai'
 	Plug 'moorereason/vim-markdownfmt'
+	Plug 'ctrlpvim/ctrlp.vim'
 	call plug#end()
+
+	nnoremap <M-'> :CtrlP<CR>
 
 	vmap <CR> <Plug>(LiveEasyAlign)
 
@@ -81,6 +84,7 @@ cnoremap <F5> <C-R>=strftime("%Y%m%d_%H%M%S")<CR>
 cnoremap <S-F5> <C-R>=strftime("%Y%m%d")<CR>
 nnoremap <silent> <F9> :<C-U>set wrap!\|if &wrap \| echo "Word wrap ON" \| else \| echo "Word wrap OFF"\|endif<CR>
 inoremap <silent> <F9> <C-O>:set wrap!<CR>
+nnoremap <silent> <S-F9> :set cursorline!<CR>
 
 command! -nargs=* DateMark :call MarkDBDate(<f-args>)
 function! MarkDBDate(...)
@@ -162,7 +166,7 @@ set hidden
 "set showmatch
 "set cpoptions-=m
 
-se cursorline
+"se cursorline
 hi LineNr guibg=#F0F0FF guifg=Brown
 hi VertSplit guibg=Black
 "hi CursorLine guibg=LightCyan
@@ -377,24 +381,24 @@ if has("multi_byte")
 	nnoremap <silent> ZL :e ++enc=latin1 ++bad=keep<CR>
 	nnoremap <silent> ZB :e ++nobin<CR>
 	"change save file encoding
-	nnoremap <silent> <C-p><C-j> :set fenc=japan<CR>
-	nnoremap <silent> <C-p><C-s> :set fenc=cp936<CR>
-	nnoremap <silent> <C-p><C-t> :set fenc=cp950<CR>
-	nnoremap <silent> <C-p><C-u> :set fenc=utf-8<CR>
-	nnoremap <silent> <C-p><C-l> :set fenc=latin1<CR>
-	nnoremap <silent> <C-p><C-b> :set bin<CR>
-	nnoremap <silent> <C-p><C-B> :set bin<CR>
-	nnoremap <silent> <C-p><C-m> :set bomb<CR>
-	nnoremap <silent> <C-p><C-M> :set bomb<CR>
-	nnoremap <silent> <C-p>j :set fenc=japan<CR>
-	nnoremap <silent> <C-p>s :set fenc=cp936<CR>
-	nnoremap <silent> <C-p>t :set fenc=cp950<CR>
-	nnoremap <silent> <C-p>u :set fenc=utf-8<CR>
-	nnoremap <silent> <C-p>l :set fenc=latin1<CR>
-	nnoremap <silent> <C-p>b :set nobin<CR>
-	nnoremap <silent> <C-p>B :set nobin<CR>
-	nnoremap <silent> <C-p>m :set nobomb<CR>
-	nnoremap <silent> <C-p>M :set nobomb<CR>
+	nnoremap <silent> <C-'><C-j> :set fenc=japan<CR>
+	nnoremap <silent> <C-'><C-s> :set fenc=cp936<CR>
+	nnoremap <silent> <C-'><C-t> :set fenc=cp950<CR>
+	nnoremap <silent> <C-'><C-u> :set fenc=utf-8<CR>
+	nnoremap <silent> <C-'><C-l> :set fenc=latin1<CR>
+	nnoremap <silent> <C-'><C-b> :set bin<CR>
+	nnoremap <silent> <C-'><C-B> :set bin<CR>
+	nnoremap <silent> <C-'><C-m> :set bomb<CR>
+	nnoremap <silent> <C-'><C-M> :set bomb<CR>
+	nnoremap <silent> <C-'>j :set fenc=japan<CR>
+	nnoremap <silent> <C-'>s :set fenc=cp936<CR>
+	nnoremap <silent> <C-'>t :set fenc=cp950<CR>
+	nnoremap <silent> <C-'>u :set fenc=utf-8<CR>
+	nnoremap <silent> <C-'>l :set fenc=latin1<CR>
+	nnoremap <silent> <C-'>b :set nobin<CR>
+	nnoremap <silent> <C-'>B :set nobin<CR>
+	nnoremap <silent> <C-'>m :set nobomb<CR>
+	nnoremap <silent> <C-'>M :set nobomb<CR>
 	"change encoding
 	nnoremap <silent> <C-H><C-j> :set enc=japan<CR>
 	nnoremap <silent> <C-H><C-s> :set enc=cp936<CR>
