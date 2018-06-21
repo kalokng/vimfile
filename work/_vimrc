@@ -1,9 +1,10 @@
 set nocp
+set rtp+=C:/temp/fzf
 
 sil! call plug#begin()
 if exists('*plug#begin')
 	Plug 'tpope/vim-sensible'
-	Plug 'fatih/vim-go'
+	Plug 'fatih/vim-go', {'do': ':GoUpdateBinaries'}
 	Plug 'junegunn/vim-easy-align'
 	Plug 'jreybert/vimagit'
 	Plug 'junegunn/seoul256.vim'
@@ -11,9 +12,12 @@ if exists('*plug#begin')
 	Plug 'fatih/molokai'
 	Plug 'moorereason/vim-markdownfmt'
 	Plug 'ctrlpvim/ctrlp.vim'
+	Plug 'junegunn/fzf'
 	call plug#end()
 
 	nnoremap <M-'> :CtrlP<CR>
+	let g:ctrlp_switch_buffer = 'et'
+	let g:ctrlp_cmd = 'CtrlPMRU'
 
 	vmap <CR> <Plug>(LiveEasyAlign)
 
@@ -39,6 +43,8 @@ if exists('*plug#begin')
 	let g:go_gocode_unimported_packages = 1
 	let g:go_highlight_build_constraints = 1
 	"let g:go_auto_sameids = 1
+
+	nnoremap <C-S-P> :FZF<CR>
 
 	let g:markdownfmt_autosave = 1
 endif
@@ -136,7 +142,7 @@ set noswf
 "set guifont=NSimsun:h9:cDEFAULT
 set linespace=1
 set guifont=
-	\InputMono_Light:h11:w6:cANSI:qCLEARTYPE,
+	\InputMono_Light:h10:cANSI:qCLEARTYPE,
 	\Source_Code_Pro:h11:w6:cDEFAULT:qCLEARTYPE,
 	\Go_Mono:h10:cDEFAULT:qCLEARTYPE,
 	\DejaVu_Sans_Mono:h10:cANSI,
@@ -593,6 +599,7 @@ endfunction
 
 command! Bash :!start bash
 command! Cmd :!start cmd
+command! Term :terminal bash
 
 inoremap <C-V> <C-G>u<C-R>+
 nnoremap <C-V> "+gp
@@ -927,7 +934,7 @@ inoremap <silent> <S-F7> <C-O>:set spell!<CR>
 inoremap <silent> <F8> <C-O>:set list!<CR>
 nnoremap <silent> <S-F7> :set spell!<CR>
 nnoremap <silent> <F8> :set list!<CR>
-nnoremap <silent> <M-F8> :let @z=@/<CR>:%s/\s\+$//e<CR><C-O>:let @/=@z<CR>
+nnoremap <silent> <M-F8> :let @z=@/<CR>:%s/[[:space:]]\+$//e<CR><C-O>:let @/=@z<CR>
 
 function! LineCount(...)
 	if (a:0 == 0)
