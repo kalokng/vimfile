@@ -4,18 +4,39 @@
 
 set nocp
 
-call plug#begin()
-Plug 'tpope/vim-sensible'
-Plug 'fatih/vim-go'
-Plug 'junegunn/vim-easy-align'
-Plug 'jreybert/vimagit'
-Plug 'junegunn/seoul256.vim'
-Plug 'mbbill/undotree'
-call plug#end()
+sil! call plug#begin()
+if exists('*plug#begin')
+	Plug 'tpope/vim-sensible'
+	Plug 'fatih/vim-go', { 'tag': '*', 'do': ':GoInstallBinaries' }
+	"Plug 'govim/govim'
+	Plug 'junegunn/vim-easy-align'
+	Plug 'jreybert/vimagit'
+	Plug 'junegunn/seoul256.vim'
+	Plug 'mbbill/undotree'
+	Plug 'ctrlpvim/ctrlp.vim'
+	Plug 'justinmk/vim-sneak'
+	Plug 'rust-lang/rust.vim'
+	Plug 'PProvost/vim-ps1', { 'for': 'ps1' }
+	Plug 'inkarkat/vim-ingo-library'
+	Plug 'inkarkat/vim-mark'
+	Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+	Plug '~/vimfiles/plugged/after'
+	call plug#end()
+
+	let g:ctrlp_cmd = 'CtrlPMRU'
+	let g:ctrlp_types = ['mru', 'fil', 'buf']
+
+	let g:mwExclusionPredicates = []
+endif
+
+set noautoread
+
+let g:sneak#label = 1
 
 vmap <Enter> <Plug>(LiveEasyAlign)
 
 nmap <leader>gr <Plug>MarkRegex
+let g:mwMaxMatchPriority = -10
 let g:mwDirectGroupJumpMappingNum = 0
 
 source $VIMRUNTIME/macros/matchit.vim
@@ -24,6 +45,10 @@ filetype plugin indent on
 set grepprg=grep\ -nH\ $*
 let g:tex_flavor='latex'
 let g:Tex_HotKeyMappings='eqnarray*,eqnarray,bmatrix,mbox'
+
+"rust
+let g:rustfmt_autosave = 1
+au filetype rust nmap <buffer> <leader>b :make check<CR>
 
 "php
 let g:PHP_default_indenting = 1
@@ -37,16 +62,21 @@ if has('mouse')
   set mouse=a
 endif
 
+if has("patch-8.1.1904")
+	set completeopt+=popup
+	set completepopup=align:menu,border:off,highlight:Pmenu
+endif
+
 "go
-au filetype go nmap <leader>r <Plug>(go-run)
-au filetype go nmap <leader>b <Plug>(go-build)
-au filetype go nmap <leader>ds <Plug>(go-def-split)
-au filetype go nmap <leader>gd <Plug>(go-doc)
-au filetype go nmap <leader>s <Plug>(go-implements)
-au filetype go nmap <leader>i <Plug>(go-info)
-au filetype go nmap <leader>t <Plug>(go-test)
-au filetype go nmap <leader>f <Plug>(go-referrers)
-au filetype go nmap <leader>l :GoSameIds<CR>
+au filetype go nmap <buffer> <leader>r <Plug>(go-run)
+au filetype go nmap <buffer> <leader>b <Plug>(go-build)
+au filetype go nmap <buffer> <leader>ds <Plug>(go-def-split)
+au filetype go nmap <buffer> <leader>gd <Plug>(go-doc)
+au filetype go nmap <buffer> <leader>s <Plug>(go-implements)
+au filetype go nmap <buffer> <leader>i <Plug>(go-info)
+au filetype go nmap <buffer> <leader>t <Plug>(go-test)
+au filetype go nmap <buffer> <leader>f <Plug>(go-referrers)
+au filetype go nmap <buffer> <leader>l :GoSameIds<CR>
 let g:go_fmt_command = "goimports"
 "let g:go_auto_type_info = 1
 let g:go_gocode_socket_type = 'tcp'
@@ -54,6 +84,8 @@ let g:go_textobj_enabled = 0
 let g:go_template_autocreate = 0
 let g:go_gocode_unimported_packages = 1
 let g:go_highlight_build_constraints = 1
+let g:go_build_tags="''"
+"call govim#config#Set("FormatOnSave", "goimports")
 
 "map <F5> :syn sync fromstart<CR>
 nnoremap <silent> <S-F5> zfaB
@@ -66,6 +98,7 @@ cnoremap <F5> <C-R>=strftime("%Y%m%d_%H%M%S")<CR>
 cnoremap <S-F5> <C-R>=strftime("%Y%m%d")<CR>
 nnoremap <silent> <F9> :<C-U>set wrap!\|if &wrap \| echo "Word wrap ON" \| else \| echo "Word wrap OFF"\|endif<CR>
 inoremap <silent> <F9> <C-O>:set wrap!<CR>
+nnoremap <silent> <S-F9> :set cursorline!<CR>
 
 set ts=4
 set sw=4
@@ -75,6 +108,7 @@ set display=lastline
 set noea
 
 set noswf
+"set dir=C:\temp\swap
 
 syn on
 "set fdm=syntax
@@ -202,7 +236,7 @@ au WinEnter * let g:myFocus = winnr()
 "set statusline=%(\ %1*%r%*\ %)%(%Y\|%)\ %<%{getcwd()==expand('%:p:h')?'':'.../'}%t\ %m%{GetCacheFTime()}%=%k[%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ [0x%02B]\ %-5.(%l,%c%V%)\ %P
 "set statusline=%(\ %1*%r%*\ %)%(%Y\|%)%<\ %f%(\ %m%)%{GetCacheFTime()}%=%k[%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ [0x%02B]\ %-5.(%l,%c%V%)\ %P
 set noshowmode
-set statusline=%(%#ModeMsg#%{GetMode()}%*\ %)%(\ %1*%r%*\ %)%(%Y\|%)%(%M\|%)\ %{expand('%')==expand('%:t')?'':'.../'}%t%<%{&key==''?'':'\ ['.&cm.']'}%{GetCacheFTime()}%=%k[0x%02B]\ [%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ %-5.(%l,%c%V%)\ %P
+set statusline=%(%#ModeMsg#%{GetMode()}%*\ %)%(\ %1*%r%*\ %)%(%Y\|%)%(%M\|%)\ %{expand('%')==expand('%:t')?'':'…/'}%t%<%{&key==''?'':'\ ['.&cm.']'}%{GetCacheFTime()}%=%k[0x%02B]\ [%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ %-5.(%l,%c%V%)\ %P
 set laststatus=2
 
 set backspace=2
@@ -282,24 +316,24 @@ if has("multi_byte")
 	nnoremap <silent> ZL :e ++enc=latin1 ++bad=keep<CR>
 	nnoremap <silent> ZB :e ++nobin<CR>
 	"change save file encoding
-	nnoremap <silent> <C-p><C-j> :set fenc=japan<CR>
-	nnoremap <silent> <C-p><C-s> :set fenc=cp936<CR>
-	nnoremap <silent> <C-p><C-t> :set fenc=cp950<CR>
-	nnoremap <silent> <C-p><C-u> :set fenc=utf-8<CR>
-	nnoremap <silent> <C-p><C-l> :set fenc=latin1<CR>
-	nnoremap <silent> <C-p><C-b> :set bin<CR>
-	nnoremap <silent> <C-p><C-B> :set bin<CR>
-	nnoremap <silent> <C-p><C-m> :set bomb<CR>
-	nnoremap <silent> <C-p><C-M> :set bomb<CR>
-	nnoremap <silent> <C-p>j :set fenc=japan<CR>
-	nnoremap <silent> <C-p>s :set fenc=cp936<CR>
-	nnoremap <silent> <C-p>t :set fenc=cp950<CR>
-	nnoremap <silent> <C-p>u :set fenc=utf-8<CR>
-	nnoremap <silent> <C-p>l :set fenc=latin1<CR>
-	nnoremap <silent> <C-p>b :set nobin<CR>
-	nnoremap <silent> <C-p>B :set nobin<CR>
-	nnoremap <silent> <C-p>m :set nobomb<CR>
-	nnoremap <silent> <C-p>M :set nobomb<CR>
+	nnoremap <silent> <C-M><C-j> :set fenc=japan<CR>
+	nnoremap <silent> <C-M><C-s> :set fenc=cp936<CR>
+	nnoremap <silent> <C-M><C-t> :set fenc=cp950<CR>
+	nnoremap <silent> <C-M><C-u> :set fenc=utf-8<CR>
+	nnoremap <silent> <C-M><C-l> :set fenc=latin1<CR>
+	nnoremap <silent> <C-M><C-b> :set bin<CR>
+	nnoremap <silent> <C-M><C-B> :set bin<CR>
+	nnoremap <silent> <C-M><C-m> :set bomb<CR>
+	nnoremap <silent> <C-M><C-M> :set bomb<CR>
+	nnoremap <silent> <C-M>j :set fenc=japan<CR>
+	nnoremap <silent> <C-M>s :set fenc=cp936<CR>
+	nnoremap <silent> <C-M>t :set fenc=cp950<CR>
+	nnoremap <silent> <C-M>u :set fenc=utf-8<CR>
+	nnoremap <silent> <C-M>l :set fenc=latin1<CR>
+	nnoremap <silent> <C-M>b :set nobin<CR>
+	nnoremap <silent> <C-M>B :set nobin<CR>
+	nnoremap <silent> <C-M>m :set nobomb<CR>
+	nnoremap <silent> <C-M>M :set nobomb<CR>
 	"change encoding
 	nnoremap <silent> <C-H><C-j> :set enc=japan<CR>
 	nnoremap <silent> <C-H><C-s> :set enc=cp936<CR>
@@ -328,19 +362,20 @@ inoremap <silent> <C-U> <C-G>u<C-U>
 "inoremap <silent> <C-W> <C-G>u<C-W>
 "inoremap <silent> <C-G><C-W> <ESC>"_ciW
 inoremap <silent> <C-G><C-W> <C-O>:let oldve=&ve<CR><C-O>:set ve=onemore<CR><C-O>"_dB<C-O>:set ve=<C-R>=oldve<CR><CR>
-cnoremap <C-G><C-W> <C-\>eReplaceCmd(getcmdline(),getcmdpos())<CR>
+cnoremap <C-G><C-W> <C-\>eReplaceCmd(getcmdline(),getcmdpos(),'\S\+\s*')<CR>
+cnoremap <C-G><C-U> <C-\>eReplaceCmd(getcmdline(),getcmdpos(),'[^\\/]\+[\\/]\?\s*')<CR>
 
 "nnoremap <leader><bar> :set cc=<C-R>=
 nnoremap <silent> <leader><bar> :set cc=<C-R>=(&cc=~'\<'.virtcol('.').'\>'?substitute(','.&cc.',',','.virtcol('.').',',',','')[1:-2]:(&cc==''?'':&cc.',').virtcol('.'))<CR><CR>
 inoremap <C-L> <C-X><C-L>
 inoremap <C-R>/ <c-r>=substitute(getreg('/'),'^\\<\\|\\>$','','g')<CR>
 
-function! ReplaceCmd(cmdline, pos)
+function! ReplaceCmd(cmdline, pos, pattern)
 	if a:pos < 2
 		return a:cmdline
 	endif
-	call setcmdpos(match(a:cmdline[0:a:pos-2],'^.\{-}\zs\S\+\s*$')+1)
-	return matchstr(a:cmdline[0:a:pos-2],'^.\{-}\ze\S\+\s*$').a:cmdline[a:pos-1:-1]
+	call setcmdpos(match(a:cmdline[0:a:pos-2],'^.\{-}\zs'.a:pattern.'$')+1)
+	return matchstr(a:cmdline[0:a:pos-2],'^.\{-}\ze'.a:pattern.'$').a:cmdline[a:pos-1:-1]
 endfunction
 
 map <silent> <F6> :call Comment()<CR>
@@ -350,8 +385,27 @@ imap <silent> <S-F6> <C-O>:call Uncomment()<CR>
 
 nmap <silent> <F7> :if &diff \| diffoff \| else \| diffthis \| endif<CR>
 
-command! Bash :!start bash
-command! Cmd :!start cmd
+if has("windows")
+	function! <SID>startTerminal(name)
+		let namemap               = {}
+		let namemap["bash"]       = '"git bash"'
+		let namemap["cmd"]        = '"Command Prompt"'
+		let namemap["powershell"] = '"Windows PowerShell"'
+		try
+			sil exec "!start wt -d ".expand("%:p:h")." -p ".namemap[a:name]
+		catch /\<E371\>/
+			sil exec "!start ".a:name
+		endtry
+	endfunction
+	command! Bash :call <SID>startTerminal("bash")
+	command! Cmd :call <SID>startTerminal("cmd")
+	command! Powershell :call <SID>startTerminal("powershell")
+	if has("win64")
+		command! Term :term C:\Windows\system32\bash.exe
+	elseif has("win32")
+		command! Term :term C:\Windows\sysnative\bash.exe
+	endif
+endif
 
 command! -nargs=? -bang -complete=file W :call <SID>SaveF("<args>","<bang>")
 
@@ -498,7 +552,6 @@ cnoremap <C-V> <MiddleMouse>
 vnoremap <C-V> "+gp
 nnoremap <silent> <C-C> "+y$
 vnoremap <silent> <C-C> "+y
-vnoremap <silent> <C-X> "+d
 
 nnoremap <silent> Y y$
 nnoremap <silent> y% :let @+=expand('%:p')<CR>:echo @+<CR>
@@ -688,6 +741,22 @@ set autochdir
 "	"autocmd InsertLeave * hi CursorLine guibg=LightCyan
 "	"autocmd InsertEnter * hi CursorLine guibg=LightGray
 "augroup END
+
+if &term =~ "^xterm\\|rxvt\\|win32"
+	let &t_EI="\e[1 q"
+	let &t_SI="\e[5 q"
+
+	augroup myCmds
+		au!
+		autocmd VimEnter * silent !echo -ne "\e[1 q"
+		autocmd VimLeave * silent !echo -ne "\e[6 q"
+	augroup END
+
+	if &term =~ "^xterm-256\\|win32"
+		let g:seoul256_background = 234
+		sil! color seoul256
+	endif
+endif
 
 map <silent> Q gq
 nnoremap <silent> <F1> :call Auto_Highlight_Cword()\|set hls<CR>
@@ -1050,6 +1119,14 @@ nnoremap <silent> <C-F11> :TlistToggle<CR>
 :dig sC 9831
 :dig sD 9830
 :dig *. 8729
+:dig V< 11168
+:dig V> 11169
+:dig ^< 11170
+:dig ^> 11171
+:dig <^ 11172
+:dig >^ 11173
+:dig <V 11174
+:dig >V 11175
 
 au BufRead,BufNewFile *.wiki			setfiletype wiki
 au BufRead,BufNewFile *.wikipedia.org*	setfiletype wiki

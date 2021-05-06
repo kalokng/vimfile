@@ -8,8 +8,13 @@ set langmenu=none
 source $VIMRUNTIME/menu.vim
 
 "set guifont=DotumChe:cHANGEUL
-set linespace=0
+set renderoptions=type:directx,renmode:4
+set linespace=2
 set guifont=
+	\JetBrains_Mono:h9:cANSI:qDRAFT,
+	\D2Coding_ligature:h8:cANSI:qDRAFT,
+	\InputMonoCondensed_Light:h11:cANSI:qDRAFT,
+	\InputMono_Light:h12:w6:cANSI:qDRAFT,
 	\Source_Code_Pro:h11:w6:cANSI:qCLEARTYPE,
 	\DejaVu_Sans_Mono:h10:cANSI,
 	\Consolas:h10:cANSI,
@@ -23,14 +28,18 @@ set guifont=
 "set guifontwide=Noto_Mono:h9
 "set guifontset=-misc-msgothic-medium-r-normal--9-*-*-*-c-140-ksx1001-0
 
-se cursorline
-hi LineNr guibg=#F0F0FF guifg=Brown
-hi CursorLine guibg=LightCyan
+let g:seoul256_background = 234
+sil! color seoul256
+
+"se cursorline
+"hi LineNr guibg=#F0F0FF guifg=Brown
+"hi CursorLine guibg=LightCyan
+hi CursorLine guibg=#800040
 hi DiffText guibg=#FF7F7F
 hi StatusLineNC	guibg=darkgrey guifg=white gui=none
 "hi ModeMsg guibg=Purple guifg=white
 hi User1	guibg=cyan guifg=black gui=none
-hi ColorColumn guibg=LightGrey
+hi ColorColumn guibg=#800040
 "color default
 "color desert
 hi WarningMsg guifg=black guibg=green
@@ -39,8 +48,6 @@ hi SpecialKey gui=bold guifg=#7FDF7F
 
 hi goSameId gui=bold guifg=yellow
 
-let g:seoul256_background = 234
-sil! color seoul256
 "color dracula
 "hi Search guifg=black guibg=#d1ca8c gui=underline
 hi WarningMsg guifg=black guibg=#79ffc6
@@ -75,9 +82,18 @@ let defaultLines=&lines
 let defaultColumns=&columns
 noremap <silent> <M-[> :<C-U>call DefaultWinSize()<CR>
 function! DefaultWinSize()
+	let lv1lines = g:defaultLines+20
+	let lv1cols = g:defaultColumns+40
+	let lv2lines = float2nr(lv1lines*1.5)
+	let lv2cols = float2nr(lv1cols*1.5)
+	"let lv3lines = float2nr(lv1lines*2)
+	"let lv3cols = float2nr(lv1cols*2)
 	if &lines==g:defaultLines && &columns==g:defaultColumns
-		let &lines=g:defaultLines+20
-		let &columns=g:defaultColumns+40
+		let &lines=lv1lines
+		let &columns=lv1cols
+	elseif &lines==lv1lines && &columns==lv1cols
+		let &lines=lv2lines
+		let &columns=lv2cols
 	else
 		let &lines=g:defaultLines
 		let &columns=g:defaultColumns
@@ -157,20 +173,22 @@ function! GuiTabTooltip()
   return label[1:-1]
 endfunction
 
+let g:mwDefaultHighlightingPalette = 'extended'
+
 "mark.vba
-highlight def MarkWord1   ctermbg=Cyan		   ctermfg=Black  guibg=#FF7FBF    guifg=Black
-highlight def MarkWord2   ctermbg=Green		   ctermfg=Black  guibg=#BFFF7F    guifg=Black
-highlight def MarkWord3   ctermbg=Yellow	   ctermfg=Black  guibg=#7FBFFF    guifg=Black
-highlight def MarkWord4   ctermbg=Red		   ctermfg=Black  guibg=#FFBFBF    guifg=Black
-highlight def MarkWord5   ctermbg=Magenta	   ctermfg=Black  guibg=#BFFFBF    guifg=Black
-highlight def MarkWord6   ctermbg=Blue		   ctermfg=Black  guibg=#BFBFFF    guifg=Black
-highlight def MarkWord7   ctermbg=DarkCyan	   ctermfg=Black  guibg=#EFEF8F    guifg=Black
-highlight def MarkWord8   ctermbg=DarkGreen    ctermfg=Black  guibg=#BFFFFF    guifg=Black
-highlight def MarkWord9   ctermbg=DarkYellow   ctermfg=Black  guibg=#FFBFFF    guifg=Black
-highlight def MarkWord10  ctermbg=DarkRed	   ctermfg=Black  guibg=#FFBF7F    guifg=Black
-highlight def MarkWord11  ctermbg=DarkMagenta  ctermfg=Black  guibg=#7FFFBF    guifg=Black
-highlight def MarkWord12  ctermbg=DarkBlue	   ctermfg=Black  guibg=#BF7FFF    guifg=Black
-highlight def MarkWord13  ctermbg=Grey		   ctermfg=Black  guibg=#BF7F7F    guifg=Black
-highlight def MarkWord14  ctermbg=LightRed	   ctermfg=Black  guibg=#7FBF7F    guifg=Black
-highlight def MarkWord15  ctermbg=LightYellow  ctermfg=Black  guibg=#7F7FBF    guifg=Black
-highlight def MarkWord16  ctermbg=LightYellow  ctermfg=Black  guibg=#7F7F7F    guifg=White
+"highlight def MarkWord1   ctermbg=Cyan		   ctermfg=Black  guibg=#FF7FBF    guifg=Black
+"highlight def MarkWord2   ctermbg=Green		   ctermfg=Black  guibg=#BFFF7F    guifg=Black
+"highlight def MarkWord3   ctermbg=Yellow	   ctermfg=Black  guibg=#7FBFFF    guifg=Black
+"highlight def MarkWord4   ctermbg=Red		   ctermfg=Black  guibg=#FFBFBF    guifg=Black
+"highlight def MarkWord5   ctermbg=Magenta	   ctermfg=Black  guibg=#BFFFBF    guifg=Black
+"highlight def MarkWord6   ctermbg=Blue		   ctermfg=Black  guibg=#BFBFFF    guifg=Black
+"highlight def MarkWord7   ctermbg=DarkCyan	   ctermfg=Black  guibg=#EFEF8F    guifg=Black
+"highlight def MarkWord8   ctermbg=DarkGreen    ctermfg=Black  guibg=#BFFFFF    guifg=Black
+"highlight def MarkWord9   ctermbg=DarkYellow   ctermfg=Black  guibg=#FFBFFF    guifg=Black
+"highlight def MarkWord10  ctermbg=DarkRed	   ctermfg=Black  guibg=#FFBF7F    guifg=Black
+"highlight def MarkWord11  ctermbg=DarkMagenta  ctermfg=Black  guibg=#7FFFBF    guifg=Black
+"highlight def MarkWord12  ctermbg=DarkBlue	   ctermfg=Black  guibg=#BF7FFF    guifg=Black
+"highlight def MarkWord13  ctermbg=Grey		   ctermfg=Black  guibg=#BF7F7F    guifg=Black
+"highlight def MarkWord14  ctermbg=LightRed	   ctermfg=Black  guibg=#7FBF7F    guifg=Black
+"highlight def MarkWord15  ctermbg=LightYellow  ctermfg=Black  guibg=#7F7FBF    guifg=Black
+"highlight def MarkWord16  ctermbg=LightYellow  ctermfg=Black  guibg=#7F7F7F    guifg=White
