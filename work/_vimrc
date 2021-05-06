@@ -5,6 +5,7 @@ sil! call plug#begin()
 if exists('*plug#begin')
 	Plug 'tpope/vim-sensible'
 	Plug 'fatih/vim-go', {'do': ':GoUpdateBinaries'}
+	"Plug 'govim/govim'
 	Plug 'junegunn/vim-easy-align'
 	Plug 'jreybert/vimagit'
 	Plug 'junegunn/seoul256.vim'
@@ -12,12 +13,18 @@ if exists('*plug#begin')
 	Plug 'fatih/molokai'
 	Plug 'moorereason/vim-markdownfmt'
 	Plug 'ctrlpvim/ctrlp.vim'
-	Plug 'junegunn/fzf'
+	Plug 'junegunn/fzf', {'do': './install --all'}
+	Plug 'justinmk/vim-sneak'
+	Plug 'PProvost/vim-ps1', { 'for': 'ps1' }
+	Plug 'inkarkat/vim-ingo-library'
+	Plug 'inkarkat/vim-mark'
+	Plug '~/vimfiles/plugged/after'
 	call plug#end()
 
 	nnoremap <M-'> :CtrlP<CR>
 	let g:ctrlp_switch_buffer = 'et'
 	let g:ctrlp_cmd = 'CtrlPMRU'
+	let g:ctrlp_types = ['mru', 'fil', 'buf']
 
 	vmap <CR> <Plug>(LiveEasyAlign)
 
@@ -35,19 +42,25 @@ if exists('*plug#begin')
 	au filetype go nmap <leader>t <Plug>(go-test)
 	au filetype go nmap <leader>l :GoSameIds<CR>
 	"let g:go_auto_type_info = 1
-	let g:go_textobj_enabled = 0
+	"let g:go_textobj_enabled = 0
 	let g:go_highlight_build_constraints = 1
 	let g:go_template_autocreate = 0
 	let g:go_fmt_command = "goimports"
 	let g:go_gocode_socket_type = 'tcp'
 	let g:go_gocode_unimported_packages = 1
+	let g:go_gopls_unimported_packages = 1
 	let g:go_highlight_build_constraints = 1
+	let g:go_build_tags = "''"
 	"let g:go_auto_sameids = 1
+
+	let g:sneak#label = 1
 
 	nnoremap <C-S-P> :FZF<CR>
 
 	let g:markdownfmt_autosave = 1
 endif
+
+"set noautoread
 
 au filetype go set makeprg=go\ build\ -ldflags=\"-s\"
 "au filetype go set guifont=Go_Mono:h9:w6:cDEFAULT:qCLEARTYPE
@@ -55,6 +68,7 @@ au BufWritePre *.ptxt set undofile
 
 nmap <leader>gr <Plug>MarkRegex
 
+set renderoptions=type:directx
 set guioptions-=T
 set guioptions-=m
 "set guioptions+=b
@@ -140,9 +154,12 @@ set undoreload=50000
 set noswf
 "set guifont=DotumChe:cHANGEUL
 "set guifont=NSimsun:h9:cDEFAULT
-set linespace=1
+set linespace=0
 set guifont=
-	\InputMono_Light:h10:cANSI:qCLEARTYPE,
+	\JetBrains_Mono:h9:cANSI:qDRAFT,
+	\D2Coding_ligature:h10:cANSI:qDRAFT,
+	\InputMonoCondensed_Light:h10:cANSI:qCLEARTYPE,
+	\Ubuntu_Mono:h11:cANSI:qDRAFT,
 	\Source_Code_Pro:h11:w6:cDEFAULT:qCLEARTYPE,
 	\Go_Mono:h10:cDEFAULT:qCLEARTYPE,
 	\DejaVu_Sans_Mono:h10:cANSI,
@@ -157,6 +174,8 @@ set guifont=
 "set guifontwide=MingLiU:h10
 "set guifontwide=GulimChe:h9
 "set guifontset=-misc-msgothic-medium-r-normal--9-*-*-*-c-140-ksx1001-0
+nnoremap <kPlus> :let &guifont=substitute(&guifont, '\d\+', '\=submatch(0) + 1', '')<cr>
+nnoremap <kMinus> :let &guifont=substitute(&guifont, '\d\+', '\=submatch(0) - 1', '')<cr>
 
 syn on
 let g:load_doxygen_syntax=1
@@ -172,11 +191,15 @@ set hidden
 "set showmatch
 "set cpoptions-=m
 
+let g:seoul256_background = 234
+sil! color seoul256
+
 "se cursorline
-hi LineNr guibg=#F0F0FF guifg=Brown
+"hi LineNr guibg=#F0F0FF guifg=Brown
 hi VertSplit guibg=Black
 "hi CursorLine guibg=LightCyan
-hi CursorLine guibg=#E0FFFF
+hi CursorLine guibg=#800040
+"hi CursorLine guibg=#E0FFFF
 hi DiffText guibg=#FF7F7F
 hi StatusLineNC	guibg=darkgrey guifg=white gui=none
 hi ModeMsg guibg=Purple guifg=white
@@ -187,12 +210,19 @@ hi ColorColumn guibg=LightGrey
 hi NonText gui=bold guifg=#9F9FDF
 hi SpecialKey gui=bold guifg=#7FDF7F
 
-let g:seoul256_background = 234
-sil! color seoul256
-
 hi WarningMsg guifg=black guibg=green
 
 hi goSameId gui=bold guifg=yellow
+
+if &term =~ "^xterm\\|rxvt"
+	let &t_EI = "\e[1 q"
+	let &t_SI = "\e[5 q"
+	augroup myCmds
+		au!
+		autocmd VimEnter * silent !echo -ne "\e[2 q"
+		autocmd VimLeave * silent !echo -ne "\e[6 q"
+	augroup END
+endif
 
 set hls is
 set ignorecase smartcase
@@ -201,7 +231,7 @@ set nowrap
 "set wrap
 set linebreak
 
-set so=4
+set so=5
 set siso=3
 
 "let g:netrw_browse_split=3
@@ -233,12 +263,22 @@ endfunction
 
 au BufRead,BufNewFile,BufFilePost,BufWritePost *			call CacheBufPara()
 function! CacheBufPara()
+	if !&ma || &buftype =='nofile'
+		let b:FtimeStr = ''
+		return
+	endif
 	let Ftime = getftime(expand('%:p'))
 	let b:FtimeStr = (Ftime > 0 ? ' '.strftime('(%Y-%m-%d %H:%M:%S)',Ftime) : '')
 	"let b:FPath = expand('%:p:~:h')
 endfunction
 
 function! GetCacheFTime()
+	if !&ma || &buftype =='nofile'
+		if !exists('b:FtimeStr')
+			return ''
+		endif
+		return b:FtimeStr
+	endif
 	"let l:time = getftime(expand('%:p'))
 	if !exists('b:FtimeStr')
 		if expand('%:p') ==# '' || !&ma
@@ -306,7 +346,7 @@ au WinEnter * let g:myFocus = winnr()
 "set titlestring=%t%(\ %M%)%(\ %{GetCacheFTime()}%)%<%(\ (%{GetCachePath()})%)%a%(\ -\ %{v:servername}%)
 "set statusline=%(\ %1*%r%*\ %)%(%Y\|%)%<\ %f%(\ %m%)%{GetCacheFTime()}%=%k[%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ [0x%02B]\ %-5.(%l,%c%V%)\ %P
 set noshowmode
-set statusline=%(%#ModeMsg#%{GetMode()}%*\ %)%(\ %1*%r%*\ %)%(%Y\|%)%(%M\|%)\ %{expand('%')==expand('%:t')?'':'.../'}%t%<%{&key==''?'':'\ ['.&cm.']'}%{GetCacheFTime()}%=%k[0x%02B]\ [%{GetFF().','.AliasEnc().',f:'.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ %-5.(%l,%c%V%)\ %P
+set statusline=%(%#ModeMsg#%{GetMode()}%*\ %)%(\ %1*%r%*\ %)%(%Y\│%)%(%M\│%)\ %{expand('%')==expand('%:t')?'':'…/'}%t%<%{&key==''?'':'\ ['.&cm.']'}%{GetCacheFTime()}%=%k[0x%02B]\ [%{GetFF().','.AliasEnc().',f:'.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ %-5.(%l,%c%V%)\ %P
 set laststatus=2
 
 set backspace=indent,eol,start
@@ -615,7 +655,7 @@ nnoremap <silent> y<C-R>% :let @+=expand('%:t')<CR>:echo "copied: ".@+<CR>
 nnoremap <silent> y<C-R><C-R>% :let @+=@%<CR>:echo "copied: ".@+<CR>
 
 nmap <silent> <F2> :set scb!<CR>
-nmap <silent> <F3> :set is!<CR>
+"nmap <silent> <F3> :set is!<CR>
 nmap <silent> <C-F2> :!start explorer <c-r>=(expand('%')!=''?'/select,'.expand('%:p'):getcwd())<CR><CR>
 nmap <silent> <F4> @@
 
@@ -878,11 +918,24 @@ cnoremap <M-5> <SPACE><C-R>=fnameescape(expand('%:p'))<CR>
 cnoremap <C-R><C-R>% <SPACE><C-R>=fnameescape(expand('%:p'))<CR>
 inoremap <M-/> <C-R>=fnameescape(expand("%:p:t"))<CR>
 nmap <silent> <M-n> :cn<CR>
-nmap <silent> <M-N> :cN<CR>
+nmap <silent> <M-S-n> :cN<CR>
 nnoremap m/ :lad expand('%').':'.line('.').':'.getline('.')<CR>
 cnoremap <C-R>^ <C-R>=fnameescape(expand('%:p:h'))<CR>/
 inoremap <C-R>^ <C-R>=expand('%:p:h')<CR>/
 cnoremap <C-R><C-L> <C-R>=getline('.')<CR>
+function! s:get_visual_selection()
+    " Why is this not a built-in Vim script function?!
+    let [line_start, column_start] = getpos("'<")[1:2]
+    let [line_end, column_end] = getpos("'>")[1:2]
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
+    let lines[0] = lines[0][column_start - 1:]
+    return join(lines, "\n")
+endfunction
+cnoremap <C-R><C-v> <C-R>=substitute(<SID>get_visual_selection(), "\n", '\\n', "g")<CR>
 
 if !exists('s:isEnlarge')
 	"set lines=27 columns=85
@@ -896,9 +949,18 @@ let defaultLines=&lines
 let defaultColumns=&columns
 noremap <silent> <M-[> :<C-U>call DefaultWinSize()<CR>
 function! DefaultWinSize()
+	let lv1lines = g:defaultLines+20
+	let lv1cols = g:defaultColumns+40
+	let lv2lines = float2nr(lv1lines*1.5)
+	let lv2cols = float2nr(lv1cols*1.5)
+	"let lv3lines = float2nr(lv1lines*2)
+	"let lv3cols = float2nr(lv1cols*2)
 	if &lines==g:defaultLines && &columns==g:defaultColumns
-		let &lines=g:defaultLines+20
-		let &columns=g:defaultColumns+40
+		let &lines=lv1lines
+		let &columns=lv1cols
+	elseif &lines==lv1lines && &columns==lv1cols
+		let &lines=lv2lines
+		let &columns=lv2cols
 	else
 		let &lines=g:defaultLines
 		let &columns=g:defaultColumns
@@ -1247,6 +1309,28 @@ set guitabtooltip=%{GuiTabTooltip()}
 "set lcs=tab:\|`,eol:$,nbsp:@,trail:-,extends:>
 set listchars=tab:>\ ,trail:-,extends:>,precedes:<,nbsp:+,eol:$
 
+if has("windows")
+	function! <SID>startTerminal(name)
+		let namemap               = {}
+		let namemap["bash"]       = '"git bash"'
+		let namemap["cmd"]        = '"Command Prompt"'
+		let namemap["powershell"] = '"Windows PowerShell"'
+		try
+			sil exec "!start wt -d ".expand("%:p:h")." -p ".namemap[a:name]
+		catch /\<E371\>/
+			sil exec "!start ".a:name
+		endtry
+	endfunction
+	command! Bash :call <SID>startTerminal("bash")
+	command! Cmd :call <SID>startTerminal("cmd")
+	command! Powershell :call <SID>startTerminal("powershell")
+	if has("win64")
+		command! Term :term C:\Windows\system32\bash.exe
+	elseif has("win32")
+		command! Term :term C:\Windows\sysnative\bash.exe
+	endif
+endif
+
 "syn match trailingWhite display "[[:space:]]\+$"
 "hi link trailingWhite WarningMsg
 "highlight def TrailingWhite   ctermbg=DarkRed		   ctermfg=Black  guibg=#BFFFFF    guifg=Black
@@ -1257,6 +1341,7 @@ set spellsuggest=double
 "utl.vba
 "nnoremap <silent> <C-LeftMouse> <LeftMouse>:Utl ol<CR>
 
+let g:mwDefaultHighlightingPalette = 'extended'
 "mark.vba
 highlight def MarkWord1   ctermbg=Cyan		   ctermfg=Black  guibg=#FF7FBF    guifg=Black
 highlight def MarkWord2   ctermbg=Green		   ctermfg=Black  guibg=#BFFF7F    guifg=Black
@@ -1336,8 +1421,12 @@ nnoremap <silent> <C-F11> :TlistToggle<CR>
 :dig *. 8729
 :dig @+ 8853
 :dig @- 8854
-:dig @* 8855
+:dig @x 8855
 :dig @/ 8856
+:dig @. 8857
+:dig @o 8858
+:dig @* 8859
+:dig @= 8860
 
 au BufRead,BufNewFile *.wiki			setfiletype wiki
 au BufRead,BufNewFile *.wikipedia.org*	setfiletype wiki
@@ -1443,3 +1532,4 @@ set grepformat=%f:%l:%m
 "go no gui
 "--ldflags -H=windowsgui
 "go build --ldflags '-extldflags "-static"'
+"!git tag -l --format "\%(tag)\%0A\%(creatordate:rfc2822)\%0A\%(contents)"
