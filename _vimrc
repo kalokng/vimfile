@@ -26,6 +26,8 @@ if exists('*plug#begin')
 	let g:ctrlp_cmd = 'CtrlPMRU'
 	let g:ctrlp_types = ['mru', 'fil', 'buf']
 
+	nnoremap <C-S-P> :FZF<CR>
+
 	let g:mwExclusionPredicates = []
 endif
 
