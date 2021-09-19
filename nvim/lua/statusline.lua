@@ -250,7 +250,13 @@ gls.short_line_left[1] = {
 
 gls.short_line_left[2] = {
   SFileName = {
-    provider =  'SFileName',
+    provider =  function()
+		local path = vim.fn.expand('%:p')
+		if vim.fn.winwidth(0) < vim.fn.strdisplaywidth(path)+10 then
+			return fileinfo.filename_in_special_buffer()
+		end
+		return path
+	end,
     condition = condition.buffer_not_empty,
     highlight = {colors.fg,colors.bg,'bold'}
   }
