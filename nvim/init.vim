@@ -1,6 +1,6 @@
 "neovide settings
 let g:neovide_cursor_vfx_mode = "ripple"
-let g:neovide_remember_window_size = v:true
+"let g:neovide_remember_window_size = v:true
 let g:neovide_floating_opacity = 0.85
 
 "set guioptions=egrL
@@ -37,7 +37,13 @@ if exists('*plug#begin')
 	let g:ctrlp_cmd = 'CtrlPMRU'
 	let g:ctrlp_types = ['mru', 'fil', 'buf']
 
-	nnoremap <Space>f :FZF<CR>
+	nnoremap <Space>f :FZF<space>
+	nnoremap <Space>g :GitFiles<CR>
+	nnoremap <space>w :Ag <C-R><C-W><CR>
+	nnoremap <space>a :Ag<CR>
+
+	nnoremap <space>b :NERDTreeFind<CR>
+	nnoremap <S-F12> :NERDTreeToggle<CR>
 
 	let g:mwExclusionPredicates = []
 
@@ -55,12 +61,6 @@ if exists('*plug#begin')
 	let g:mwDirectGroupJumpMappingNum = 0
 
 	let NERDTreeCustomOpenArgs = {'file':{'reuse':'all', 'where': 'p', 'keepopen': 0}, 'dir': {}}
-
-	nnoremap <space>w :Ag <C-R><C-W><CR>
-	nnoremap <space>a :Ag<CR>
-
-	nnoremap <C-S-B> :NERDTreeFind<CR>
-	nnoremap <S-F12> :NERDTreeToggle<CR>
 
 	" coc.nvim setting
 	set signcolumn = number
@@ -105,14 +105,15 @@ endif
 
 let g:seoul256_background = 234
 sil! color seoul256
+syn on
 
 set guifont=
 			\JetBrainsMono\ NF,
 			\Noto\ Sans\ CJK\ TC:h9
-"se cursorline
+se cursorline
 "hi LineNr guibg=#F0F0FF guifg=Brown
 "hi CursorLine guibg=LightCyan
-hi CursorLine guibg=#800040
+hi CursorLine guibg=#401020
 hi DiffText guibg=#FF7F7F
 "hi StatusLineNC	guibg=darkgrey guifg=white gui=none
 "hi ModeMsg guibg=Purple guifg=white
@@ -123,6 +124,7 @@ hi ColorColumn guibg=#800040
 hi WarningMsg guifg=black guibg=green
 hi NonText gui=bold guifg=#9F9FDF
 hi SpecialKey gui=bold guifg=#7FDF7F
+hi StatusLine guibg=#bbc2cf guifg=#303668
 
 hi goSameId gui=bold guifg=yellow
 
@@ -185,10 +187,10 @@ set showcmd
 set display=lastline
 set noea
 
-set noswf
+"set noswf
+set directory^=$HOME/vimswap//
 "set dir=C:\temp\swap
 
-syn on
 "set fdm=syntax
 "set nofen
 
@@ -447,11 +449,6 @@ nmap <silent> <F2> :set scb!<CR>
 nmap <silent> <F3> :set is!<CR>
 nmap <silent> <C-F2> :!start explorer <c-r>=(expand('%')!=''?'/select,'.expand('%:p'):getcwd())<CR><CR>
 nmap <silent> <F4> @@
-inoremap <silent> <S-F7> <C-O>:set spell!<CR>
-inoremap <silent> <F8> <C-O>:set list!<CR>
-nnoremap <silent> <S-F7> :set spell!<CR>
-nnoremap <silent> <F8> :set list!<CR>
-nnoremap <silent> <M-F8> :let @z=@/<CR>:%s/\s\+$//<CR><C-O>:let @/=@z<CR>
 nnoremap <silent> <F9> :<C-U>set wrap!\|if &wrap \| echo "Word wrap ON" \| else \| echo "Word wrap OFF"\|endif<CR>
 inoremap <silent> <F9> <C-O>:set wrap!<CR>
 nnoremap <silent> <S-F9> :set cursorline!<CR>
@@ -973,7 +970,7 @@ function! AliasEnc(...)
 	elseif lenc =~ "cp936"
 		let lenc = "GB"
 	elseif lenc =~ "cp932"
-		let lenc = "Jp"
+		let lenc = "JP"
 	elseif lenc =~ "utf-8"
 		let lenc = "U8"
 	elseif lenc =~ "^$"
@@ -988,7 +985,6 @@ function! AliasEnc(...)
 	return lenc
 endfunction
 
-hi StatusLine guibg=#bbc2cf guifg=#202338
 lua require('top-bufferline')
 lua require('statusline')
 lua require('file-icons')

@@ -97,7 +97,10 @@ require "bufferline".setup {
     modified_visible = {
       guifg = "#BF616A",
       guibg = "#23272f"
-    }
+    },
+	modified = {
+      guibg = "#252931"
+	},
   }
 }
 
@@ -105,5 +108,7 @@ local opt = {silent = true}
 local map = vim.api.nvim_set_keymap
 
 -- move between tabs
-map("n", "<TAB>", [[<Cmd>BufferLineCycleNext<CR>]], opt)
-map("n", "<S-TAB>", [[<Cmd>BufferLineCyclePrev<CR>]], opt)
+
+
+map("n", "<C-TAB>", [[<Cmd>BufferLineCycleNext<CR>]], opt)
+map("n", "<C-S-TAB>", [[<Cmd>BufferLineCyclePrev<CR>]], opt)

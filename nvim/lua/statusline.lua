@@ -9,6 +9,7 @@ colors.fg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "bg#", "gui")
 colors.bg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "fg#", "gui")
 local color_darkred = '#804040'
 local color_darkgreen = '#98be55'
+local color_gray = '#808080'
 --colors.bg = '#dfdebd'
 
 -- show line:column
@@ -21,6 +22,22 @@ function line_column()
   else
 	  return string.format("%d,%d-%d", line, column, vcolumn)
   end
+end
+
+function special_filetype()
+	local ft = vim.bo.filetype
+	if ft == 'nerdtree' then return false end
+	if ft == 'qf' then return false end
+	return true
+end
+
+function buf_binded(mode)
+	local scb = vim.wo.scb
+	if scb then
+		vim.api.nvim_command('hi '..mode..' guifg='..colors.orange)
+	else
+		vim.api.nvim_command('hi '..mode..' guifg='..colors.fg)
+	end
 end
 
 gls.left = {}
@@ -44,6 +61,8 @@ table.insert(gls.left, {
       }
       local mode = vim.fn.mode()
       vim.api.nvim_command('hi GalaxyViMode guibg='..mode_color[mode])
+	  buf_binded('GalaxyLineInfo')
+	  buf_binded('GalaxyPerCent')
       local name = mode_name[mode]
       if name ~= nil then
         mode = name
@@ -133,6 +152,7 @@ gls.mid = {}
 table.insert(gls.mid, {
   ShowLspClient = {
     provider = function()
+		if vim.fn.exists('g:coc_enabled') == 0 then return '' end
 		return vim.fn['coc#status']()
 	end,
     condition = condition.hide_in_width,
@@ -149,6 +169,7 @@ table.insert(gls.right, {
 	  return vim.fn.GetCacheFTime()
 	end,
 	condition = function()
+      if not special_filetype() then return false end
 	  if vim.fn.winwidth(0) >= 70 then
 		return true
 	  end
@@ -168,6 +189,7 @@ table.insert(gls.right, {
 	  if c == "" then return '×' end
 	  return string.format('0x%02X', vim.fn.char2nr(c))
 	end,
+    condition = special_filetype,
 	separator = '',
 	separator_highlight = {color_darkred,colors.bg},
 	highlight = {colors.fg,color_darkred}
@@ -182,6 +204,7 @@ table.insert(gls.right, {
 		if fenc == enc or fenc == '--' then return enc end
 		return enc .. ' ' .. fenc
 	end,
+    condition = special_filetype,
     separator = '',
     separator_highlight = {color_darkred,color_darkgreen},
     highlight = {colors.bg,color_darkgreen,'bold'}
@@ -191,6 +214,7 @@ table.insert(gls.right, {
 table.insert(gls.right, {
   FileFormat = {
     provider = 'FileFormat',
+    condition = special_filetype,
     separator = ' ',
     separator_highlight = {'NONE',color_darkgreen},
     highlight = {colors.bg,color_darkgreen,'bold'}
@@ -199,7 +223,7 @@ table.insert(gls.right, {
 
 table.insert(gls.right, {
   GitIcon = {
-    provider = function() return ' ' end,
+    provider = function() return ' ' end,
     condition = condition.check_git_workspace,
 	separator = '',
     separator_highlight = {colors.violet,color_darkgreen},
@@ -249,14 +273,23 @@ gls.short_line_left[1] = {
 }
 
 gls.short_line_left[2] = {
-  SFileName = {
+  SFileDir = {
     provider =  function()
 		local path = vim.fn.expand('%:p')
+		local name = vim.fn.expand('%:p:t')
 		if vim.fn.winwidth(0) < vim.fn.strdisplaywidth(path)+10 then
-			return fileinfo.filename_in_special_buffer()
+			return ''
 		end
-		return path
+		return string.sub(path,0,vim.fn.strridx(path, name))
 	end,
+    condition = condition.buffer_not_empty,
+    highlight = {color_gray,colors.bg}
+  }
+}
+
+gls.short_line_left[3] = {
+  SFileName = {
+    provider = 'SFileName',
     condition = condition.buffer_not_empty,
     highlight = {colors.fg,colors.bg,'bold'}
   }
@@ -265,6 +298,17 @@ gls.short_line_left[2] = {
 gls.short_line_right[1] = {
   BufferIcon = {
     provider= 'BufferIcon',
+    highlight = {colors.fg,colors.bg}
+  }
+}
+
+gls.short_line_right[2] = {
+  Binded = {
+    provider= function()
+	  local scb = vim.wo.scb
+	  if scb then return 'B' end
+	  return ''
+	end,
     highlight = {colors.fg,colors.bg}
   }
 }
