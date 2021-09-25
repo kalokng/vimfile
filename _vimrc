@@ -34,10 +34,14 @@ endif
 set noautoread
 
 let g:sneak#label = 1
+map f <Plug>Sneak_f
+map t <Plug>Sneak_t
+map F <Plug>Sneak_F
+map T <Plug>Sneak_T
 
 vmap <Enter> <Plug>(LiveEasyAlign)
 
-nmap <leader>gr <Plug>MarkRegex
+nmap <Space>r <Plug>MarkRegex
 let g:mwMaxMatchPriority = -10
 let g:mwDirectGroupJumpMappingNum = 0
 
