@@ -40,6 +40,16 @@ function buf_binded(mode)
 	end
 end
 
+function buf_cur_dir(mode)
+	local pwd = vim.fn.getcwd()
+	local dir = vim.fn.expand('%:p:h')
+	if pwd ~= dir then
+		vim.api.nvim_command('hi '..mode..' guifg='..colors.orange)
+	else
+		vim.api.nvim_command('hi '..mode..' guifg='..colors.magenta)
+	end
+end
+
 gls.left[1] = {
   ViMode = {
     provider = function()
@@ -61,6 +71,7 @@ gls.left[1] = {
       vim.api.nvim_command('hi GalaxyViMode guibg='..mode_color[mode])
 	  buf_binded('GalaxyLineInfo')
 	  buf_binded('GalaxyPerCent')
+	  buf_cur_dir('GalaxyFileName')
       local name = mode_name[mode]
       if name ~= nil then
         mode = name
@@ -159,9 +170,7 @@ gls.mid[1] = {
 
 gls.right[1] = {
   ShowFTime = {
-	provider = function()
-	  return vim.fn.GetCacheFTime()
-	end,
+	provider = vim.fn.GetCacheFTimeStr,
 	condition = function()
       if not special_filetype() then return false end
 	  if vim.fn.winwidth(0) >= 70 then
