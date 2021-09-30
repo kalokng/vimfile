@@ -39,11 +39,17 @@ if exists('*plug#begin')
 
 	function! s:get_git_root()
 		let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
-		return v:shell_error ? '' : root
+		if v:shell_error
+			return ''
+		endif
+		if has('win32')
+			let root = substitute(root, "/","\\","g")
+		endif
+		return root
 	endfunction
 
 	function! s:searchGit(arg)
-		let root = substitute(s:get_git_root(), "/","\\","g")
+		let root = s:get_git_root()
 		let dict = fzf#vim#with_preview({'dir': root})
 		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -- ".shellescape(a:arg)." ".root, 1, l:dict, 1)
 	endfunction
@@ -90,7 +96,7 @@ if exists('*plug#begin')
 	let NERDTreeCustomOpenArgs = {'file':{'reuse':'all', 'where': 'p', 'keepopen': 0}, 'dir': {}}
 
 	" coc.nvim setting
-	set signcolumn = number
+	set signcolumn=number
 	inoremap <silent><expr> <TAB>
 				\ pumvisible() ? "\<C-n>" :
 				\ <SID>check_back_space() ? "\<TAB>" :
