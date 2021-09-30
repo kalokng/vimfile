@@ -67,7 +67,7 @@ if exists('*plug#begin')
 	let NERDTreeCustomOpenArgs = {'file':{'reuse':'all', 'where': 'p', 'keepopen': 0}, 'dir': {}}
 
 	" coc.nvim setting
-	set signcolumn = number
+	set signcolumn=number
 	inoremap <silent><expr> <TAB>
 				\ pumvisible() ? "\<C-n>" :
 				\ <SID>check_back_space() ? "\<TAB>" :
@@ -101,6 +101,23 @@ if exists('*plug#begin')
 	endfunction
 
 	nnoremap <leader>rn <Plug>(coc-rename)
+
+	xmap <leader>f <Plug>(coc-format-selected)
+	nmap <leader>f <Plug>(coc-format-selected)
+
+	augroup mycocgroup
+		autocmd!
+		autocmd FileType typescript,java,json setl formatexpr=CocAction('formatSelected')
+		autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
+	augroup end
+
+	xmap <leader>a <Plug>(coc-codeaction-selected)
+	nmap <leader>a <Plug>(coc-codeaction-selected)
+
+	nmap <leader>ac <Plug>(coc-codeaction)
+	nmap <leader>qf <Plug>(coc-fix-current)
+
+	command! -nargs=0 Format :call CocAction('format')
 endif
 
 if executable('ag')
