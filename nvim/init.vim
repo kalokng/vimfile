@@ -55,7 +55,7 @@ if exists('*plug#begin')
 	endfunction
 
 	function! s:searchGitAll(arg)
-		let root = substitute(s:get_git_root(), "/","\\","g")
+		let root = s:get_git_root()
 		let dict = fzf#vim#with_preview({'dir': root})
 		"call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -u -- ".shellescape(a:arg)." ".root, 1, l:dict, 0)
 		call fzf#vim#grep("ag --column --nogroup --color -- ".fzf#shellescape(a:arg)." ".root, 1, l:dict, 1)
