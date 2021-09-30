@@ -45,13 +45,14 @@ if exists('*plug#begin')
 	function! s:searchGit(arg)
 		let root = substitute(s:get_git_root(), "/","\\","g")
 		let dict = fzf#vim#with_preview({'dir': root})
-		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -- ".shellescape(a:arg)." ".root, 1, l:dict, 0)
+		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -- ".shellescape(a:arg)." ".root, 1, l:dict, 1)
 	endfunction
 
 	function! s:searchGitAll(arg)
 		let root = substitute(s:get_git_root(), "/","\\","g")
 		let dict = fzf#vim#with_preview({'dir': root})
-		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -u -- ".shellescape(a:arg)." ".root, 1, l:dict, 0)
+		"call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -u -- ".shellescape(a:arg)." ".root, 1, l:dict, 0)
+		call fzf#vim#grep("ag --column --nogroup --color -- ".fzf#shellescape(a:arg)." ".root, 1, l:dict, 1)
 	endfunction
 
 	cnoremap <C-G><C-G> <C-R>=<SID>get_git_root()<CR>
@@ -59,10 +60,10 @@ if exists('*plug#begin')
 	nnoremap <Space>gf :GFiles<CR>
 	nnoremap <Space>gw :call <SID>searchGit(expand("<cword>"))<CR>
 	nnoremap <Space>ga :call <SID>searchGit("")<CR>
-	nnoremap <Space>gW :call <SID>searchGitAll(expand("<cword>"))<CR>
-	nnoremap <Space>gA :call <SID>searchGitAll("")<CR>
-	nnoremap <space>w :Ag! <C-R><C-W><CR>
-	nnoremap <space>a :Ag!<CR>
+	nnoremap <Space>w :call <SID>searchGitAll(expand("<cword>"))<CR>
+	nnoremap <Space>a :call <SID>searchGitAll('^(?=.)')<CR>
+	"nnoremap <space>w :Ag! <C-R><C-W><CR>
+	"nnoremap <space>a :Ag!<CR>
 
 	nnoremap <space>b :NERDTreeFind<CR>
 	nnoremap <S-F12> :NERDTreeToggle<CR>
