@@ -37,10 +37,33 @@ if exists('*plug#begin')
 	let g:ctrlp_cmd = 'CtrlPMRU'
 	let g:ctrlp_types = ['mru', 'fil', 'buf']
 
+	function! s:get_git_root()
+		let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
+		return v:shell_error ? '' : root
+	endfunction
+
+	function! s:searchGit(arg)
+		let root = substitute(s:get_git_root(), "/","\\","g")
+		let dict = fzf#vim#with_preview({'dir': root})
+		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -- ".shellescape(a:arg)." ".root, 1, l:dict, 1)
+	endfunction
+
+	function! s:searchGitAll(arg)
+		let root = substitute(s:get_git_root(), "/","\\","g")
+		let dict = fzf#vim#with_preview({'dir': root})
+		"call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -u -- ".shellescape(a:arg)." ".root, 1, l:dict, 0)
+		call fzf#vim#grep("ag --column --nogroup --color -- ".fzf#shellescape(a:arg)." ".root, 1, l:dict, 1)
+	endfunction
+
+	cnoremap <C-G><C-G> <C-R>=<SID>get_git_root()<CR>
 	nnoremap <Space>f :FZF<space>
-	nnoremap <Space>g :GitFiles<CR>
-	nnoremap <space>w :Ag <C-R><C-W><CR>
-	nnoremap <space>a :Ag<CR>
+	nnoremap <Space>gf :GFiles<CR>
+	nnoremap <Space>gw :call <SID>searchGit(expand("<cword>"))<CR>
+	nnoremap <Space>ga :call <SID>searchGit("")<CR>
+	nnoremap <Space>w :call <SID>searchGitAll(expand("<cword>"))<CR>
+	nnoremap <Space>a :call <SID>searchGitAll('^(?=.)')<CR>
+	"nnoremap <space>w :Ag! <C-R><C-W><CR>
+	"nnoremap <space>a :Ag!<CR>
 
 	nnoremap <space>b :NERDTreeFind<CR>
 	nnoremap <S-F12> :NERDTreeToggle<CR>
@@ -650,7 +673,7 @@ cnoremap <M-5> <SPACE><C-R>=fnameescape(expand('%:p'))<CR>
 inoremap <M-/> <C-R>=fnameescape(expand("%:p:t"))<CR>
 nmap <silent> <M-n> :cn<CR>
 nmap <silent> <M-N> :cN<CR>
-nnoremap m/ :lad expand('%').':'.line('.').':'.getline('.')<CR>
+nnoremap <space>l :lad expand('%').':'.line('.').':'.getline('.')<CR>
 cnoremap <C-R>^ <C-R>=fnameescape(expand('%:p:h'))<CR>/
 inoremap <C-R>^ <C-R>=expand('%:p:h')<CR>/
 cnoremap <C-R><C-L> <C-R>=getline('.')<CR>
@@ -892,7 +915,7 @@ set spellsuggest=double
 :dig >V 11175
 
 set noshowmode
-"set statusline=%(%#ModeMsg#%{GetMode()}%*\ %)%(\ %1*%r%*\ %)%(%Y\|%)%(%M\|%)\ %{expand('%')==expand('%:t')?'':'…/'}%t%<%{GetCacheFTime()}%=%k[0x%02B]\ [%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ %-5.(%l,%c%V%)\ %P
+"set statusline=%(%#ModeMsg#%{GetMode()}%*\ %)%(\ %1*%r%*\ %)%(%Y\|%)%(%M\|%)\ %{expand('%')==expand('%:t')?'':'…/'}%t%<%{GetCacheFTimeStr()}%=%k[0x%02B]\ [%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ %-5.(%l,%c%V%)\ %P
 set laststatus=2
 set backspace=2
 
@@ -916,19 +939,38 @@ au WinEnter * let g:myFocus = winnr()
 
 au BufRead,BufNewFile,BufFilePost,BufWritePost *			call CacheBufPara()
 function! CacheBufPara()
-	let Ftime = getftime(expand('%:p'))
-	let b:FtimeStr = (Ftime > 0 ? ' '.strftime('%Y-%m-%d %H:%M:%S',Ftime) : '')
+	let b:Ftime = getftime(expand('%:p'))
+	let ltime = localtime()
+	if ltime/86400 == b:Ftime/86400
+		let b:FtimeStr = (b:Ftime > 0 ? strftime(' %H:%M:%S',b:Ftime) : '')
+	elseif strftime('%Y', b:Ftime) == strftime('%Y', ltime)
+		let b:FtimeStr = (b:Ftime > 0 ? strftime(' %m-%d %H:%M:%S',b:Ftime) : '')
+	else
+		let b:FtimeStr = (b:Ftime > 0 ? strftime(' %Y-%m-%d %H:%M:%S',b:Ftime) : '')
+	endif
 	"let b:FPath = expand('%:p:~:h')
 endfunction
 
 function! GetCacheFTime()
 	"let l:time = getftime(expand('%:p'))
+	if !exists('b:Ftime')
+		if expand('%:p') ==# '' || !&ma
+			let b:Ftime = ''
+		else
+			call CacheBufPara()
+		endif
+		"return ' (Invalid)'
+	endif
+	return b:Ftime
+endfunction
+
+function! GetCacheFTimeStr()
+	"let l:time = getftime(expand('%:p'))
 	if !exists('b:FtimeStr')
 		if expand('%:p') ==# '' || !&ma
 			let b:FtimeStr = ''
 		else
-			let Ftime = getftime(expand('%:p'))
-			let b:FtimeStr = (Ftime > 0 ? ' '.strftime('%Y-%m-%d %H:%M:%S',Ftime) : '')
+			call CacheBufPara()
 		endif
 		"return ' (Invalid)'
 	endif

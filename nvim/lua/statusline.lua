@@ -40,6 +40,52 @@ function buf_binded(mode)
 	end
 end
 
+function cache_expand(key)
+	local table = vim.b.cache_expand
+	if type(table) ~= "table" then
+		table = { }
+	end
+	local v = table[key]
+	if type(v) ~= "string" then
+		v = vim.fn.expand(key)
+		table[key] = v
+		vim.b.cache_expand = table
+	end
+	return v
+end
+
+function cache_getcwd()
+	local v = vim.b.cache_getcwd
+	if type(v) ~= "string" then
+		v = vim.fn.getcwd()
+		vim.b.cache_getcwd = v
+	end
+	return v
+end
+
+function local_check_git_workspace()
+	local p = cache_expand('%:p:h')
+	if string.sub(p,1,1) == '\\' then
+		return false
+	end
+	return condition.check_git_workspace()
+end
+
+vim.api.nvim_command('augroup statusline')
+vim.api.nvim_command('au! DirChanged * unlet! b:cache_getcwd')
+vim.api.nvim_command('au! BufFilePost * unlet! b:cache_expand')
+vim.api.nvim_command('augroup END')
+
+function buf_cur_dir(mode)
+	local pwd = vim.fn.getcwd()
+	local dir = cache_expand('%:p:h')
+	if pwd ~= dir then
+		vim.api.nvim_command('hi '..mode..' guifg='..colors.orange)
+	else
+		vim.api.nvim_command('hi '..mode..' guifg='..colors.magenta)
+	end
+end
+
 gls.left[1] = {
   ViMode = {
     provider = function()
@@ -61,6 +107,7 @@ gls.left[1] = {
       vim.api.nvim_command('hi GalaxyViMode guibg='..mode_color[mode])
 	  buf_binded('GalaxyLineInfo')
 	  buf_binded('GalaxyPerCent')
+	  buf_cur_dir('GalaxyFileName')
       local name = mode_name[mode]
       if name ~= nil then
         mode = name
@@ -159,9 +206,7 @@ gls.mid[1] = {
 
 gls.right[1] = {
   ShowFTime = {
-	provider = function()
-	  return vim.fn.GetCacheFTime()
-	end,
+	provider = vim.fn.GetCacheFTimeStr,
 	condition = function()
       if not special_filetype() then return false end
 	  if vim.fn.winwidth(0) >= 70 then
@@ -218,7 +263,7 @@ gls.right[4] = {
 gls.right[5] = {
   GitIcon = {
     provider = function() return ' ' end,
-    condition = condition.check_git_workspace,
+    condition = local_check_git_workspace,
 	separator = '',
     separator_highlight = {colors.violet,color_darkgreen},
     highlight = {colors.bg,colors.violet,'bold'},
@@ -228,7 +273,7 @@ gls.right[5] = {
 gls.right[6] = {
   GitBranch = {
     provider = 'GitBranch',
-    condition = condition.check_git_workspace,
+    condition = local_check_git_workspace,
     highlight = {colors.bg,colors.violet,'bold'},
   }
 }
@@ -269,8 +314,8 @@ gls.short_line_left[1] = {
 gls.short_line_left[2] = {
   SFileDir = {
     provider =  function()
-		local path = vim.fn.expand('%:p')
-		local name = vim.fn.expand('%:p:t')
+		local path = cache_expand('%:p')
+		local name = cache_expand('%:p:t')
 		if vim.fn.winwidth(0) < vim.fn.strdisplaywidth(path)+10 then
 			return ''
 		end
