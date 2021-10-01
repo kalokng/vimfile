@@ -2,6 +2,7 @@
 let g:neovide_cursor_vfx_mode = "ripple"
 "let g:neovide_remember_window_size = v:true
 let g:neovide_floating_opacity = 0.85
+let g:neovide_refresh_rate = 60
 
 "set guioptions=egrL
 
@@ -946,13 +947,19 @@ au WinEnter * let g:myFocus = winnr()
 au BufRead,BufNewFile,BufFilePost,BufWritePost *			call CacheBufPara()
 function! CacheBufPara()
 	let b:Ftime = getftime(expand('%:p'))
+	if b:Ftime <= 0
+		let b:FtimeStr = ''
+		return
+	endif
 	let ltime = localtime()
-	if ltime/86400 == b:Ftime/86400
-		let b:FtimeStr = (b:Ftime > 0 ? strftime(' %H:%M:%S',b:Ftime) : '')
-	elseif strftime('%Y', b:Ftime) == strftime('%Y', ltime)
-		let b:FtimeStr = (b:Ftime > 0 ? strftime(' %m-%d %H:%M:%S',b:Ftime) : '')
+	let fdate = strftime(' %Y-%m-%d', b:Ftime)
+	let ldate = strftime(' %Y-%m-%d', ltime)
+	if fdate == ldate
+		let b:FtimeStr = strftime(' %H:%M:%S',b:Ftime)
+	elseif fdate[1:4] == ldate[1:4]
+		let b:FtimeStr = strftime(' %m-%d %H:%M:%S',b:Ftime)
 	else
-		let b:FtimeStr = (b:Ftime > 0 ? strftime(' %Y-%m-%d %H:%M:%S',b:Ftime) : '')
+		let b:FtimeStr = fdate . strftime(' %H:%M:%S',b:Ftime)
 	endif
 	"let b:FPath = expand('%:p:~:h')
 endfunction

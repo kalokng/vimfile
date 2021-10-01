@@ -7,6 +7,8 @@ gl.short_line_list = {'NvimTree','vista','dbui','packer'}
 --hi StatusLine guifg=#bbc2cf guifg=#202328
 colors.fg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "bg#", "gui")
 colors.bg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "fg#", "gui")
+colors.ctermfg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "fg#", "cterm")
+colors.ctermbg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "bg#", "cterm")
 local color_darkred = '#804040'
 local color_darkgreen = '#98be55'
 local color_gray = '#808080'
@@ -63,18 +65,18 @@ function cache_getcwd()
 	return v
 end
 
-function local_check_git_workspace()
-	local p = cache_expand('%:p:h')
-	if string.sub(p,1,1) == '\\' then
-		return false
-	end
-	return condition.check_git_workspace()
-end
-
 vim.api.nvim_command('augroup statusline')
 vim.api.nvim_command('au! DirChanged * unlet! b:cache_getcwd')
 vim.api.nvim_command('au! BufFilePost * unlet! b:cache_expand')
 vim.api.nvim_command('augroup END')
+
+function local_check_git_workspace()
+	local p = cache_expand('%:p:h')
+	if string.len(p) > 1 and string.sub(p,1,1) == '\\' then
+		return false
+	end
+	return condition.check_git_workspace()
+end
 
 function buf_cur_dir(mode)
 	local pwd = vim.fn.getcwd()
@@ -84,6 +86,14 @@ function buf_cur_dir(mode)
 	else
 		vim.api.nvim_command('hi '..mode..' guifg='..colors.magenta)
 	end
+end
+
+function cursor_char()
+	if vim.fn.mode() == 'i' then return '' end
+	local l = vim.fn.getline('.')
+	local c = vim.fn.strcharpart(l, vim.fn.charidx(l,vim.fn.col('.')-1,1))
+	if c == "" then return '×' end
+	return string.format('0x%02X', vim.fn.char2nr(c))
 end
 
 gls.left[1] = {
@@ -157,6 +167,7 @@ gls.left[6] = {
     separator = '',
     separator_highlight = {colors.darkblue,colors.bg},
     highlight = {colors.fg,colors.darkblue},
+	--highlight = "guifg="..colors.fg.." guibg="..colors.darkblue.." ctermfg="..colors.ctermbg.." ctermbg="..colors.ctermfg,
   },
 }
 
@@ -221,13 +232,7 @@ gls.right[1] = {
 
 gls.right[2] = {
   CursorByte = {
-	provider = function()
-	  if vim.fn.mode() == 'i' then return '' end
-	  local l = vim.fn.getline('.')
-	  local c = vim.fn.strcharpart(l, vim.fn.charidx(l,vim.fn.col('.')-1,1))
-	  if c == "" then return '×' end
-	  return string.format('0x%02X', vim.fn.char2nr(c))
-	end,
+	provider = cursor_char,
     condition = special_filetype,
 	separator = '',
 	separator_highlight = {color_darkred,colors.bg},
