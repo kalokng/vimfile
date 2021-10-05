@@ -64,7 +64,7 @@ if exists('*plug#begin')
 
 	cnoremap <C-G><C-G> <C-R>=<SID>get_git_root()<CR>
 	nnoremap <Space>f :FZF<space>
-	nnoremap <Space>gf :GFiles<CR>
+	nnoremap <Space>gf :GFiles!<CR>
 	nnoremap <Space>gw :call <SID>searchGit(expand("<cword>"))<CR>
 	nnoremap <Space>ga :call <SID>searchGit("")<CR>
 	nnoremap <Space>w :call <SID>searchGitAll(expand("<cword>"))<CR>
@@ -83,9 +83,9 @@ if exists('*plug#begin')
 	map t <Plug>Sneak_t
 	map T <Plug>Sneak_T
 
-	vnoremap <Enter> <Plug>(LiveEasyAlign)
+	vmap <Enter> <Plug>(LiveEasyAlign)
 
-	nnoremap <Space>r <Plug>MarkRegex
+	nmap <Space>r <Plug>MarkRegex
 	"nmap <Leader>m <Plug>MarkSet
 	"vmap <Leader>m <Plug>MarkSet
 	"nmap <Leader>M <Plug>MarkToggle
