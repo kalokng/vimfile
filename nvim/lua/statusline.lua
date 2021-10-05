@@ -340,8 +340,27 @@ gls.short_line_left[3] = {
   SFileName = {
     provider = 'SFileName',
     condition = condition.buffer_not_empty,
+	separator = '',
+    separator_highlight = {colors.darkblue,colors.bg},
     highlight = {colors.fg,colors.bg,'bold'}
   }
+}
+
+gls.short_line_left[4] = {
+  PerCent = {
+    provider = current_line_percent,
+    highlight = {colors.fg,colors.darkblue,'bold'},
+  }
+}
+
+gls.short_line_left[5] = {
+  LineInfo = {
+    provider = line_column,
+    separator = '',
+    separator_highlight = {colors.darkblue,colors.bg},
+    highlight = {colors.fg,colors.darkblue},
+	--highlight = "guifg="..colors.fg.." guibg="..colors.darkblue.." ctermfg="..colors.ctermbg.." ctermbg="..colors.ctermfg,
+  },
 }
 
 gls.short_line_right[1] = {
