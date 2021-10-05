@@ -28,16 +28,18 @@ end
 
 -- show current line percent of all lines
 function current_line_percent()
-  local current_line = vim.fn.line('.')
+  local visual_first = vim.fn.line('w0')
+  local visual_last = vim.fn.line('w$')
   local total_line = vim.fn.line('$')
-  if vim.fn.line('w0') == 1 and vim.fn.line('w$') == total_line then
-	return ' All '
-  elseif current_line == 1 then
+  if visual_first == 1 then
+	if visual_last == total_line then
+	  return ' All '
+	end
     return ' Top '
-  elseif current_line == vim.fn.line('$') then
+  elseif visual_last == total_line then
     return ' Bot '
   end
-  local result,_ = math.modf((current_line/total_line)*100)
+  local result,_ = math.modf((vim.fn.line('.')/total_line)*100)
   return ' '.. result .. '% '
 end
 
