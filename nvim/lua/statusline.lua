@@ -56,17 +56,7 @@ function cache_expand(key)
 	return v
 end
 
-function cache_getcwd()
-	local v = vim.b.cache_getcwd
-	if type(v) ~= "string" then
-		v = vim.fn.getcwd()
-		vim.b.cache_getcwd = v
-	end
-	return v
-end
-
 vim.api.nvim_command('augroup statusline')
-vim.api.nvim_command('au! DirChanged * unlet! b:cache_getcwd')
 vim.api.nvim_command('au! BufFilePost * unlet! b:cache_expand')
 vim.api.nvim_command('augroup END')
 
