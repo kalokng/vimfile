@@ -26,6 +26,21 @@ function line_column()
   end
 end
 
+-- show current line percent of all lines
+function current_line_percent()
+  local current_line = vim.fn.line('.')
+  local total_line = vim.fn.line('$')
+  if vim.fn.line('w0') == 1 and vim.fn.line('w$') == total_line then
+	return ' All '
+  elseif current_line == 1 then
+    return ' Top '
+  elseif current_line == vim.fn.line('$') then
+    return ' Bot '
+  end
+  local result,_ = math.modf((current_line/total_line)*100)
+  return ' '.. result .. '% '
+end
+
 function special_filetype()
 	local ft = vim.bo.filetype
 	if ft == 'nerdtree' then return false end
@@ -146,7 +161,7 @@ gls.left[4] = {
 
 gls.left[5] = {
   PerCent = {
-    provider = 'LinePercent',
+    provider = current_line_percent,
     highlight = {colors.fg,colors.darkblue,'bold'},
   }
 }
