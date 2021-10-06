@@ -7,12 +7,70 @@ gl.short_line_list = {'NvimTree','vista','dbui','packer'}
 --hi StatusLine guifg=#bbc2cf guifg=#202328
 colors.fg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "bg#", "gui")
 colors.bg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "fg#", "gui")
-colors.ctermfg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "fg#", "cterm")
-colors.ctermbg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "bg#", "cterm")
 local color_darkred = '#804040'
 local color_darkgreen = '#98be55'
 local color_gray = '#808080'
+local api = vim.api
 --colors.bg = '#dfdebd'
+
+local mode_color = {
+  n = colors.red, i = colors.green,v=colors.blue,
+  [''] = colors.blue,V=colors.blue,
+  c = colors.magenta,no = colors.red,s = colors.orange,
+  S=colors.orange,[''] = colors.orange,
+  ic = colors.yellow,R = colors.violet,Rv = colors.violet,
+  cv = colors.red,ce=colors.red, r = colors.cyan,
+  rm = colors.cyan, ['r?'] = colors.cyan,
+  ['!']  = colors.red,t = colors.red
+}
+local mode_name = {
+  [''] = '^V', [''] = '^S'
+}
+
+--terminal highlight setting
+local cterms={
+	red=168,green=10,blue=68,
+	magenta=177,orange=173,
+	yellow=222,violet=89,cyan=14,
+	darkred=88,darkgreen=114,
+	darkblue=23,grey=8,fg=15,bg=17,
+}
+colors.ctermfg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "fg#", "cterm")
+colors.ctermbg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "bg#", "cterm")
+local cterm_color = {
+  n = cterms.red, i = cterms.green,v=cterms.blue,
+  [''] = cterms.blue,V=cterms.blue,
+  c = cterms.magenta,no = cterms.red,s = cterms.orange,
+  S=cterms.orange,[''] = cterms.orange,
+  ic = cterms.yellow,R = cterms.violet,Rv = cterms.violet,
+  cv = cterms.red,ce=cterms.red, r = cterms.cyan,
+  rm = cterms.cyan, ['r?'] = cterms.cyan,
+  ['!']  = cterms.red,t = cterms.red
+}
+api.nvim_command('hi StatusLine cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
+api.nvim_command('hi StatusLineNC cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
+api.nvim_command('hi StatusLineTermNC cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
+api.nvim_command('hi GalaxyViMode cterm=bold ctermfg=16')
+api.nvim_command('hi GalaxyFileSize ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
+api.nvim_command('hi LineInfoSeparator ctermfg='..cterms.darkblue..' ctermbg='..cterms.bg)
+api.nvim_command('hi FileNameSeparator ctermfg='..cterms.darkblue..' ctermbg='..cterms.bg)
+api.nvim_command('hi PerCentSeparator ctermfg='..cterms.darkblue)
+api.nvim_command('hi GalaxyFileName cterm=bold ctermbg='..cterms.bg..' ctermfg='..cterms.magenta)
+api.nvim_command('hi GalaxyFileIcon cterm=bold ctermbg='..cterms.bg..' ctermfg='..cterms.fg)
+api.nvim_command('hi GalaxyLineInfo ctermbg='..cterms.darkblue..' ctermfg='..cterms.fg)
+api.nvim_command('hi GalaxyPerCent cterm=bold ctermbg='..cterms.darkblue..' ctermfg='..cterms.fg)
+api.nvim_command('hi CursorByteSeparator ctermfg='..cterms.darkred..' ctermbg='..cterms.bg)
+api.nvim_command('hi GalaxyShowFTime ctermfg='..cterms.darkgreen..' ctermbg='..cterms.bg)
+api.nvim_command('hi GalaxyCursorByte ctermbg='..cterms.darkred..' ctermfg='..cterms.fg)
+api.nvim_command('hi FileEncodeSeparator ctermfg='..cterms.darkred..' ctermbg='..cterms.darkgreen)
+api.nvim_command('hi GalaxyFileEncode ctermbg='..cterms.darkgreen..' ctermfg='..cterms.darkblue)
+api.nvim_command('hi GalaxyFileFormat ctermbg='..cterms.darkgreen..' ctermfg='..cterms.darkblue)
+api.nvim_command('hi FileFormatSeparator ctermbg='..cterms.darkgreen..' ctermfg='..cterms.darkblue)
+api.nvim_command('hi GalaxyBufferType ctermbg='..cterms.bg..' ctermfg='..cterms.blue)
+api.nvim_command('hi BufferTypeSeparator ctermbg='..cterms.bg..' ctermfg='..cterms.blue)
+api.nvim_command('hi GalaxySFileDir ctermbg='..cterms.bg..' ctermfg='..cterms.grey)
+api.nvim_command('hi GalaxySFileName ctermbg='..cterms.bg..' ctermfg='..cterms.fg)
+api.nvim_command('hi SFileNameSeparator ctermbg='..cterms.bg..' ctermfg='..cterms.darkblue)
 
 -- show line:column
 function line_column()
@@ -33,14 +91,14 @@ function current_line_percent()
   local total_line = vim.fn.line('$')
   if visual_first == 1 then
 	if visual_last == total_line then
-	  return ' All '
+	  return 'All '
 	end
-    return ' Top '
+    return 'Top '
   elseif visual_last == total_line then
-    return ' Bot '
+    return 'Bot '
   end
   local result,_ = math.modf((vim.fn.line('.')/total_line)*100)
-  return ' '.. result .. '% '
+  return result .. '% '
 end
 
 function special_filetype()
@@ -53,45 +111,68 @@ end
 function buf_binded(mode)
 	local scb = vim.wo.scb
 	if scb then
-		vim.api.nvim_command('hi '..mode..' guifg='..colors.orange)
+		api.nvim_command('hi '..mode..' guifg='..colors.orange)
 	else
-		vim.api.nvim_command('hi '..mode..' guifg='..colors.fg)
+		api.nvim_command('hi '..mode..' guifg='..colors.fg)
 	end
 end
 
-function cache_expand(key)
-	local table = vim.b.cache_expand
+function cache_func(key, f)
+	local table = vim.b.cache_val
 	if type(table) ~= "table" then
 		table = { }
 	end
 	local v = table[key]
 	if type(v) ~= "string" then
-		v = vim.fn.expand(key)
+		v = f()
 		table[key] = v
-		vim.b.cache_expand = table
+		vim.b.cache_val = table
 	end
 	return v
 end
 
-vim.api.nvim_command('augroup statusline')
-vim.api.nvim_command('au! BufFilePost * unlet! b:cache_expand')
-vim.api.nvim_command('augroup END')
-
-function local_check_git_workspace()
-	local p = cache_expand('%:p:h')
-	if string.len(p) > 1 and string.sub(p,1,1) == '\\' then
-		return false
-	end
-	return condition.check_git_workspace()
+function cache_expand(key)
+	return cache_func('exp('..key, function()
+		return vim.fn.expand(key)
+	end)
 end
+
+function file_size(file)
+  local size = vim.fn.getfsize(file)
+  if size == 0 or size == -1 or size == -2 then
+    return ''
+  end
+  if size < 1024 then
+    size = size .. 'b'
+  elseif size < 1024 * 1024 then
+    size = string.format('%.1f',size/1024) .. 'k'
+  elseif size < 1024 * 1024 * 1024 then
+    size = string.format('%.1f',size/1024/1024) .. 'm'
+  else
+    size = string.format('%.1f',size/1024/1024/1024) .. 'g'
+  end
+  return size .. ' '
+end
+
+function cache_filesize()
+	return cache_func('filesize', function()
+		local file = cache_expand('%:p')
+		if string.len(file) == 0 then return '' end
+		return file_size(file)
+	end)
+end
+
+api.nvim_command('augroup statusline')
+api.nvim_command('au! BufRead,BufWritePost,BufFilePost * unlet! b:cache_val')
+api.nvim_command('augroup END')
 
 function buf_cur_dir(mode)
 	local pwd = vim.fn.getcwd()
 	local dir = cache_expand('%:p:h')
 	if pwd ~= dir then
-		vim.api.nvim_command('hi '..mode..' guifg='..colors.orange)
+		api.nvim_command('hi '..mode..' guifg='..colors.orange)
 	else
-		vim.api.nvim_command('hi '..mode..' guifg='..colors.magenta)
+		api.nvim_command('hi '..mode..' guifg='..colors.magenta)
 	end
 end
 
@@ -107,21 +188,9 @@ gls.left[1] = {
   ViMode = {
     provider = function()
       -- auto change color according the vim mode
-      local mode_color = {
-        n = colors.red, i = colors.green,v=colors.blue,
-        [''] = colors.blue,V=colors.blue,
-        c = colors.magenta,no = colors.red,s = colors.orange,
-        S=colors.orange,[''] = colors.orange,
-        ic = colors.yellow,R = colors.violet,Rv = colors.violet,
-        cv = colors.red,ce=colors.red, r = colors.cyan,
-        rm = colors.cyan, ['r?'] = colors.cyan,
-        ['!']  = colors.red,t = colors.red
-      }
-      local mode_name = {
-        [''] = '^V', [''] = '^S'
-      }
       local mode = vim.fn.mode()
-      vim.api.nvim_command('hi GalaxyViMode guibg='..mode_color[mode])
+      api.nvim_command('hi GalaxyViMode guibg='..mode_color[mode])
+      api.nvim_command('hi GalaxyViMode ctermbg='..cterm_color[mode])
 	  buf_binded('GalaxyLineInfo')
 	  buf_binded('GalaxyPerCent')
 	  buf_cur_dir('GalaxyFileName')
@@ -137,7 +206,7 @@ gls.left[1] = {
 
 gls.left[2] = {
   FileSize = {
-	provider = 'FileSize',
+	provider = cache_filesize,
 	condition = condition.buffer_not_empty,
 	highlight = {colors.fg,colors.bg}
   }
@@ -269,48 +338,6 @@ gls.right[4] = {
     separator = ' ',
     separator_highlight = {'NONE',color_darkgreen},
     highlight = {colors.bg,color_darkgreen,'bold'}
-  }
-}
-
-gls.right[5] = {
-  GitIcon = {
-    provider = function() return ' ' end,
-    condition = local_check_git_workspace,
-	separator = '',
-    separator_highlight = {colors.violet,color_darkgreen},
-    highlight = {colors.bg,colors.violet,'bold'},
-  }
-}
-
-gls.right[6] = {
-  GitBranch = {
-    provider = 'GitBranch',
-    condition = local_check_git_workspace,
-    highlight = {colors.bg,colors.violet,'bold'},
-  }
-}
-
-gls.right[7] = {
-  DiffAdd = {
-    provider = 'DiffAdd',
-    icon = '',
-    highlight = {colors.green,colors.bg},
-  }
-}
-
-gls.right[8] = {
-  DiffModified = {
-    provider = 'DiffModified',
-    icon = '柳',
-    highlight = {colors.orange,colors.bg},
-  }
-}
-
-gls.right[9] = {
-  DiffRemove = {
-    provider = 'DiffRemove',
-    icon = '',
-    highlight = {colors.red,colors.bg},
   }
 }
 

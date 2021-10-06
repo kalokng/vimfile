@@ -4,6 +4,7 @@ let g:neovide_cursor_vfx_mode = "ripple"
 let g:neovide_floating_opacity = 0.85
 let g:neovide_refresh_rate = 60
 
+set termguicolors
 "set guioptions=egrL
 
 sil! call plug#begin()
@@ -26,17 +27,20 @@ if exists('*plug#begin')
 	Plug 'junegunn/fzf.vim'
 	Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
 	Plug 'kyazdani42/nvim-web-devicons'
-	Plug 'akinsho/nvim-bufferline.lua'
+	"Plug 'akinsho/nvim-bufferline.lua'
 	Plug 'mileszs/ack.vim'
 	Plug 'preservim/nerdtree'
 	Plug 'ryanoasis/vim-devicons'
 	Plug 'tpope/vim-fugitive'
 	Plug 'neoclide/coc.nvim', {'branch': 'release'}
-	Plug '~/vimfiles/plugged/after'
+	"Plug 'seblj/nvim-tabline'
+	Plug 'romgrk/barbar.nvim'
+	"Plug '~/vimfiles/plugged/after'
 	call plug#end()
 
 	let g:ctrlp_cmd = 'CtrlPMRU'
 	let g:ctrlp_types = ['mru', 'fil', 'buf']
+	let g:ctrlp_switch_buffer = 't'
 
 	function! s:get_git_root()
 		let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
@@ -110,8 +114,8 @@ if exists('*plug#begin')
 	endfunction
 
 	inoremap <silent><expr> <c-space> coc#refresh()
-	inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
-				\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+	"inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
+	"			\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
 	nnoremap <silent> gd <Plug>(coc-definition)
 	nnoremap <silent> gy <Plug>(coc-type-definition)
@@ -314,12 +318,12 @@ else
 endif
 
 "" CTRL-Tab is Next window
-"noremap <silent> <C-Tab> gt
+"noremap <silent> <C-Tab> <C-W>w
 "inoremap <silent> <C-Tab> <C-O>gt
 "cnoremap <silent> <C-Tab> <C-C>gt
 "onoremap <silent> <C-Tab> <C-C>gt
 ""noremap <Tab> <C-W>w
-"noremap <silent> <C-S-Tab> gT
+"noremap <silent> <C-S-Tab> <C-W>W
 "inoremap <silent> <C-S-Tab> <C-O>gT
 "cnoremap <silent> <C-S-Tab> <C-C>gT
 "onoremap <silent> <C-S-Tab> <C-C>gT
@@ -498,7 +502,7 @@ nnoremap <silent> y<C-R><C-R>% :let @+=@%<CR>:echo @+<CR>
 
 nmap <silent> <F2> :set scb!<CR>
 nmap <silent> <F3> :set is!<CR>
-nmap <silent> <C-F2> :!start explorer <c-r>=(expand('%')!=''?'/select,'.expand('%:p'):getcwd())<CR><CR>
+nmap <silent> <C-F2> :sil !start explorer <c-r>=(expand('%')!=''?'/select,'.expand('%:p'):getcwd())<CR><CR>
 nmap <silent> <F4> @@
 nnoremap <silent> <F9> :<C-U>set wrap!\|if &wrap \| echo "Word wrap ON" \| else \| echo "Word wrap OFF"\|endif<CR>
 inoremap <silent> <F9> <C-O>:set wrap!<CR>
@@ -1061,6 +1065,7 @@ function! AliasEnc(...)
 	return lenc
 endfunction
 
-lua require('top-bufferline')
+"lua require('top-bufferline')
+lua require('top-tabline')
 lua require('statusline')
 lua require('file-icons')

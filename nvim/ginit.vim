@@ -6,3 +6,4 @@ endif
 "set guifont="JetBrains Mono NF:h11"
 "set guifont=JetBrains\ Mono:h10
 
+GuiTabline 0
