@@ -68,8 +68,8 @@ if exists('*plug#begin')
 	function! s:searchGitAll(arg)
 		let root = s:get_git_root()
 		let dict = fzf#vim#with_preview({'dir': root})
-		"call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -u -- ".shellescape(a:arg)." ".root, 1, l:dict, 0)
-		call fzf#vim#grep("ag --column --nogroup --color -- ".fzf#shellescape(a:arg)." ".root, 1, l:dict, 1)
+		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -uu -- ".shellescape(a:arg)." ".root, 1, l:dict, 1)
+		"call fzf#vim#grep("ag --column --nogroup --color -- ".fzf#shellescape(a:arg)." ".root, 1, l:dict, 1)
 	endfunction
 
 	cnoremap <C-G><C-G> <C-R>=<SID>get_git_root()<CR>
