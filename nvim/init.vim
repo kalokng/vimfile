@@ -46,6 +46,8 @@ if exists('*plug#begin')
 	let g:ctrlp_types = ['mru', 'fil', 'buf']
 	let g:ctrlp_switch_buffer = 't'
 
+	let $FZF_DEFAULT_OPTS = '--bind ctrl-a:select-all+accept'
+	let g:fzf_preview_window = ['up:40%:hidden', 'ctrl-\']
 	function! s:get_git_root()
 		let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
 		if v:shell_error

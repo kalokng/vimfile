@@ -322,6 +322,7 @@ gls.right[3] = {
 		local fenc = vim.fn.AliasEnc('f')
 		local enc = vim.fn.AliasEnc()
 		if fenc == enc or fenc == '--' then return enc end
+		if fenc == 'U8m' and enc == 'U8' then return fenc end
 		return enc .. ' ' .. fenc
 	end,
     condition = special_filetype,
