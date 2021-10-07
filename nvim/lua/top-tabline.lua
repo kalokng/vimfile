@@ -22,19 +22,26 @@ theme = {
   red = '#ec5f67',
   teal = '#005131',
   dark = '#0e121a',
+  darkred = '#401020',
+  grey = '#222c40',
 }
 
 vim.g.bufferline = {
   icon_pinned = '車',
 }
 
-vim.api.nvim_command('hi BufferCurrentMod guifg='..theme.orange) 
-vim.api.nvim_command('hi BufferVisibleMod guifg='..theme.orange..' guibg='..theme.teal) 
-vim.api.nvim_command('hi BufferVisible guibg='..theme.teal) 
-vim.api.nvim_command('hi BufferVisibleSign guibg='..theme.teal) 
-vim.api.nvim_command('hi BufferVisibleIcon guibg='..theme.teal) 
-vim.api.nvim_command('hi BufferVisibleIndex guibg='..theme.teal) 
-vim.api.nvim_command('hi BufferVisibleTarget guibg='..theme.teal) 
+vim.api.nvim_command('hi BufferCurrent guibg='..theme.teal) 
+vim.api.nvim_command('hi BufferCurrentMod guifg='..theme.orange..' guibg='..theme.teal) 
+vim.api.nvim_command('hi BufferCurrentSign guibg='..theme.teal) 
+vim.api.nvim_command('hi BufferCurrentIcon guibg='..theme.teal) 
+vim.api.nvim_command('hi BufferCurrentIndex guibg='..theme.teal) 
+vim.api.nvim_command('hi BufferCurrentTarget guibg='..theme.teal) 
+vim.api.nvim_command('hi BufferVisibleMod guifg='..theme.orange..' guibg='..theme.grey) 
+vim.api.nvim_command('hi BufferVisible guibg='..theme.grey) 
+vim.api.nvim_command('hi BufferVisibleSign guibg='..theme.grey) 
+vim.api.nvim_command('hi BufferVisibleIcon guibg='..theme.grey) 
+vim.api.nvim_command('hi BufferVisibleIndex guibg='..theme.grey) 
+vim.api.nvim_command('hi BufferVisibleTarget guibg='..theme.grey) 
 
 vim.api.nvim_command('hi BufferInactive guifg=#bbc2cf guibg='..theme.dark) 
 vim.api.nvim_command('hi BufferInactiveMod guifg='..theme.orange..' guibg='..theme.dark) 
