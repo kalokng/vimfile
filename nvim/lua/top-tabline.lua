@@ -1,13 +1,15 @@
 local map = vim.api.nvim_set_keymap
 local opts = {noremap = true, silent = true}
 
-map('n', '<C-Tab>', ':BufferNext<CR>', opts)
-map('n', '<C-S-Tab>', ':BufferPrevious<CR>', opts)
-map('n', '<C-Right>', ':BufferNext<CR>', opts)
-map('n', '<C-Left>', ':BufferPrevious<CR>', opts)
-map('n', '<M->>', ':BufferMoveNext<CR>', opts)
-map('n', '<M-<>', ':BufferMovePrevious<CR>', opts)
-map('n', '<M-x>', ':BufferClose<CR>', opts)
+map('n', '<C-Tab>',     ':BufferNext<CR>',         opts)
+map('n', '<C-S-Tab>',   ':BufferPrevious<CR>',     opts)
+map('n', '<C-Right>',   ':BufferNext<CR>',         opts)
+map('n', '<C-Left>',    ':BufferPrevious<CR>',     opts)
+map('n', '<M->>',       ':BufferMoveNext<CR>',     opts)
+map('n', '<M-<>',       ':BufferMovePrevious<CR>', opts)
+map('n', '<M-C-Right>', ':BufferMoveNext<CR>',     opts)
+map('n', '<M-C-Left>',  ':BufferMovePrevious<CR>', opts)
+map('n', '<M-x>',       ':BufferClose<CR>',        opts)
 
 local theme = {}
 theme = {
