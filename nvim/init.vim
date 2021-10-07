@@ -8,6 +8,7 @@ set termguicolors
 set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
 			\,a:blinkwait1000-blinkoff500-blinkon500-Cursor/lCursor,
 			\sm:block-blinkwait175-blinkoff150-blinkon175
+set shada="NONE"
 "set guioptions=egrL
 
 sil! call plug#begin()
