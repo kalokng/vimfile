@@ -308,17 +308,6 @@ if has("multi_byte")
 	"nnoremap <silent> <C-M>B :set nobin<CR>
 	"nnoremap <silent> <C-M>m :set nobomb<CR>
 	"nnoremap <silent> <C-M>M :set nobomb<CR>
-	"change encoding
-	nnoremap <silent> <C-H><C-j> :set enc=japan<CR>
-	nnoremap <silent> <C-H><C-s> :set enc=cp936<CR>
-	nnoremap <silent> <C-H><C-t> :set enc=cp950<CR>
-	nnoremap <silent> <C-H><C-u> :set enc=utf-8<CR>
-	nnoremap <silent> <C-H><C-l> :set enc=latin1<CR>
-	nnoremap <silent> <C-H>j :set enc=japan<CR>
-	nnoremap <silent> <C-H>s :set enc=cp936<CR>
-	nnoremap <silent> <C-H>t :set enc=cp950<CR>
-	nnoremap <silent> <C-H>u :set enc=utf-8<CR>
-	nnoremap <silent> <C-H>l :set enc=latin1<CR>
 else
 	echoerr "Sorry, this version of (g)vim was not compiled with multi_byte"
 endif
@@ -1048,9 +1037,8 @@ function! GetMode()
 	return l:m . g:myMode[l:k]
 endfunction
 
-function! AliasEnc(...)
-	let isFenc = (a:0 > 0 && (a:1 == 'f' || a:1 == 'F'))
-	let lenc = (isFenc ? &fenc : &enc)
+function! AliasEnc()
+	let lenc = &fenc
 	if lenc =~ "cp950"
 		let lenc = "B5"
 	elseif lenc =~ "cp936"
@@ -1061,11 +1049,11 @@ function! AliasEnc(...)
 		let lenc = "U8"
 	elseif lenc =~ "^$"
 		let lenc = "--"
-		if isFenc && &binary
+		if &binary
 			return "bin"
 		endif
 	endif
-	if isFenc && &bomb
+	if &bomb
 		return lenc."m"
 	endif
 	return lenc

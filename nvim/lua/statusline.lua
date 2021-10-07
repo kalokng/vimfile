@@ -318,13 +318,7 @@ gls.right[2] = {
 
 gls.right[3] = {
   FileEncode = {
-    provider = function()
-		local fenc = vim.fn.AliasEnc('f')
-		local enc = vim.fn.AliasEnc()
-		if fenc == enc or fenc == '--' then return enc end
-		if fenc == 'U8m' and enc == 'U8' then return fenc end
-		return enc .. ' ' .. fenc
-	end,
+    provider = vim.fn.AliasEnc,
     condition = special_filetype,
     separator = '',
     separator_highlight = {color_darkred,color_darkgreen},
