@@ -1038,20 +1038,20 @@ function! GetMode()
 endfunction
 
 function! AliasEnc()
+	if &binary
+		return "bin"
+	endif
 	let lenc = &fenc
-	if lenc =~ "cp950"
+	if lenc =~ "^$"
+		return "U8"
+	elseif lenc =~ "utf-8"
+		let lenc = "U8"
+	elseif lenc =~ "cp950"
 		let lenc = "B5"
 	elseif lenc =~ "cp936"
 		let lenc = "GB"
 	elseif lenc =~ "cp932"
 		let lenc = "JP"
-	elseif lenc =~ "utf-8"
-		let lenc = "U8"
-	elseif lenc =~ "^$"
-		let lenc = "--"
-		if &binary
-			return "bin"
-		endif
 	endif
 	if &bomb
 		return lenc."m"
