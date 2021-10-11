@@ -168,9 +168,6 @@ let g:seoul256_background = 234
 sil! color seoul256
 syn on
 
-set guifont=
-			\JetBrainsMono\ NF,
-			\Noto\ Sans\ CJK\ TC:h9
 se cursorline
 "hi LineNr guibg=#F0F0FF guifg=Brown
 "hi CursorLine guibg=LightCyan
@@ -683,6 +680,8 @@ nnoremap <space>l :lad expand('%').':'.line('.').':'.getline('.')<CR>
 cnoremap <C-R>^ <C-R>=fnameescape(expand('%:p:h'))<CR>/
 inoremap <C-R>^ <C-R>=expand('%:p:h')<CR>/
 cnoremap <C-R><C-L> <C-R>=getline('.')<CR>
+
+nmap <silent> <F7> :if &diff \| diffoff \| else \| diffthis \| endif<CR>
 
 inoremap <silent> <S-F7> <C-O>:set spell!<CR>
 inoremap <silent> <F8> <C-O>:set list!<CR>
