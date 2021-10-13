@@ -120,8 +120,8 @@ if exists('*plug#begin')
 	endfunction
 
 	inoremap <silent><expr> <c-space> coc#refresh()
-	"inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
-	"			\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+	inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
+				\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
 	nnoremap <silent> gd <Plug>(coc-definition)
 	nnoremap <silent> gy <Plug>(coc-type-definition)
