@@ -689,6 +689,28 @@ nnoremap <silent> <S-F7> :set spell!<CR>
 nnoremap <silent> <F8> :set list!<CR>
 nnoremap <silent> <M-F8> :let @z=@/<CR>:%s/\s\+$//<CR><C-O>:let @/=@z<CR>
 
+if has("windows")
+	function! <SID>startTerminal(name)
+		let namemap               = {}
+		let namemap["bash"]       = '"git bash"'
+		let namemap["cmd"]        = '"Command Prompt"'
+		let namemap["powershell"] = '"Windows PowerShell"'
+		try
+			sil exec "!start wt -d ".expand("%:p:h")." -p ".namemap[a:name]
+		catch /\<E371\>/
+			sil exec "!start ".a:name
+		endtry
+	endfunction
+	command! Bash :call <SID>startTerminal("bash")
+	command! Cmd :call <SID>startTerminal("cmd")
+	command! Powershell :call <SID>startTerminal("powershell")
+	if has("win64")
+		command! Term :term C:\Windows\system32\bash.exe
+	elseif has("win32")
+		command! Term :term C:\Windows\sysnative\bash.exe
+	endif
+endif
+
 "nmap <C-PageDown> G:sleep 1000m<CR>:call Auto_Scroll_Down()<CR><C-PageDown>
 command! -nargs=? AutoScroll :call Auto_Scroll_Down('<args>')
 let g:tmp_astimer = []
