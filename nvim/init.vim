@@ -488,9 +488,9 @@ nnoremap <silent> <C-C> "+y$
 vnoremap <silent> <C-C> "+y
 
 nnoremap <silent> Y y$
-nnoremap <silent> y% :let @+=expand('%:p')<CR>:echo @+<CR>
-nnoremap <silent> y<C-R>% :let @+=expand('%:t')<CR>:echo @+<CR>
-nnoremap <silent> y<C-R><C-R>% :let @+=@%<CR>:echo @+<CR>
+nnoremap <silent> y% :let @+=expand('%:p')<CR>:echo "copied '".@+."'"<CR>
+nnoremap <silent> y<C-R>% :let @+=expand('%:t')<CR>:echo "copied '".@+."'"<CR>
+nnoremap <silent> y<C-R><C-R>% :let @+=@%<CR>:echo "copied '".@+."'"<CR>
 
 nmap <silent> <F2> :set scb!<CR>
 nmap <silent> <F3> :set is!<CR>
