@@ -82,7 +82,17 @@ if exists('*plug#begin')
 	"nnoremap <space>w :Ag! <C-R><C-W><CR>
 	"nnoremap <space>a :Ag!<CR>
 
-	nnoremap <space>b :NERDTreeFind<CR>
+	function! s:fileTree()
+		let l:file = expand('%:p')
+		if l:file == ""
+			let l:file = input("NERDTree: ", "", "dir")
+			exec "NERDTree ".l:file
+			return
+		endif
+		exec "NERDTreeFind ".l:file
+	endfunction
+
+	nnoremap <silent><space>b :call <SID>fileTree()<CR>
 	nnoremap <S-F12> :NERDTreeToggle<CR>
 
 	let g:mwExclusionPredicates = []
