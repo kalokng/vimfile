@@ -18,9 +18,9 @@ elseif exists(':GonvimVersion')
 	set guifont=JetBrainsMono\ NF:h9
 else
 	"neovide
-	set guifont=
-				\JetBrainsMono\ NF,
-				\Noto\ Sans\ CJK\ TC:h9
+	set guifont=JetBrainsMono\ NF:h9
+				"\Noto\ Sans\ CJK\ TC:h9
+	let g:neovide_cursor_vfx_mode = "ripple"
 endif
 "set guifont="JetBrains Mono NF:h11"
 "set guifont=JetBrains\ Mono:h10

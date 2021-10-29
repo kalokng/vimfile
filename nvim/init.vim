@@ -1,8 +1,4 @@
 "neovide settings
-let g:neovide_cursor_vfx_mode = "ripple"
-"let g:neovide_remember_window_size = v:true
-let g:neovide_floating_opacity = 0.85
-let g:neovide_refresh_rate = 60
 
 set termguicolors
 set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
@@ -39,6 +35,7 @@ if exists('*plug#begin')
 	Plug 'neoclide/coc.nvim', {'branch': 'release'}
 	"Plug 'seblj/nvim-tabline'
 	Plug 'romgrk/barbar.nvim'
+	Plug 'dstein64/nvim-scrollview'
 	"Plug '~/vimfiles/plugged/after'
 	call plug#end()
 
@@ -168,6 +165,8 @@ if exists('*plug#begin')
 	nmap <leader>qf <Plug>(coc-fix-current)
 
 	command! -nargs=0 Format :call CocAction('format')
+
+	let g:scrollview_excluded_filetypes = ['nerdtree']
 endif
 
 if executable('ag')
