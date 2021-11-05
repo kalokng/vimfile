@@ -679,6 +679,7 @@ nnoremap <F12> :UndotreeToggle<CR>
 
 nnoremap <M-/> :Ack -Q "
 nnoremap <M-?> :AckAdd -Q "
+cnoremap <M-v> vimgrep /
 cnoremap <M-/> <SPACE><C-R>=fnameescape(getcwd())<CR>/
 cnoremap <M-?> <SPACE><C-R>=fnameescape(expand("%:p:h"))<CR>/
 cnoremap <M-5> <SPACE><C-R>=fnameescape(expand('%:p'))<CR>
