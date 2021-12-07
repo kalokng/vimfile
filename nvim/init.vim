@@ -495,6 +495,9 @@ cnoremap <C-V> <MiddleMouse>
 vnoremap <C-V> "+gp
 nnoremap <silent> <C-C> "+y$
 vnoremap <silent> <C-C> "+y
+if exists('g:vscode')
+	vunmap <C-V>
+endif
 
 nnoremap <silent> Y y$
 nnoremap <silent> y% :let @+=expand('%:p')<CR>:echo "copied '".@+."'"<CR>
