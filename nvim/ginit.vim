@@ -1,8 +1,8 @@
 if exists(':GuiFont')
 	"nvim-qt
 	GuiFont! JetBrainsMono\ NF:h9
-	GuiRenderLigatures 1
 	GuiTabline 0
+	sil! GuiRenderLigatures 1
 elseif exists('g:fvim_loaded')
 	"fvim
 	set guifont=JetBrains\ Mono:h10
