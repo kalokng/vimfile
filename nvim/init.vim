@@ -7,6 +7,11 @@ set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
 set shada="NONE"
 "set guioptions=egrL
 
+function! Cond(cond, ...)
+	let opts = get(a:000, 0, {})
+	return a:cond ? opts : extend(opts, { 'on': [], 'for': [] })
+endfunction
+
 sil! call plug#begin()
 if exists('*plug#begin')
 	Plug 'tpope/vim-sensible'
@@ -32,7 +37,7 @@ if exists('*plug#begin')
 	Plug 'preservim/nerdtree'
 	Plug 'ryanoasis/vim-devicons'
 	Plug 'tpope/vim-fugitive'
-	Plug 'neoclide/coc.nvim', {'branch': 'release'}
+	Plug 'neoclide/coc.nvim', Cond(!exists('g:vscode'), {'branch': 'release'})
 	"Plug 'seblj/nvim-tabline'
 	Plug 'romgrk/barbar.nvim'
 	Plug 'dstein64/nvim-scrollview'
@@ -491,13 +496,12 @@ endfunction
 map <MiddleMouse> <NOP>
 inoremap <C-V> <C-G>u<C-R>+
 nnoremap <C-V> "+gp
-cnoremap <C-V> <MiddleMouse>
-vnoremap <C-V> "+gp
+if !exists('g:vscode')
+	cnoremap <C-V> <MiddleMouse>
+	vnoremap <C-V> "+gp
+endif
 nnoremap <silent> <C-C> "+y$
 vnoremap <silent> <C-C> "+y
-if exists('g:vscode')
-	vunmap <C-V>
-endif
 
 nnoremap <silent> Y y$
 nnoremap <silent> y% :let @+=expand('%:p')<CR>:echo "copied '".@+."'"<CR>
