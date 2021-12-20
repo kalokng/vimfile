@@ -32,6 +32,8 @@ theme = {
 
 vim.g.bufferline = {
   icon_pinned = '車',
+  icon_separator_active = '',
+  icon_separator_inactive = '|',
 }
 
 vim.api.nvim_command('hi BufferCurrent guibg='..theme.teal) 
