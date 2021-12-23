@@ -6,6 +6,8 @@ if exists(':GuiFont')
 	sil! GuiRenderLigatures 1
 	nnoremap <silent> <C-=> :let fontsize+=1 \| exec "GuiFont! JetBrainsMono\ NF:h".fontsize<CR>
 	nnoremap <silent> <C--> :let fontsize-=1 \| exec "GuiFont! JetBrainsMono\ NF:h".fontsize<CR>
+	nmap <silent> <C-ScrollWheelUp> <C-=>
+	nmap <silent> <C-ScrollWheelDown> <C-->
 elseif exists('g:fvim_loaded')
 	"fvim
 	set guifont=JetBrains\ Mono:h10
@@ -24,6 +26,8 @@ elseif exists(':GonvimVersion')
 	let fontsize=9
 	nnoremap <silent> <C-=> :let fontsize+=1 \| exec "set guifont=JetBrainsMono\ NF:h".fontsize<CR>
 	nnoremap <silent> <C--> :let fontsize-=1 \| exec "set guifont=JetBrainsMono\ NF:h".fontsize<CR>
+	nmap <silent> <C-ScrollWheelUp> <C-=>
+	nmap <silent> <C-ScrollWheelDown> <C-->
 else
 	"neovide
 	set guifont=JetBrainsMono\ NF:h9
@@ -32,6 +36,8 @@ else
 	let fontsize=9
 	nnoremap <silent> <C-=> :let fontsize+=1 \| exec "set guifont=JetBrainsMono\ NF:h".fontsize<CR>
 	nnoremap <silent> <C--> :let fontsize-=1 \| exec "set guifont=JetBrainsMono\ NF:h".fontsize<CR>
+	nmap <silent> <C-ScrollWheelUp> <C-=>
+	nmap <silent> <C-ScrollWheelDown> <C-->
 endif
 "set guifont="JetBrains Mono NF:h11"
 "set guifont=JetBrains\ Mono:h10
