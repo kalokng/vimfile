@@ -355,7 +355,7 @@ function! ReplaceCmd(cmdline, pos, pattern)
 	return matchstr(a:cmdline[0:a:pos-2],'^.\{-}\ze'.a:pattern.'$').a:cmdline[a:pos-1:-1]
 endfunction
 
-command! -nargs=? -bang -complete=file W :call <SID>SaveF("<args>","<bang>")
+command! -nargs=? -bang -complete=file W :call <SID>SaveF('<args>','<bang>')
 
 function! <SID>IsRoot(name)
 	if a:name[0] == '/' || a:name[0] =='\'
@@ -372,6 +372,10 @@ function! <SID>ExtName(name)
 	let l:path = a:name
 	if len(a:name) == 0
 		let l:path = expand('%:p')
+		let l:idx = stridx(l:path, '\\')
+		if l:idx >= 0
+			let l:path = l:path[l:idx+1:]
+		endif
 	endif
 	"return [a:name,"",a:name]
 	if !<SID>IsRoot(l:path)
@@ -407,8 +411,8 @@ function! <SID>SaveF(name,bang)
 	let dir = p[1]
 	let name = p[2]
 
+	"Try to create the folder
 	if !filewritable(dir) && !filereadable(dir) && !isdirectory(dir) && !isdirectory(path)
-		"Try to create the folder
 		call <SID>Warn('"Directory '.dir.'" not exists, press Y to create.')
 		let l:reply = nr2char(getchar())
 		if !<SID>OK(l:reply)
@@ -489,8 +493,8 @@ function! <SID>SaveF(name,bang)
 		silent! exe "f ".path
 		silent! exe "e! ".path
 		silent! exe "b ".l:nextfile
-		silent! exe "b ".l:curfile
 	endif
+	silent! exe "e! ".path
 endfunction
 
 map <MiddleMouse> <NOP>
