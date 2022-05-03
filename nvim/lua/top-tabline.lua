@@ -27,7 +27,7 @@ theme = {
   teal = '#005131',
   dark = '#0e121a',
   darkred = '#401020',
-  grey = '#222c40',
+  grey = '#364666',
 }
 
 vim.g.bufferline = {

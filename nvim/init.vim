@@ -357,15 +357,24 @@ endfunction
 
 command! -nargs=? -bang -complete=file W :call <SID>SaveF('<args>','<bang>')
 
-function! <SID>IsRoot(name)
-	if a:name[0] == '/' || a:name[0] =='\'
-		return 1
-	endif
+function! <SID>ToAbsPath(name)
 	let l:win = has("win16")||has("win32")||has("win64")
-	if ! l:win
-		return 0
+	if a:name[0] == '/' || a:name[0] =='\'
+		if l:win
+			let l:drive = stridx(getcwd(), ":")
+			if l:drive > 0
+				return getcwd()[:stridx(getcwd(), ":")] . a:name
+			endif
+		endif
+		return a:name
 	endif
-	return match(a:name, ':[/\\]') >= 0
+	if ! l:win
+		return fnamemodify(a:name, ":p")
+	endif
+	if match(a:name, ':[/\\]') >= 0
+		return a:name
+	endif
+	return fnamemodify(a:name, ":p")
 endfunction
 
 function! <SID>ExtName(name)
@@ -373,15 +382,12 @@ function! <SID>ExtName(name)
 	if len(a:name) == 0
 		let l:path = expand('%:p')
 		let l:idx = stridx(l:path, '\\')
-		if l:idx >= 0
+		if l:idx > 0
 			let l:path = l:path[l:idx+1:]
 		endif
 	endif
 	"return [a:name,"",a:name]
-	if !<SID>IsRoot(l:path)
-		let l:path = getcwd()."/".l:path
-	endif
-	let l:path = expand(l:path)
+	let l:path = <SID>ToAbsPath(l:path)
 	let idx = match(l:path, '[^/\\]*$')
 	if idx < 0
 		return [l:path,"",l:path]
@@ -405,7 +411,7 @@ function! <SID>OK(string)
 	return "y"==a:string || "Y"==a:string
 endfunction
 
-function! <SID>SaveF(name,bang)
+function! <SID>SaveF(name, bang)
 	let p = <SID>ExtName(a:name)
 	let path = p[0]
 	let dir = p[1]
@@ -426,11 +432,18 @@ function! <SID>SaveF(name,bang)
 		endif
 	endif
 
+	let cwd = getcwd()
+	call chdir(expand("%:p:h"))
+
+	if expand("%") != l:path && expand("%") != l:name
+		silent! exe "f ".path
+	endif
+
 	let v:errmsg = ""
 	let bang = a:bang
 	while 1
 		try
-			exe "w".bang." " . path
+			exe "w".bang
 		catch /\<\%(E13\|E45\|E505\)\>/
 			"File exists | read only
 			if exists("l:E13")
@@ -494,7 +507,7 @@ function! <SID>SaveF(name,bang)
 		silent! exe "e! ".path
 		silent! exe "b ".l:nextfile
 	endif
-	silent! exe "e! ".path
+	call chdir(l:cwd)
 endfunction
 
 map <MiddleMouse> <NOP>
@@ -688,8 +701,13 @@ endfunction
 
 nnoremap <F12> :UndotreeToggle<CR>
 
-nnoremap <M-/> :Ack -Q "
-nnoremap <M-?> :AckAdd -Q "
+if has("persistent_undo")
+	set undodir=~/.undodir/
+	set undofile
+endif
+
+nnoremap <M-/> :Rg "
+nnoremap <M-?> :Ack -Q "
 cnoremap <M-v> vimgrep /
 cnoremap <M-/> <SPACE><C-R>=fnameescape(getcwd())<CR>/
 cnoremap <M-?> <SPACE><C-R>=fnameescape(expand("%:p:h"))<CR>/
@@ -1100,6 +1118,10 @@ function! AliasEnc()
 	endif
 	return lenc
 endfunction
+
+if exists('g:vscode')
+	lua require('vscode')
+endif
 
 "lua require('top-bufferline')
 lua require('top-tabline')

@@ -221,6 +221,21 @@ gls.left[3] = {
 }
 
 gls.left[4] = {
+  FileDir = {
+    provider =  function()
+		local path = cache_expand('%:p')
+		local name = cache_expand('%:p:t')
+		if vim.fn.winwidth(0) < vim.fn.strdisplaywidth(path)+10 then
+			return ''
+		end
+		return string.sub(path,0,vim.fn.strridx(path, name))
+	end,
+    condition = condition.buffer_not_empty,
+    highlight = {color_gray,colors.bg}
+  }
+}
+
+gls.left[5] = {
   FileName = {
     provider = 'FileName',
     condition = condition.buffer_not_empty,
@@ -230,14 +245,14 @@ gls.left[4] = {
   }
 }
 
-gls.left[5] = {
+gls.left[6] = {
   PerCent = {
     provider = current_line_percent,
     highlight = {colors.fg,colors.darkblue,'bold'},
   }
 }
 
-gls.left[6] = {
+gls.left[7] = {
   LineInfo = {
     provider = line_column,
     separator = '',
@@ -247,7 +262,7 @@ gls.left[6] = {
   },
 }
 
-gls.left[7] = {
+gls.left[8] = {
   DiagnosticError = {
     provider = 'DiagnosticError',
     icon = '  ',
@@ -255,7 +270,7 @@ gls.left[7] = {
   }
 }
 
-gls.left[8] = {
+gls.left[9] = {
   DiagnosticWarn = {
     provider = 'DiagnosticWarn',
     icon = '  ',
@@ -263,7 +278,7 @@ gls.left[8] = {
   }
 }
 
-gls.left[9] = {
+gls.left[10] = {
   DiagnosticHint = {
     provider = 'DiagnosticHint',
     icon = '  ',
@@ -271,7 +286,7 @@ gls.left[9] = {
   }
 }
 
-gls.left[10] = {
+gls.left[11] = {
   DiagnosticInfo = {
     provider = 'DiagnosticInfo',
     icon = '  ',
@@ -346,6 +361,14 @@ gls.short_line_left[1] = {
 }
 
 gls.short_line_left[2] = {
+  FileSize = {
+	provider = cache_filesize,
+	condition = condition.buffer_not_empty,
+	highlight = {colors.fg,colors.bg}
+  }
+}
+
+gls.short_line_left[3] = {
   SFileDir = {
     provider =  function()
 		local path = cache_expand('%:p')
@@ -360,7 +383,7 @@ gls.short_line_left[2] = {
   }
 }
 
-gls.short_line_left[3] = {
+gls.short_line_left[4] = {
   SFileName = {
     provider = 'SFileName',
     condition = condition.buffer_not_empty,
@@ -370,14 +393,14 @@ gls.short_line_left[3] = {
   }
 }
 
-gls.short_line_left[4] = {
+gls.short_line_left[5] = {
   PerCent = {
     provider = current_line_percent,
     highlight = {colors.fg,colors.darkblue,'bold'},
   }
 }
 
-gls.short_line_left[5] = {
+gls.short_line_left[6] = {
   LineInfo = {
     provider = line_column,
     separator = '',
