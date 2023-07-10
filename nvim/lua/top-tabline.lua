@@ -1,6 +1,12 @@
 local map = vim.api.nvim_set_keymap
 local opts = {noremap = true, silent = true}
 
+require'barbar'.setup {
+  auto_hide = false,
+  clickable = true,
+  icons = {current = {filetype = {custom_colors = true, enabled = true}}},
+}
+
 map('n', '<C-Tab>',     ':BufferNext<CR>',         opts)
 map('n', '<C-S-Tab>',   ':BufferPrevious<CR>',     opts)
 map('n', '<C-Right>',   ':BufferNext<CR>',         opts)
@@ -39,20 +45,17 @@ vim.g.bufferline = {
 vim.api.nvim_command('hi BufferCurrent guibg='..theme.teal) 
 vim.api.nvim_command('hi BufferCurrentMod guifg='..theme.orange..' guibg='..theme.teal) 
 vim.api.nvim_command('hi BufferCurrentSign guibg='..theme.teal) 
-vim.api.nvim_command('hi BufferCurrentIcon guibg='..theme.teal) 
 vim.api.nvim_command('hi BufferCurrentIndex guibg='..theme.teal) 
 vim.api.nvim_command('hi BufferCurrentTarget guibg='..theme.teal) 
 vim.api.nvim_command('hi BufferVisibleMod guifg='..theme.orange..' guibg='..theme.grey) 
 vim.api.nvim_command('hi BufferVisible guibg='..theme.grey) 
 vim.api.nvim_command('hi BufferVisibleSign guibg='..theme.grey) 
-vim.api.nvim_command('hi BufferVisibleIcon guibg='..theme.grey) 
 vim.api.nvim_command('hi BufferVisibleIndex guibg='..theme.grey) 
 vim.api.nvim_command('hi BufferVisibleTarget guibg='..theme.grey) 
 
 vim.api.nvim_command('hi BufferInactive guifg=#bbc2cf guibg='..theme.dark) 
 vim.api.nvim_command('hi BufferInactiveMod guifg='..theme.orange..' guibg='..theme.dark) 
 vim.api.nvim_command('hi BufferInactiveSign guifg=#bbc2cf guibg='..theme.dark) 
-vim.api.nvim_command('hi BufferInactiveIcon guifg=#bbc2cf guibg='..theme.dark) 
 vim.api.nvim_command('hi BufferInactiveIndex guifg=#bbc2cf guibg='..theme.dark) 
 vim.api.nvim_command('hi BufferInactiveTarget guifg=#bbc2cf guibg='..theme.dark) 
 vim.api.nvim_command('hi BufferTabpageFill guifg=#bbc2cf guibg='..theme.dark) 

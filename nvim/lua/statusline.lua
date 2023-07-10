@@ -9,6 +9,7 @@ colors.fg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "bg#", "gui")
 colors.bg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "fg#", "gui")
 local color_darkred = '#804040'
 local color_darkgreen = '#98be55'
+local color_lightgray = '#c0c0c0'
 local color_gray = '#808080'
 local api = vim.api
 --colors.bg = '#dfdebd'
@@ -231,7 +232,7 @@ gls.left[4] = {
 		return string.sub(path,0,vim.fn.strridx(path, name))
 	end,
     condition = condition.buffer_not_empty,
-    highlight = {color_gray,colors.bg}
+    highlight = {color_lightgray,colors.bg,'bold'}
   }
 }
 

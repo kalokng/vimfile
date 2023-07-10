@@ -12,6 +12,8 @@ function! Cond(cond, ...)
 	return a:cond ? opts : extend(opts, { 'on': [], 'for': [] })
 endfunction
 
+let g:barbar_auto_setup = v:false
+
 sil! call plug#begin()
 if exists('*plug#begin')
 	Plug 'tpope/vim-sensible'
@@ -49,7 +51,9 @@ if exists('*plug#begin')
 	let g:ctrlp_switch_buffer = 't'
 
 	let $FZF_DEFAULT_OPTS = '--bind ctrl-a:select-all+accept'
-	let g:fzf_preview_window = ['up:40%:hidden', 'ctrl-\']
+	"let g:fzf_preview_bash = 'C:\Program Files\Git\bin\bash.exe'
+	"let $FZF_PREVIEW_COMMAND = g:fzf_preview_bash
+	"let g:fzf_preview_window = ['up:40%:hidden', 'ctrl-\']
 	function! s:get_git_root()
 		let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
 		if v:shell_error
@@ -63,24 +67,29 @@ if exists('*plug#begin')
 
 	function! s:searchGit(arg)
 		let root = s:get_git_root()
-		let dict = fzf#vim#with_preview({'dir': root})
-		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -- ".shellescape(a:arg)." ".root, 1, l:dict, 1)
+		let spec = {'options': [], 'dir': root}
+		let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -- ".shellescape(a:arg)." ".root, 1, l:spec, 1)
 	endfunction
 
-	function! s:searchGitAll(arg)
+	function! s:searchGitAll(query, fullscreen)
 		let root = s:get_git_root()
-		let dict = fzf#vim#with_preview({'dir': root})
-		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -uu -- ".shellescape(a:arg)." ".root, 1, l:dict, 1)
-		"call fzf#vim#grep("ag --column --nogroup --color -- ".fzf#shellescape(a:arg)." ".root, 1, l:dict, 1)
+		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case -- %s || true'
+		let initial_command = printf(command_fmt, shellescape(a:query))
+		let reload_command = printf(command_fmt, '{q}')
+		let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command], 'dir': root}
+		let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
 	endfunction
 
 	cnoremap <C-G><C-G> <C-R>=<SID>get_git_root()<CR>
+	cnoremap <C-G>% <C-R>=expand("%:p")<CR>
 	nnoremap <Space>f :FZF<space>
 	nnoremap <Space>gf :GFiles!<CR>
-	nnoremap <Space>gw :call <SID>searchGit(expand("<cword>"))<CR>
-	nnoremap <Space>ga :call <SID>searchGit("")<CR>
-	nnoremap <Space>w :call <SID>searchGitAll(expand("<cword>"))<CR>
-	nnoremap <Space>a :call <SID>searchGitAll('^(?=.)')<CR>
+	nnoremap <Space>gw :call <SID>searchGit('\b'.expand("<cword>").'\b')<CR>
+	nnoremap <Space>ga :call <SID>searchGitAll("", 1)<CR>
+	nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
+	nnoremap <Space>a :call <SID>searchGitAll('', 0)<CR>
 	"nnoremap <space>w :Ag! <C-R><C-W><CR>
 	"nnoremap <space>a :Ag!<CR>
 
@@ -118,18 +127,18 @@ if exists('*plug#begin')
 
 	let NERDTreeCustomOpenArgs = {'file':{'reuse':'all', 'where': 'p', 'keepopen': 0}, 'dir': {}}
 
-	" coc.nvim setting
-	set signcolumn=number
-	inoremap <silent><expr> <TAB>
-				\ pumvisible() ? "\<C-n>" :
-				\ <SID>check_back_space() ? "\<TAB>" :
-				\ coc#refresh()
-	inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
-
-	function! s:check_back_space() abort
+	function! Check_back_space() abort
 		let col = col('.') - 1
 		return !col || getline('.')[col - 1] =~# '\s'
 	endfunction
+
+	" coc.nvim setting
+	set signcolumn=number
+	inoremap <silent><expr> <TAB>
+				\ coc#pum#visible() ? coc#pum#next(1) : 
+				\ Check_back_space() ? "\<TAB>" :
+				\ coc#refresh()
+	inoremap <expr><S-TAB> pumvisible() ? coc#pum#prev(1) : ""
 
 	inoremap <silent><expr> <c-space> coc#refresh()
 	inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
@@ -176,6 +185,29 @@ endif
 
 if executable('ag')
 	let g:ackprg = 'ag --vimgrep'
+endif
+
+if executable('rg')
+	function! RipgrepOpt(query, fullscreen)
+		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case %s || true'
+		let initial_command = printf(command_fmt, a:query)
+		let spec = {'options': []}
+		let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
+	endfunction
+
+	command! -nargs=* -bang -complete=file Fg call RipgrepOpt(<q-args>, <bang>1)
+
+	function! RipgrepFzf(query, fullscreen)
+		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case -- %s || true'
+		let initial_command = printf(command_fmt, shellescape(a:query))
+		let reload_command = printf(command_fmt, '{q}')
+		let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command]}
+		let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
+	endfunction
+
+	command! -nargs=* -bang RG call RipgrepFzf(<q-args>, <bang>0)
 endif
 
 let g:seoul256_background = 234
@@ -706,7 +738,9 @@ if has("persistent_undo")
 	set undofile
 endif
 
-nnoremap <M-/> :Rg "
+command! Bash :call <SID>rgInGit()<CR>
+
+nnoremap <M-/> :Fg<space>
 nnoremap <M-?> :Ack -Q "
 cnoremap <M-v> vimgrep /
 cnoremap <M-/> <SPACE><C-R>=fnameescape(getcwd())<CR>/
@@ -1120,10 +1154,11 @@ function! AliasEnc()
 endfunction
 
 if exists('g:vscode')
+	set clipboard+=win32yank
 	lua require('vscode')
 endif
 
 "lua require('top-bufferline')
-lua require('top-tabline')
 lua require('statusline')
 lua require('file-icons')
+lua require('top-tabline')

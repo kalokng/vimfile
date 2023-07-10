@@ -1,6 +1,7 @@
 {
 	"java.format.enabled": true,
 	"json.format.enable": true,
+	"suggest.noselect": true,
 	"coc.preferences.formatOnSaveFiletypes": [
 		"*"
 	]

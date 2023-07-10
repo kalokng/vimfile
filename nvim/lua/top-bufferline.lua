@@ -4,10 +4,10 @@ local bar_fg = "#565c64"
 local activeBuffer_fg = "#c8ccd4"
 local selected_bg = "#0e121a"
 
-require "bufferline".setup {
+require "barbar".setup {
   options = {
     offsets = {{filetype = "NvimTree", text = "Explorer"}},
-    buffer_close_icon = "",
+    buffer_close_icon = "*",
     modified_icon = "",
     close_icon = " ",
     left_trunc_marker = "",
