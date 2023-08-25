@@ -1,5 +1,5 @@
-	set guifont=JetBrainsMono\ NF:h9
-if exists(':GuiFont')
+if exists('g:vscode')
+elseif exists(':GuiFont')
 	"nvim-qt
 	let fontsize=9
 	GuiFont! JetBrainsMono\ NF:h9
@@ -31,14 +31,16 @@ elseif exists(':GonvimVersion')
 	nmap <silent> <C-ScrollWheelDown> <C-->
 elseif exists('g:neovide')
 	"neovide
-	set guifont=JetBrainsMono\ NF:h9
+	set title
+	let fontsize=9
+	let fontname="JetBrainsMono\ Nerd\ Font:h"
+	let &guifont=fontname.fontsize
 				"\Noto\ Sans\ CJK\ TC:h9
 	let g:neovide_cursor_vfx_mode = "ripple"
 	let g:neovide_remember_window_size = v:false
-	let fontsize=9
-	nnoremap <silent> <M-=> :let fontsize=min([fontsize+1,64]) \| exec "set guifont=JetBrainsMono\\ NF:h".fontsize<CR>
-	nnoremap <silent> <M--> :let fontsize=max([fontsize-1,2]) \| exec "set guifont=JetBrainsMono\\ NF:h".fontsize<CR>
-	nnoremap <silent> <M-0> :let fontsize=9 \| exec "set guifont=JetBrainsMono\\ NF:h".fontsize<CR>
+	nnoremap <silent> <M-=> :let fontsize=min([fontsize+1,64]) \| let &guifont=fontname.fontsize<CR>
+	nnoremap <silent> <M--> :let fontsize=max([fontsize-1,2]) \| let &guifont=fontname.fontsize<CR>
+	nnoremap <silent> <M-0> :let fontsize=9 \| let &guifont=fontname.fontsize<CR>
 	nmap <silent> <C-ScrollWheelUp> <M-=>
 	nmap <silent> <C-ScrollWheelDown> <M-->
 	nnoremap <silent> <M-[> :let g:neovide_fullscreen=!g:neovide_fullscreen<CR>
