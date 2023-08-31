@@ -30,20 +30,22 @@ if exists('*plug#begin')
 	Plug 'PProvost/vim-ps1', { 'for': 'ps1' }
 	Plug 'inkarkat/vim-ingo-library'
 	Plug 'inkarkat/vim-mark'
-	Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-	Plug 'junegunn/fzf.vim'
-	Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
-	Plug 'kyazdani42/nvim-web-devicons'
-	"Plug 'akinsho/nvim-bufferline.lua'
-	Plug 'mileszs/ack.vim'
-	Plug 'preservim/nerdtree'
-	Plug 'ryanoasis/vim-devicons'
-	Plug 'tpope/vim-fugitive'
-	Plug 'neoclide/coc.nvim', Cond(!exists('g:vscode'), {'branch': 'release'})
-	"Plug 'seblj/nvim-tabline'
-	Plug 'romgrk/barbar.nvim'
-	Plug 'dstein64/nvim-scrollview'
-	"Plug '~/vimfiles/plugged/after'
+	if !exists('g:vscode')
+		Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+		Plug 'junegunn/fzf.vim'
+		Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
+		Plug 'kyazdani42/nvim-web-devicons'
+		"Plug 'akinsho/nvim-bufferline.lua'
+		Plug 'mileszs/ack.vim'
+		Plug 'preservim/nerdtree'
+		Plug 'ryanoasis/vim-devicons'
+		Plug 'tpope/vim-fugitive'
+		Plug 'neoclide/coc.nvim', Cond(!exists('g:vscode'), {'branch': 'release'})
+		"Plug 'seblj/nvim-tabline'
+		Plug 'romgrk/barbar.nvim'
+		Plug 'dstein64/nvim-scrollview'
+		"Plug '~/vimfiles/plugged/after'
+	endif
 	call plug#end()
 
 	let g:ctrlp_cmd = 'CtrlPMRU'
@@ -134,51 +136,53 @@ if exists('*plug#begin')
 
 	" coc.nvim setting
 	set signcolumn=number
-	inoremap <silent><expr> <TAB>
-				\ coc#pum#visible() ? coc#pum#next(1) : 
-				\ Check_back_space() ? "\<TAB>" :
-				\ coc#refresh()
-	inoremap <expr><S-TAB> pumvisible() ? coc#pum#prev(1) : ""
+	if !exists('g:vscode')
+		inoremap <silent><expr> <TAB>
+					\ coc#pum#visible() ? coc#pum#next(1) : 
+					\ Check_back_space() ? "\<TAB>" :
+					\ coc#refresh()
+		inoremap <expr><S-TAB> pumvisible() ? coc#pum#prev(1) : ""
 
-	inoremap <silent><expr> <c-space> coc#refresh()
-	inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
-				\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+		inoremap <silent><expr> <c-space> coc#refresh()
+		inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
+					\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
-	nnoremap <silent> gd <Plug>(coc-definition)
-	nnoremap <silent> gy <Plug>(coc-type-definition)
-	nnoremap <silent> gi <Plug>(coc-implementation)
-	nnoremap <silent> gr <Plug>(coc-references)
+		nnoremap <silent> gd <Plug>(coc-definition)
+		nnoremap <silent> gy <Plug>(coc-type-definition)
+		nnoremap <silent> gi <Plug>(coc-implementation)
+		nnoremap <silent> gr <Plug>(coc-references)
 
-	nnoremap <silent> K :call <SID>show_documentation()<CR>
+		nnoremap <silent> K :call <SID>show_documentation()<CR>
 
-	function! s:show_documentation()
-		if (index(['vim','help'], &filetype) >= 0)
-			execute 'h '.expand('<cword>')
-		elseif (coc#rpc#ready())
-			call CocActionAsync('doHover')
-		else
-			execute '!' . &keywordprg . " " . expand('<cword>')
-		endif
-	endfunction
+		function! s:show_documentation()
+			if (index(['vim','help'], &filetype) >= 0)
+				execute 'h '.expand('<cword>')
+			elseif (coc#rpc#ready())
+				call CocActionAsync('doHover')
+			else
+				execute '!' . &keywordprg . " " . expand('<cword>')
+			endif
+		endfunction
 
-	nnoremap <leader>rn <Plug>(coc-rename)
+		nnoremap <leader>rn <Plug>(coc-rename)
 
-	xmap <leader>f <Plug>(coc-format-selected)
-	nmap <leader>f <Plug>(coc-format-selected)
+		xmap <leader>f <Plug>(coc-format-selected)
+		nmap <leader>f <Plug>(coc-format-selected)
 
-	augroup mycocgroup
-		autocmd!
-		autocmd FileType typescript,java,json setl formatexpr=CocAction('formatSelected')
-		autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
-	augroup end
+		augroup mycocgroup
+			autocmd!
+			autocmd FileType typescript,java,json setl formatexpr=CocAction('formatSelected')
+			autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
+		augroup end
 
-	xmap <leader>a <Plug>(coc-codeaction-selected)
-	nmap <leader>a <Plug>(coc-codeaction-selected)
+		xmap <leader>a <Plug>(coc-codeaction-selected)
+		nmap <leader>a <Plug>(coc-codeaction-selected)
 
-	nmap <leader>ac <Plug>(coc-codeaction)
-	nmap <leader>qf <Plug>(coc-fix-current)
+		nmap <leader>ac <Plug>(coc-codeaction)
+		nmap <leader>qf <Plug>(coc-fix-current)
 
-	command! -nargs=0 Format :call CocAction('format')
+		command! -nargs=0 Format :call CocAction('format')
+	endif
 
 	let g:scrollview_excluded_filetypes = ['nerdtree']
 endif
@@ -1013,6 +1017,9 @@ set spellsuggest=double
 :dig >^ 11173
 :dig <V 11174
 :dig >V 11175
+:dig [] 9744
+:dig [v 9745
+:dig [x 9746
 
 set noshowmode
 "set statusline=%(%#ModeMsg#%{GetMode()}%*\ %)%(\ %1*%r%*\ %)%(%Y\|%)%(%M\|%)\ %{expand('%')==expand('%:t')?'':'…/'}%t%<%{GetCacheFTimeStr()}%=%k[0x%02B]\ [%{GetFF().','.AliasEnc().','.AliasEnc('f')}]%{(&scb==1?'B':'').(&wrap==1?'W':'')}\ %-5.(%l,%c%V%)\ %P

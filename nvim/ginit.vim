@@ -31,6 +31,7 @@ elseif exists(':GonvimVersion')
 	nmap <silent> <C-ScrollWheelDown> <C-->
 elseif exists('g:neovide')
 	"neovide
+	let g:neovide_refresh_rate_idle = 30
 	set title
 	let fontsize=9
 	let fontname="JetBrainsMono\ Nerd\ Font:h"
