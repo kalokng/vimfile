@@ -2,7 +2,7 @@ local map = vim.api.nvim_set_keymap
 local opts = {noremap = true, silent = true}
 
 require'barbar'.setup {
-  auto_hide = false,
+  auto_hide = true,
   clickable = true,
   icons = {current = {filetype = {custom_colors = true, enabled = true}}},
 }

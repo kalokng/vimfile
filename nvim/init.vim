@@ -31,6 +31,7 @@ if exists('*plug#begin')
 	Plug 'inkarkat/vim-ingo-library'
 	Plug 'inkarkat/vim-mark'
 	if !exists('g:vscode')
+		Plug 'sindrets/diffview.nvim'
 		Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 		Plug 'junegunn/fzf.vim'
 		Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
@@ -39,7 +40,6 @@ if exists('*plug#begin')
 		Plug 'mileszs/ack.vim'
 		Plug 'preservim/nerdtree'
 		Plug 'ryanoasis/vim-devicons'
-		Plug 'tpope/vim-fugitive'
 		Plug 'neoclide/coc.nvim', Cond(!exists('g:vscode'), {'branch': 'release'})
 		"Plug 'seblj/nvim-tabline'
 		Plug 'romgrk/barbar.nvim'

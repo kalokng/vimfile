@@ -748,6 +748,8 @@ set autochdir
 "	"autocmd InsertEnter * hi CursorLine guibg=LightGray
 "augroup END
 
+color industry
+
 if &term =~ "^xterm\\|rxvt\\|win32"
 	let &t_EI="\e[1 q"
 	let &t_SI="\e[5 q"
