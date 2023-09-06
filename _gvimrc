@@ -11,7 +11,7 @@ source $VIMRUNTIME/menu.vim
 set renderoptions=type:directx,renmode:4
 set linespace=2
 set guifont=
-	\JetBrains_Mono:h9:cANSI:qDRAFT,
+	\JetBrainsMono_NFM:h9:cANSI:qDRAFT,
 	\D2Coding_ligature:h8:cANSI:qDRAFT,
 	\InputMonoCondensed_Light:h11:cANSI:qDRAFT,
 	\InputMono_Light:h12:w6:cANSI:qDRAFT,
