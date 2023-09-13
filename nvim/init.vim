@@ -1161,11 +1161,11 @@ function! AliasEnc()
 endfunction
 
 if exists('g:vscode')
-	set clipboard+=win32yank
+	"set clipboard+=win32yank
 	lua require('vscode')
+else
+	"lua require('top-bufferline')
+	lua require('statusline')
+	lua require('file-icons')
+	lua require('top-tabline')
 endif
-
-"lua require('top-bufferline')
-lua require('statusline')
-lua require('file-icons')
-lua require('top-tabline')
