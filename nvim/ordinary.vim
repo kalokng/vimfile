@@ -84,6 +84,7 @@ if exists('*plug#begin')
 
 	cnoremap <C-G><C-G> <C-R>=<SID>get_git_root()<CR>
 	cnoremap <C-G>% <C-R>=expand("%:p")<CR>
+	cnoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
 	nnoremap <Space>f :FZF<space>
 	nnoremap <Space>gf :GFiles!<CR>
 	nnoremap <Space>gw :call <SID>searchGit('\b'.expand("<cword>").'\b')<CR>
@@ -117,10 +118,10 @@ if exists('*plug#begin')
 	vmap <Enter> <Plug>(LiveEasyAlign)
 
 	nmap <Space>r <Plug>MarkRegex
-	"nmap <Leader>m <Plug>MarkSet
-	"vmap <Leader>m <Plug>MarkSet
-	"nmap <Leader>M <Plug>MarkToggle
-	"nmap <Leader>N <Plug>MarkAllClear
+	nmap <Space>m <Plug>MarkSet
+	vmap <Space>m <Plug>MarkSet
+	nmap <Space>M <Plug>MarkToggle
+	nmap <Space>N <Plug>MarkAllClear
 	let g:mwDefaultHighlightingPalette = 'extended'
 	let g:mwMaxMatchPriority = -10
 	let g:mwDirectGroupJumpMappingNum = 0
