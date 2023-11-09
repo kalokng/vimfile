@@ -53,7 +53,10 @@ if exists('*plug#begin')
 	let $FZF_DEFAULT_OPTS = '--bind ctrl-a:select-all+accept'
 	"let g:fzf_preview_bash = 'C:\Program Files\Git\bin\bash.exe'
 	"let $FZF_PREVIEW_COMMAND = g:fzf_preview_bash
-	"let g:fzf_preview_window = ['up:40%:hidden', 'ctrl-\']
+	"let g:fzf_preview_window = ['hidden,right,50%', 'ctrl-\']
+	if has('windows')
+		let g:fzf_preview_window = []
+	endif
 	function! s:get_git_root()
 		let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
 		if v:shell_error
@@ -65,10 +68,21 @@ if exists('*plug#begin')
 		return root
 	endfunction
 
+	function! s:searchGitFile()
+		let root = s:get_git_root()
+		let spec = {'options': [], 'dir': root}
+		if !has('windows')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		endif
+		call fzf#vim#gitfiles("", spec, 1)
+	endfunction
+
 	function! s:searchGit(arg)
 		let root = s:get_git_root()
 		let spec = {'options': [], 'dir': root}
-		let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		if !has('windows')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		endif
 		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -- ".shellescape(a:arg)." ".root, 1, l:spec, 1)
 	endfunction
 
@@ -78,7 +92,9 @@ if exists('*plug#begin')
 		let initial_command = printf(command_fmt, shellescape(a:query))
 		let reload_command = printf(command_fmt, '{q}')
 		let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command], 'dir': root}
-		let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		if !has('windows')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		endif
 		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
 	endfunction
 
@@ -86,7 +102,7 @@ if exists('*plug#begin')
 	cnoremap <C-G>% <C-R>=expand("%:p")<CR>
 	cnoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
 	nnoremap <Space>f :FZF<space>
-	nnoremap <Space>gf :GFiles!<CR>
+	nnoremap <Space>gf :call <SID>searchGitFile()<CR>
 	nnoremap <Space>gw :call <SID>searchGit('\b'.expand("<cword>").'\b')<CR>
 	nnoremap <Space>ga :call <SID>searchGitAll("", 1)<CR>
 	nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
@@ -193,7 +209,9 @@ if executable('rg')
 		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case %s || true'
 		let initial_command = printf(command_fmt, a:query)
 		let spec = {'options': []}
-		let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		if !has('windows')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		endif
 		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
 	endfunction
 
@@ -204,7 +222,9 @@ if executable('rg')
 		let initial_command = printf(command_fmt, shellescape(a:query))
 		let reload_command = printf(command_fmt, '{q}')
 		let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command]}
-		let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		if !has('windows')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		endif
 		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
 	endfunction
 
