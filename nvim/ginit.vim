@@ -45,6 +45,8 @@ elseif exists('g:neovide')
 	nmap <silent> <C-ScrollWheelUp> <M-=>
 	nmap <silent> <C-ScrollWheelDown> <M-->
 	nnoremap <silent> <M-[> :let g:neovide_fullscreen=!g:neovide_fullscreen<CR>
+	inoremap <kDel> .
+	cnoremap <kDel> .
 endif
 "set guifont="JetBrains Mono NF:h11"
 "set guifont=JetBrains\ Mono:h10

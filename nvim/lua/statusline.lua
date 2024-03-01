@@ -1,4 +1,5 @@
 local gl = require('galaxyline')
+local vcs = require('galaxyline.provider_vcs')
 local colors = require('galaxyline.theme').default
 local condition = require('galaxyline.condition')
 local fileinfo = require('galaxyline.provider_fileinfo')
@@ -304,6 +305,15 @@ gls.mid[1] = {
     condition = condition.hide_in_width,
     icon = ':',
     highlight = {colors.cyan,colors.bg,'bold'}
+  }
+}
+
+gls.mid[2] = {
+  GitBranch = {
+    provider = 'GitBranch',
+	condition = condition.check_git_workspace,
+	icon = ' ',
+	highlight = {colors.orange,colors.bg,'bold'}
   }
 }
 

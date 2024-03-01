@@ -44,6 +44,7 @@ if exists('*plug#begin')
 	Plug 'romgrk/barbar.nvim'
 	Plug 'dstein64/nvim-scrollview'
 	"Plug '~/vimfiles/plugged/after'
+	Plug 'github/copilot.vim'
 	call plug#end()
 
 	let g:ctrlp_cmd = 'CtrlPMRU'
@@ -51,12 +52,32 @@ if exists('*plug#begin')
 	let g:ctrlp_switch_buffer = 't'
 
 	let $FZF_DEFAULT_OPTS = '--bind ctrl-a:select-all+accept'
+	let g:fzf_vim = { }
+	let g:fzf_vim.listproc = { list -> fzf#vim#listproc#quickfix(sort(list, 'QfStrCmp')) }
+	"function! g:fzf_vim.listproc(list)
+	"	let g:x = a:list
+	"	call fzf#vim#listproc#quickfix(sort(a:list, 'QfStrCmp'))
+	"	"call setqflist(sort(getqflist(), 'QfStrCmp'))
+	"endfunction
+	function! QfStrCmp(e1, e2)
+		let [b1, b2] = [a:e1.filename, a:e2.filename]
+		if b1 !=# b2
+			return b1 <# b2 ? -1 : 1
+		endif
+		let [t1, t2] = [str2nr(a:e1.lnum), str2nr(a:e2.lnum)]
+		if t1 !=# t2
+			return t1 <# t2 ? -1 : 1
+		endif
+		let [c1, c2] = [str2nr(a:e1.col), str2nr(a:e2.col)]
+		return c1 <# c2 ? -1 : 1
+	endfunction
 	"let g:fzf_preview_bash = 'C:\Program Files\Git\bin\bash.exe'
 	"let $FZF_PREVIEW_COMMAND = g:fzf_preview_bash
 	"let g:fzf_preview_window = ['hidden,right,50%', 'ctrl-\']
 	if has('windows')
 		let g:fzf_preview_window = []
 	endif
+
 	function! s:get_git_root()
 		let root = split(system('git rev-parse --show-toplevel'), '\n')[0]
 		if v:shell_error
@@ -102,7 +123,8 @@ if exists('*plug#begin')
 	cnoremap <C-G>% <C-R>=expand("%:p")<CR>
 	cnoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
 	nnoremap <Space>f :FZF<space>
-	nnoremap <Space>gf :call <SID>searchGitFile()<CR>
+	nnoremap <Space>gf :FZF! <C-R>=<SID>get_git_root()<CR><CR>
+	nnoremap <Space>gF :call <SID>searchGitFile()<CR>
 	nnoremap <Space>gw :call <SID>searchGit('\b'.expand("<cword>").'\b')<CR>
 	nnoremap <Space>ga :call <SID>searchGitAll("", 1)<CR>
 	nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
