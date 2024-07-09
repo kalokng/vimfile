@@ -271,7 +271,8 @@ hi ColorColumn guibg=#800040
 hi WarningMsg guifg=black guibg=green
 hi NonText gui=bold guifg=#9F9FDF
 hi SpecialKey gui=bold guifg=#7FDF7F
-hi StatusLine guibg=#bbc2cf guifg=#303668
+"hi StatusLine guibg=#bbc2cf guifg=#303668
+hi StatusLine guibg=#000000 guifg=#303668
 
 hi goSameId gui=bold guifg=yellow
 
@@ -809,6 +810,7 @@ if has("windows")
 		let namemap["bash"]       = '"git bash"'
 		let namemap["cmd"]        = '"Command Prompt"'
 		let namemap["powershell"] = '"Windows PowerShell"'
+		let namemap["pwsh"]       = '"PowerShell"'
 		try
 			sil exec "!start wt -d ".expand("%:p:h")." -p ".namemap[a:name]
 		catch /\<E371\>/
@@ -818,6 +820,7 @@ if has("windows")
 	command! Bash :call <SID>startTerminal("bash")
 	command! Cmd :call <SID>startTerminal("cmd")
 	command! Powershell :call <SID>startTerminal("powershell")
+	command! Pwsh :call <SID>startTerminal("pwsh")
 	if has("win64")
 		command! Term :term C:\Windows\system32\bash.exe
 	elseif has("win32")
