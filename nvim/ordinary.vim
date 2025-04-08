@@ -45,6 +45,7 @@ if exists('*plug#begin')
 	Plug 'dstein64/nvim-scrollview'
 	"Plug '~/vimfiles/plugged/after'
 	Plug 'github/copilot.vim'
+	Plug 'tpope/vim-eunuch'
 	call plug#end()
 
 	let g:ctrlp_cmd = 'CtrlPMRU'
@@ -122,6 +123,7 @@ if exists('*plug#begin')
 	cnoremap <C-G><C-G> <C-R>=<SID>get_git_root()<CR>
 	cnoremap <C-G>% <C-R>=expand("%:p")<CR>
 	cnoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
+	inoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
 	nnoremap <Space>f :FZF<space>
 	nnoremap <Space>gf :FZF! <C-R>=<SID>get_git_root()<CR><CR>
 	nnoremap <Space>gF :call <SID>searchGitFile()<CR>
@@ -143,7 +145,8 @@ if exists('*plug#begin')
 	endfunction
 
 	nnoremap <silent><space>b :call <SID>fileTree()<CR>
-	nnoremap <S-F12> :NERDTreeToggle<CR>
+	nnoremap <S-F10> :NERDTreeToggle<CR>
+	nnoremap <F22> :NERDTreeToggle<CR>
 
 	let g:mwExclusionPredicates = []
 
@@ -272,7 +275,7 @@ hi WarningMsg guifg=black guibg=green
 hi NonText gui=bold guifg=#9F9FDF
 hi SpecialKey gui=bold guifg=#7FDF7F
 "hi StatusLine guibg=#bbc2cf guifg=#303668
-hi StatusLine guibg=#000000 guifg=#303668
+"hi StatusLine guibg=#000000 guifg=#303668
 
 hi goSameId gui=bold guifg=yellow
 
@@ -318,10 +321,13 @@ au filetype go nmap <buffer> <leader>i <Plug>(go-info)
 au filetype go nmap <buffer> <leader>t <Plug>(go-test)
 au filetype go nmap <buffer> <leader>f <Plug>(go-referrers)
 au filetype go nmap <buffer> <leader>l :GoSameIds<CR>
+au filetype go nmap <buffer> <S-F12> :GoCallers<CR>:ll<CR>
+au filetype go nmap <buffer> <F24> :GoCallers<CR>:ll<CR>
 let g:go_fmt_command = "goimports"
+let g:go_def_mode = "gopls"
 "let g:go_auto_type_info = 1
 let g:go_gocode_socket_type = 'tcp'
-let g:go_textobj_enabled = 0
+let g:go_textobj_enabled = 1
 let g:go_template_autocreate = 0
 let g:go_gocode_unimported_packages = 1
 let g:go_highlight_build_constraints = 1
@@ -334,6 +340,7 @@ set sw=4
 set showcmd
 set display=lastline
 set noea
+set noar
 
 "set noswf
 set directory^=$HOME/vimswap//
@@ -343,11 +350,11 @@ set directory^=$HOME/vimswap//
 "set nofen
 
 set nu
-set cin
+"set cin
 set ai
+set si
 set hidden
 "set virtualedit=block
-"set si
 "set showmatch
 "set cpoptions-=m
 
@@ -773,7 +780,7 @@ function! SelectionHighlight()
 	call setreg('/', word)
 endfunction
 
-nnoremap <F12> :UndotreeToggle<CR>
+nnoremap <F10> :UndotreeToggle<CR>
 
 if has("persistent_undo")
 	set undodir=~/.undodir/
@@ -791,6 +798,8 @@ cnoremap <M-5> <SPACE><C-R>=fnameescape(expand('%:p'))<CR>
 inoremap <M-/> <C-R>=fnameescape(expand("%:p:t"))<CR>
 nmap <silent> <M-n> :cn<CR>
 nmap <silent> <M-N> :cN<CR>
+nmap <silent> <M-m> :lne<CR>
+nmap <silent> <M-M> :lN<CR>
 nnoremap <space>l :lad expand('%').':'.line('.').':'.getline('.')<CR>
 cnoremap <C-R>^ <C-R>=fnameescape(expand('%:p:h'))<CR>/
 inoremap <C-R>^ <C-R>=expand('%:p:h')<CR>/

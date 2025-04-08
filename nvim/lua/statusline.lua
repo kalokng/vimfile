@@ -7,7 +7,8 @@ local gls = gl.section
 gl.short_line_list = {'NvimTree','vista','dbui','packer'}
 --hi StatusLine guifg=#bbc2cf guifg=#202328
 --colors.fg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "bg#", "gui")
-colors.bg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "fg#", "gui")
+--colors.bg = vim.fn.synIDattr(vim.fn.hlID("StatusLine"), "fg#", "gui")
+colors.bg='#2e3464'
 local color_darkred = '#804040'
 local color_darkgreen = '#98be55'
 local color_lightgray = '#c0c0c0'
@@ -49,7 +50,9 @@ local cterm_color = {
   ['!']  = cterms.red,t = cterms.red
 }
 --api.nvim_command('hi StatusLine cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
-api.nvim_command('hi StatusLine cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg..' guibg='..colors.bg..' guifg='..colors.fg)
+--api.nvim_command('hi StatusLine cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg..' guibg='..colors. bg..' guifg='..colors.fg)
+sl=string.format("hi StatusLine cterm=NONE ctermfg='%s' ctermbg='%s' guibg='%s' guifg='%s'", cterms.fg, cterms.bg, colors.bg, "#2e3464")
+api.nvim_command(sl)
 api.nvim_command('hi StatusLineNC cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
 api.nvim_command('hi StatusLineTermNC cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
 api.nvim_command('hi GalaxyViMode cterm=bold ctermfg=16')
