@@ -26,6 +26,7 @@ theme = {
   darkblue = '#081633',
   green = '#98be65',
   orange = '#FF8800',
+  white = '#FFFFFF',
   violet = '#a9a1e1',
   magenta = '#c678dd',
   blue = '#51afef',
@@ -42,13 +43,13 @@ vim.g.bufferline = {
   icon_separator_inactive = '|',
 }
 
-vim.api.nvim_command('hi BufferCurrent guibg='..theme.teal) 
+vim.api.nvim_command('hi BufferCurrent guibg='..theme.teal..' guifg='..theme.white) 
 vim.api.nvim_command('hi BufferCurrentMod guifg='..theme.orange..' guibg='..theme.teal) 
 vim.api.nvim_command('hi BufferCurrentSign guibg='..theme.teal) 
 vim.api.nvim_command('hi BufferCurrentIndex guibg='..theme.teal) 
 vim.api.nvim_command('hi BufferCurrentTarget guibg='..theme.teal) 
 vim.api.nvim_command('hi BufferVisibleMod guifg='..theme.orange..' guibg='..theme.grey) 
-vim.api.nvim_command('hi BufferVisible guibg='..theme.grey) 
+vim.api.nvim_command('hi BufferVisible guifg='..theme.white..' guibg='..theme.grey) 
 vim.api.nvim_command('hi BufferVisibleSign guibg='..theme.grey) 
 vim.api.nvim_command('hi BufferVisibleIndex guibg='..theme.grey) 
 vim.api.nvim_command('hi BufferVisibleTarget guibg='..theme.grey) 

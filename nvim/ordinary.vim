@@ -124,9 +124,9 @@ if exists('*plug#begin')
 	cnoremap <C-G>% <C-R>=expand("%:p")<CR>
 	cnoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
 	inoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
-	nnoremap <Space>f :FZF<space>
-	nnoremap <Space>gf :FZF! <C-R>=<SID>get_git_root()<CR><CR>
-	nnoremap <Space>gF :call <SID>searchGitFile()<CR>
+	nnoremap <Space>gf :FZF<space>
+	nnoremap <Space>f :FZF! <C-R>=<SID>get_git_root()<CR><CR>
+	nnoremap <Space>F :call <SID>searchGitFile()<CR>
 	nnoremap <Space>gw :call <SID>searchGit('\b'.expand("<cword>").'\b')<CR>
 	nnoremap <Space>ga :call <SID>searchGitAll("", 1)<CR>
 	nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
@@ -144,7 +144,13 @@ if exists('*plug#begin')
 		exec "NERDTreeFind ".l:file
 	endfunction
 
+	function! s:gitTree()
+		exec "NERDTreeToggle ".s:get_git_root()
+		exec "NERDTreeFind"
+	endfunction
+
 	nnoremap <silent><space>b :call <SID>fileTree()<CR>
+	nnoremap <silent><space>t :call <SID>gitTree()<CR>
 	nnoremap <S-F10> :NERDTreeToggle<CR>
 	nnoremap <F22> :NERDTreeToggle<CR>
 
