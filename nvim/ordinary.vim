@@ -4,7 +4,7 @@ set termguicolors
 set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
 			\,a:blinkwait1000-blinkoff500-blinkon500-Cursor/lCursor,
 			\sm:block-blinkwait175-blinkoff150-blinkon175
-set shada="NONE"
+"set shada="NONE"
 "set guioptions=egrL
 
 function! Cond(cond, ...)
@@ -16,8 +16,9 @@ let g:barbar_auto_setup = v:false
 
 sil! call plug#begin()
 if exists('*plug#begin')
+	Plug 'neovim/nvim-lspconfig'
 	Plug 'tpope/vim-sensible'
-	Plug 'fatih/vim-go', { 'tag': '*', 'do': ':GoInstallBinaries' }
+	"Plug 'fatih/vim-go', { 'tag': '*', 'do': ':GoInstallBinaries' }
 	Plug 'rust-lang/rust.vim'
 	"Plug 'govim/govim'
 	Plug 'junegunn/vim-easy-align'
@@ -39,13 +40,14 @@ if exists('*plug#begin')
 	Plug 'mileszs/ack.vim'
 	Plug 'preservim/nerdtree'
 	Plug 'ryanoasis/vim-devicons'
-	Plug 'neoclide/coc.nvim', Cond(!exists('g:vscode'), {'branch': 'release'})
+	"Plug 'neoclide/coc.nvim', Cond(!exists('g:vscode'), {'branch': 'release'})
 	"Plug 'seblj/nvim-tabline'
 	Plug 'romgrk/barbar.nvim'
 	Plug 'dstein64/nvim-scrollview'
 	"Plug '~/vimfiles/plugged/after'
 	Plug 'github/copilot.vim'
 	Plug 'tpope/vim-eunuch'
+	Plug 'will133/vim-dirdiff'
 	call plug#end()
 
 	let g:ctrlp_cmd = 'CtrlPMRU'
@@ -180,55 +182,61 @@ if exists('*plug#begin')
 		return !col || getline('.')[col - 1] =~# '\s'
 	endfunction
 
-	" coc.nvim setting
-	set signcolumn=number
-	inoremap <silent><expr> <TAB>
-				\ coc#pum#visible() ? coc#pum#next(1) : 
-				\ Check_back_space() ? "\<TAB>" :
-				\ coc#refresh()
-	inoremap <expr><S-TAB> pumvisible() ? coc#pum#prev(1) : ""
+	"" coc.nvim setting
+	"set signcolumn=number
+	"inoremap <silent><expr> <TAB>
+	"			\ coc#pum#visible() ? coc#pum#next(1) : 
+	"			\ Check_back_space() ? "\<TAB>" :
+	"			\ coc#refresh()
+	"inoremap <expr><S-TAB> pumvisible() ? coc#pum#prev(1) : ""
 
-	inoremap <silent><expr> <c-space> coc#refresh()
-	inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
-				\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+	"inoremap <silent><expr> <c-space> coc#refresh()
+	"inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
+	"			\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
-	nnoremap <silent> gd <Plug>(coc-definition)
-	nnoremap <silent> gy <Plug>(coc-type-definition)
-	nnoremap <silent> gi <Plug>(coc-implementation)
-	nnoremap <silent> gr <Plug>(coc-references)
+	"nnoremap <silent> gd <Plug>(coc-definition)
+	"nnoremap <silent> gy <Plug>(coc-type-definition)
+	"nnoremap <silent> gi <Plug>(coc-implementation)
+	"nnoremap <silent> gr <Plug>(coc-references)
 
-	nnoremap <silent> K :call <SID>show_documentation()<CR>
+	"nnoremap <silent> K :call <SID>show_documentation()<CR>
 
-	function! s:show_documentation()
-		if (index(['vim','help'], &filetype) >= 0)
-			execute 'h '.expand('<cword>')
-		elseif (coc#rpc#ready())
-			call CocActionAsync('doHover')
-		else
-			execute '!' . &keywordprg . " " . expand('<cword>')
-		endif
-	endfunction
+	"function! s:show_documentation()
+	"	if (index(['vim','help'], &filetype) >= 0)
+	"		execute 'h '.expand('<cword>')
+	"	elseif (coc#rpc#ready())
+	"		call CocActionAsync('doHover')
+	"	else
+	"		execute '!' . &keywordprg . " " . expand('<cword>')
+	"	endif
+	"endfunction
 
-	nnoremap <leader>rn <Plug>(coc-rename)
+	"nnoremap <leader>rn <Plug>(coc-rename)
 
-	xmap <leader>f <Plug>(coc-format-selected)
-	nmap <leader>f <Plug>(coc-format-selected)
+	"xmap <leader>f <Plug>(coc-format-selected)
+	"nmap <leader>f <Plug>(coc-format-selected)
 
-	augroup mycocgroup
-		autocmd!
-		autocmd FileType typescript,java,json setl formatexpr=CocAction('formatSelected')
-		autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
-	augroup end
+	"augroup mycocgroup
+	"	autocmd!
+	"	autocmd FileType typescript,java,json setl formatexpr=CocAction('formatSelected')
+	"	autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
+	"augroup end
 
-	xmap <leader>a <Plug>(coc-codeaction-selected)
-	nmap <leader>a <Plug>(coc-codeaction-selected)
+	"xmap <leader>a <Plug>(coc-codeaction-selected)
+	"nmap <leader>a <Plug>(coc-codeaction-selected)
 
-	nmap <leader>ac <Plug>(coc-codeaction)
-	nmap <leader>qf <Plug>(coc-fix-current)
+	"nmap <leader>ac <Plug>(coc-codeaction)
+	"nmap <leader>qf <Plug>(coc-fix-current)
 
-	command! -nargs=0 Format :call CocAction('format')
+	"command! -nargs=0 Format :call CocAction('format')
+
+	lua vim.keymap.set("n", "<space>e", vim.diagnostic.open_float)
+	lua vim.keymap.set("n", "<space>i", vim.lsp.buf.implementation, { desc = "Go to implementation" })
 
 	let g:scrollview_excluded_filetypes = ['nerdtree']
+	
+	"set diffopt+=iwhite,iwhiteall,iwhiteeol,iblank
+	let g:DirDiffAddArgs="-b,-w,-Z,-B"
 endif
 
 if executable('ag')
@@ -317,28 +325,28 @@ if has('mouse')
   set mouse=a
 endif
 
-"go
-au filetype go nmap <buffer> <leader>r <Plug>(go-run)
-au filetype go nmap <buffer> <leader>b <Plug>(go-build)
-au filetype go nmap <buffer> <leader>ds <Plug>(go-def-split)
-au filetype go nmap <buffer> <leader>gd <Plug>(go-doc)
-au filetype go nmap <buffer> <leader>s <Plug>(go-implements)
-au filetype go nmap <buffer> <leader>i <Plug>(go-info)
-au filetype go nmap <buffer> <leader>t <Plug>(go-test)
-au filetype go nmap <buffer> <leader>f <Plug>(go-referrers)
-au filetype go nmap <buffer> <leader>l :GoSameIds<CR>
-au filetype go nmap <buffer> <S-F12> :GoCallers<CR>:ll<CR>
-au filetype go nmap <buffer> <F24> :GoCallers<CR>:ll<CR>
-let g:go_fmt_command = "goimports"
-let g:go_def_mode = "gopls"
-"let g:go_auto_type_info = 1
-let g:go_gocode_socket_type = 'tcp'
-let g:go_textobj_enabled = 1
-let g:go_template_autocreate = 0
-let g:go_gocode_unimported_packages = 1
-let g:go_highlight_build_constraints = 1
-let g:go_build_tags="''"
-"call govim#config#Set("FormatOnSave", "goimports")
+""go
+"au filetype go nmap <buffer> <leader>r <Plug>(go-run)
+"au filetype go nmap <buffer> <leader>b <Plug>(go-build)
+"au filetype go nmap <buffer> <leader>ds <Plug>(go-def-split)
+"au filetype go nmap <buffer> <leader>gd <Plug>(go-doc)
+"au filetype go nmap <buffer> <leader>s <Plug>(go-implements)
+"au filetype go nmap <buffer> <leader>i <Plug>(go-info)
+"au filetype go nmap <buffer> <leader>t <Plug>(go-test)
+"au filetype go nmap <buffer> <leader>f <Plug>(go-referrers)
+"au filetype go nmap <buffer> <leader>l :GoSameIds<CR>
+"au filetype go nmap <buffer> <S-F12> :GoCallers<CR>:ll<CR>
+"au filetype go nmap <buffer> <F24> :GoCallers<CR>:ll<CR>
+"let g:go_fmt_command = "goimports"
+"let g:go_def_mode = "gopls"
+""let g:go_auto_type_info = 1
+"let g:go_gocode_socket_type = 'tcp'
+"let g:go_textobj_enabled = 1
+"let g:go_template_autocreate = 0
+"let g:go_gocode_unimported_packages = 1
+"let g:go_highlight_build_constraints = 1
+"let g:go_build_tags="''"
+""call govim#config#Set("FormatOnSave", "goimports")
 
 set ts=4
 set sw=4
@@ -1215,7 +1223,10 @@ function! AliasEnc()
 	return lenc
 endfunction
 
+"lua vim.enable('go')
+
 "lua require('top-bufferline')
 lua require('statusline')
 lua require('file-icons')
 lua require('top-tabline')
+lua require('lsp')

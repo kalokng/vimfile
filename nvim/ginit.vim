@@ -33,8 +33,9 @@ elseif exists('g:neovide')
 	"neovide
 	let g:neovide_refresh_rate_idle = 30
 	set title
-	let fontsize=9
-	let fontname="JetBrainsMono\ Nerd\ Font:h"
+	let fontsize=10
+	"let fontname="JetBrainsMono\ Nerd\ Font:h"
+	let fontname="JuliaMono:h"
 	let &guifont=fontname.fontsize
 				"\Noto\ Sans\ CJK\ TC:h9
 	let g:neovide_cursor_vfx_mode = "ripple"
