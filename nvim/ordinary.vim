@@ -48,6 +48,9 @@ if exists('*plug#begin')
 	Plug 'github/copilot.vim'
 	Plug 'tpope/vim-eunuch'
 	Plug 'will133/vim-dirdiff'
+	Plug 'mason-org/mason.nvim'
+	Plug 'mason-org/mason-lspconfig.nvim'
+	"Plug 'hrsh7th/cmp-nvim-lsp'
 	call plug#end()
 
 	let g:ctrlp_cmd = 'CtrlPMRU'
@@ -268,6 +271,15 @@ if executable('rg')
 	endfunction
 
 	command! -nargs=* -bang RG call RipgrepFzf(<q-args>, <bang>0)
+endif
+
+if executable('lazygit')
+	function! LG()
+		exec "tabnew"
+		exec "term lazygit"
+		norm i
+	endfunction
+	command! LG call LG()
 endif
 
 let g:seoul256_background = 234

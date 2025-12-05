@@ -1,5 +1,19 @@
 -- lsp.lua
 
+require("mason").setup()
+require("mason-lspconfig").setup({
+	ensure_installed = { "terraformls", "tflint" },
+})
+
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+if pcall(require, 'cmp_nvim_lsp') then
+    capabilities = require('cmp_nvim_lsp').default_capabilities()
+end
+
+vim.lsp.enable('teraformls', {
+    capabilities = capabilities,
+})
+
 ---------------------------------------------------------
 -- Format on save for Go
 ---------------------------------------------------------
@@ -26,10 +40,25 @@ vim.api.nvim_create_autocmd("BufWritePre", {
   end,
 })
 
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  pattern = { "*.tf", "*.tfvars", "*.tftpl" },
+  callback = function()
+    vim.bo.filetype = "terraform"
+  end,
+})
+
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = { "*.tf", "*.tfvars" },
+  callback = function()
+    vim.lsp.buf.format({async = false})
+  end,
+})
+
 ---------------------------------------------------------
 -- gopls configuration
 ---------------------------------------------------------
 vim.lsp.enable('gopls', {
+  capabilities = capabilities,
   settings = {
     gopls = {
       ------------------------------------------
