@@ -386,6 +386,7 @@ set hidden
 
 set hls is
 set ignorecase smartcase
+set wildignorecase
 
 set nowrap
 "set wrap
