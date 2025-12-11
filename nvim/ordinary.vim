@@ -840,7 +840,8 @@ nnoremap <silent> <S-F7> :set spell!<CR>
 nnoremap <silent> <F8> :set list!<CR>
 nnoremap <silent> <M-F8> :let @z=@/<CR>:%s/\s\+$//<CR><C-O>:let @/=@z<CR>
 
-if has("windows")
+if has("win32")
+	nnoremap <Nul> :exec "exec \"sp\" \| exec \"te pwsh\" \| norm i"<CR>
 	function! <SID>startTerminal(name)
 		let namemap               = {}
 		let namemap["bash"]       = '"git bash"'
