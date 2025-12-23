@@ -118,7 +118,7 @@ if exists('*plug#begin')
 
 	function! s:searchGitAll(query, fullscreen)
 		let root = s:get_git_root()
-		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case -- %s || true'
+		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case -- %s'
 		let initial_command = printf(command_fmt, shellescape(a:query))
 		let reload_command = printf(command_fmt, '{q}')
 		let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command], 'dir': root}
@@ -133,8 +133,8 @@ if exists('*plug#begin')
 	cnoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
 	inoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
 	nnoremap <Space>gf :FZF<space>
-	nnoremap <Space>f :FZF! <C-R>=<SID>get_git_root()<CR><CR>
-	nnoremap <Space>F :call <SID>searchGitFile()<CR>
+	nnoremap <Space>F :FZF! <C-R>=<SID>get_git_root()<CR><CR>
+	nnoremap <Space>f :GFiles!<CR>
 	nnoremap <Space>gw :call <SID>searchGit('\b'.expand("<cword>").'\b')<CR>
 	nnoremap <Space>ga :call <SID>searchGitAll("", 1)<CR>
 	nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
@@ -251,7 +251,7 @@ endif
 
 if executable('rg')
 	function! RipgrepOpt(query, fullscreen)
-		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case %s || true'
+		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case %s'
 		let initial_command = printf(command_fmt, a:query)
 		let spec = {'options': []}
 		if !has('windows')
@@ -262,18 +262,18 @@ if executable('rg')
 
 	command! -nargs=* -bang -complete=file Fg call RipgrepOpt(<q-args>, <bang>1)
 
-	function! RipgrepFzf(query, fullscreen)
-		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case -- %s || true'
-		let initial_command = printf(command_fmt, shellescape(a:query))
-		let reload_command = printf(command_fmt, '{q}')
-		let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command]}
-		if !has('windows')
-			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-/')
-		endif
-		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
-	endfunction
+	"function! RipgrepFzf(query, fullscreen)
+	"	let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case -- %s'
+	"	let initial_command = printf(command_fmt, shellescape(a:query))
+	"	let reload_command = printf(command_fmt, '{q}')
+	"	let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command]}
+	"	if !has('windows')
+	"		let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-/')
+	"	endif
+	"	call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
+	"endfunction
 
-	command! -nargs=* -bang RG call RipgrepFzf(<q-args>, <bang>0)
+	"command! -nargs=* -bang RG call RipgrepFzf(<q-args>, <bang>0)
 endif
 
 if executable('lazygit')
