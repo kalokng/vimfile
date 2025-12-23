@@ -57,10 +57,10 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 ---------------------------------------------------------
 -- gopls configuration
 ---------------------------------------------------------
-vim.lsp.enable('gopls', {
-  capabilities = capabilities,
+vim.lsp.config('gopls', {
   settings = {
-    gopls = {
+	gopls = {
+      buildFlags = { "-tags=wireinject" },
       ------------------------------------------
       -- Enable goimports style import fixing
       ------------------------------------------
@@ -77,14 +77,55 @@ vim.lsp.enable('gopls', {
         useany = true,
       },
       staticcheck = true,
-    },
-  },
+	},
+  }
 })
+
+vim.lsp.enable('gopls', {
+  capabilities = capabilities,
+})
+
+vim.lsp.enable('eslint')
+vim.lsp.enable('ts_ls')
+
+
+ShowHoverSignatureInCmdline = function()
+  local params = vim.lsp.util.make_position_params()
+  vim.lsp.buf_request(0, 'textDocument/hover', params, function(err, result)
+    if err or not result or not result.contents then
+      return
+    end
+
+    local lines = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
+    local signature
+
+    for i, line in ipairs(lines) do
+      -- Find the start of a Go code block
+      if string.match(line, "^```go") then
+        -- Check if there's a line after it
+        if i + 1 <= #lines then
+          signature = lines[i+1]
+          -- We found what we need, so we can exit the loop
+          break
+        end
+      end
+    end
+
+    if signature then
+      -- Clear the command line and print the signature
+      vim.cmd('echon ""')
+      vim.api.nvim_echo({ {signature, "Normal"} }, false, {})
+    end
+  end)
+end
 
 vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('UserLspConfig', {}),
   callback = function(ev)
     local opts = { noremap = true, silent = true, buffer = ev.buf }
+
+    vim.keymap.set("n", "<space>e", vim.diagnostic.open_float)
+    vim.keymap.set('n', '<space>i', ShowHoverSignatureInCmdline, { silent = true, buffer = true, desc = "Show hover info in cmdline" })
 
     vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
     vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)

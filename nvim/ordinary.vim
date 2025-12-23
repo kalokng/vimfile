@@ -43,9 +43,10 @@ if exists('*plug#begin')
 	"Plug 'neoclide/coc.nvim', Cond(!exists('g:vscode'), {'branch': 'release'})
 	"Plug 'seblj/nvim-tabline'
 	Plug 'romgrk/barbar.nvim'
-	Plug 'dstein64/nvim-scrollview'
+	"Plug 'dstein64/nvim-scrollview'
+	Plug 'petertriho/nvim-scrollbar'
 	"Plug '~/vimfiles/plugged/after'
-	Plug 'github/copilot.vim'
+	Plug 'zbirenbaum/copilot.lua'
 	Plug 'tpope/vim-eunuch'
 	Plug 'will133/vim-dirdiff'
 	Plug 'mason-org/mason.nvim'
@@ -79,9 +80,11 @@ if exists('*plug#begin')
 	endfunction
 	"let g:fzf_preview_bash = 'C:\Program Files\Git\bin\bash.exe'
 	"let $FZF_PREVIEW_COMMAND = g:fzf_preview_bash
-	"let g:fzf_preview_window = ['hidden,right,50%', 'ctrl-\']
-	if has('windows')
+	"let g:fzf_preview_window = ['hidden,right,50%', 'ctrl-/']
+	if has('win32')
 		let g:fzf_preview_window = []
+	else
+		let g:fzf_preview_window = ['right,50%', 'ctrl-/']
 	endif
 
 	function! s:get_git_root()
@@ -98,8 +101,8 @@ if exists('*plug#begin')
 	function! s:searchGitFile()
 		let root = s:get_git_root()
 		let spec = {'options': [], 'dir': root}
-		if !has('windows')
-			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		if !has('win32')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-/')
 		endif
 		call fzf#vim#gitfiles("", spec, 1)
 	endfunction
@@ -107,8 +110,8 @@ if exists('*plug#begin')
 	function! s:searchGit(arg)
 		let root = s:get_git_root()
 		let spec = {'options': [], 'dir': root}
-		if !has('windows')
-			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		if !has('win32')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-/')
 		endif
 		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -- ".shellescape(a:arg)." ".root, 1, l:spec, 1)
 	endfunction
@@ -119,8 +122,8 @@ if exists('*plug#begin')
 		let initial_command = printf(command_fmt, shellescape(a:query))
 		let reload_command = printf(command_fmt, '{q}')
 		let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command], 'dir': root}
-		if !has('windows')
-			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+		if !has('win32')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-/')
 		endif
 		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
 	endfunction
@@ -136,6 +139,7 @@ if exists('*plug#begin')
 	nnoremap <Space>ga :call <SID>searchGitAll("", 1)<CR>
 	nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
 	nnoremap <Space>a :call <SID>searchGitAll('', 0)<CR>
+	nnoremap <C-space> :sp +te<CR>A
 	"nnoremap <space>w :Ag! <C-R><C-W><CR>
 	"nnoremap <space>a :Ag!<CR>
 
@@ -233,13 +237,12 @@ if exists('*plug#begin')
 
 	"command! -nargs=0 Format :call CocAction('format')
 
-	lua vim.keymap.set("n", "<space>e", vim.diagnostic.open_float)
-	lua vim.keymap.set("n", "<space>i", vim.lsp.buf.implementation, { desc = "Go to implementation" })
-
 	let g:scrollview_excluded_filetypes = ['nerdtree']
 	
 	"set diffopt+=iwhite,iwhiteall,iwhiteeol,iblank
-	let g:DirDiffAddArgs="-b,-w,-Z,-B"
+	let g:DirDiffAddArgs="-w"
+
+	lua require("copilot").setup({})
 endif
 
 if executable('ag')
@@ -252,7 +255,7 @@ if executable('rg')
 		let initial_command = printf(command_fmt, a:query)
 		let spec = {'options': []}
 		if !has('windows')
-			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-/')
 		endif
 		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
 	endfunction
@@ -265,7 +268,7 @@ if executable('rg')
 		let reload_command = printf(command_fmt, '{q}')
 		let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command]}
 		if !has('windows')
-			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-\')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-/')
 		endif
 		call fzf#vim#grep(initial_command, 1, spec, a:fullscreen)
 	endfunction
@@ -1237,9 +1240,8 @@ function! AliasEnc()
 	return lenc
 endfunction
 
-"lua vim.enable('go')
-
 "lua require('top-bufferline')
+lua require('scrollbar').setup()
 lua require('statusline')
 lua require('file-icons')
 lua require('top-tabline')
