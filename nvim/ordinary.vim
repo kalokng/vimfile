@@ -116,9 +116,18 @@ if exists('*plug#begin')
 		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -- ".shellescape(a:arg)." ".root, 1, l:spec, 1)
 	endfunction
 
-	function! s:searchGitAll(query, fullscreen)
+	function! s:searchGitAll(arg, fullscreen)
 		let root = s:get_git_root()
-		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case -- %s'
+		let spec = {'options': [], 'dir': root}
+		if !has('win32')
+			let spec = fzf#vim#with_preview(spec, 'hidden', 'ctrl-/')
+		endif
+		call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case --no-ignore -- ".shellescape(a:arg)." ".root, 1, l:spec, a:fullscreen)
+	endfunction
+
+	function! s:searchGitAllReload(query, fullscreen)
+		let root = s:get_git_root()
+		let command_fmt = 'rg --column --line-number --no-heading --color=always --smart-case --no-ignore -- %s'
 		let initial_command = printf(command_fmt, shellescape(a:query))
 		let reload_command = printf(command_fmt, '{q}')
 		let spec = {'options': ['--disabled', '--query', a:query, '--bind', 'change:reload:'.reload_command], 'dir': root}
@@ -136,9 +145,11 @@ if exists('*plug#begin')
 	nnoremap <Space>F :FZF! <C-R>=<SID>get_git_root()<CR><CR>
 	nnoremap <Space>f :GFiles!<CR>
 	nnoremap <Space>gw :call <SID>searchGit('\b'.expand("<cword>").'\b')<CR>
-	nnoremap <Space>ga :call <SID>searchGitAll("", 1)<CR>
+	nnoremap <Space>ga :call <SID>searchGitAllReload("", 1)<CR>
 	nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
-	nnoremap <Space>a :call <SID>searchGitAll('', 0)<CR>
+	nnoremap <Space>a :call <SID>searchGit('')<CR>
+	nnoremap <Space>A :call <SID>searchGitAll('', 1)<CR>
+	"ctrl+`
 	nnoremap <C-space> :sp +te<CR>A
 	"nnoremap <space>w :Ag! <C-R><C-W><CR>
 	"nnoremap <space>a :Ag!<CR>
