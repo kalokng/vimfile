@@ -14,6 +14,10 @@ vim.lsp.enable('teraformls', {
     capabilities = capabilities,
 })
 
+vim.lsp.enable('vtsls', {
+    capabilities = capabilities,
+})
+
 ---------------------------------------------------------
 -- Format on save for Go
 ---------------------------------------------------------
@@ -60,7 +64,7 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 vim.lsp.config('gopls', {
   settings = {
 	gopls = {
-      buildFlags = { "-tags=wireinject" },
+      buildFlags = { "-tags=wireinject,test" },
       ------------------------------------------
       -- Enable goimports style import fixing
       ------------------------------------------
@@ -77,8 +81,8 @@ vim.lsp.config('gopls', {
         useany = true,
       },
       staticcheck = true,
-	},
-  }
+    },
+  },
 })
 
 vim.lsp.enable('gopls', {
@@ -86,7 +90,6 @@ vim.lsp.enable('gopls', {
 })
 
 vim.lsp.enable('eslint')
-vim.lsp.enable('ts_ls')
 
 
 ShowHoverSignatureInCmdline = function()
