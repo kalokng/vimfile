@@ -51,6 +51,8 @@ if exists('*plug#begin')
 	Plug 'will133/vim-dirdiff'
 	Plug 'mason-org/mason.nvim'
 	Plug 'mason-org/mason-lspconfig.nvim'
+	Plug 'nvim-lua/plenary.nvim'
+	Plug 'CopilotC-Nvim/CopilotChat.nvim'
 	"Plug 'hrsh7th/cmp-nvim-lsp'
 	call plug#end()
 
@@ -147,6 +149,7 @@ if exists('*plug#begin')
 	nnoremap <Space>gw :call <SID>searchGit('\b'.expand("<cword>").'\b')<CR>
 	nnoremap <Space>ga :call <SID>searchGitAllReload("", 1)<CR>
 	nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
+	vnoremap <Space>w :<C-U>call <SID>searchGit(GetSelectionEscaped("en"))<CR>
 	nnoremap <Space>a :call <SID>searchGit('')<CR>
 	nnoremap <Space>A :call <SID>searchGitAll('', 1)<CR>
 	"ctrl+`
@@ -254,6 +257,7 @@ if exists('*plug#begin')
 	let g:DirDiffAddArgs="-w"
 
 	lua require("copilot").setup({})
+	lua require("CopilotChat").setup({})
 endif
 
 if executable('ag')
