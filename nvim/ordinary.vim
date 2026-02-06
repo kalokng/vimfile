@@ -192,6 +192,8 @@ if exists('*plug#begin')
 	vmap <Space>m <Plug>MarkSet
 	nmap <Space>M <Plug>MarkToggle
 	nmap <Space>N <Plug>MarkAllClear
+	nmap <Space>* <Plug>MarkSearchAnyNext
+	nmap <Space>? <Plug>MarkSearchAnyPrev
 	let g:mwDefaultHighlightingPalette = 'extended'
 	let g:mwMaxMatchPriority = -10
 	let g:mwDirectGroupJumpMappingNum = 0
