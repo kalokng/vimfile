@@ -25,7 +25,7 @@ if exists('*plug#begin')
 	Plug 'jreybert/vimagit'
 	Plug 'junegunn/seoul256.vim'
 	Plug 'mbbill/undotree'
-	Plug 'ctrlpvim/ctrlp.vim'
+	"Plug 'ctrlpvim/ctrlp.vim'
 	Plug 'justinmk/vim-sneak'
 	"Plug 'rust-lang/rust.vim'
 	Plug 'PProvost/vim-ps1', { 'for': 'ps1' }
@@ -54,6 +54,7 @@ if exists('*plug#begin')
 	Plug 'nvim-lua/plenary.nvim'
 	Plug 'CopilotC-Nvim/CopilotChat.nvim'
 	"Plug 'hrsh7th/cmp-nvim-lsp'
+	Plug 'ibhagwan/fzf-lua'
 	call plug#end()
 
 	let g:ctrlp_cmd = 'CtrlPMRU'
@@ -145,13 +146,16 @@ if exists('*plug#begin')
 	inoremap <C-R><C-R>% <C-R>=expand("%:p")<CR>
 	nnoremap <Space>gf :FZF<space>
 	nnoremap <Space>F :FZF! <C-R>=<SID>get_git_root()<CR><CR>
-	nnoremap <Space>f :GFiles!<CR>
+	"nnoremap <Space>f :GFiles!<CR>
 	nnoremap <Space>gw :call <SID>searchGit('\b'.expand("<cword>").'\b')<CR>
 	nnoremap <Space>ga :call <SID>searchGitAllReload("", 1)<CR>
-	nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
-	vnoremap <Space>w :<C-U>call <SID>searchGit(GetSelectionEscaped("en"))<CR>
-	nnoremap <Space>a :call <SID>searchGit('')<CR>
-	nnoremap <Space>A :call <SID>searchGitAll('', 1)<CR>
+	"nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
+	"vnoremap <Space>w :<C-U>call <SID>searchGit(GetSelectionEscaped("en"))<CR>
+	nnoremap <Space>w :FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR> query=<C-R>=expand("<cword>")<CR><CR>
+	vnoremap <Space>w :<C-U>FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR> query=<C-R>=GetSelectionEscaped("en")<CR><CR>
+	nnoremap <C-G> :FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR><CR>
+	"nnoremap <Space>a :call <SID>searchGit('')<CR>
+	"nnoremap <Space>A :call <SID>searchGitAll('', 1)<CR>
 	"ctrl+`
 	nnoremap <C-space> :sp +te<CR>A
 	"nnoremap <space>w :Ag! <C-R><C-W><CR>
@@ -464,7 +468,7 @@ endif
 "cnoremap <silent> <C-S-Tab> <C-C>gT
 "onoremap <silent> <C-S-Tab> <C-C>gT
 
-nnoremap <C-G> 2<C-G>
+"nnoremap <C-G> 2<C-G>
 inoremap <silent> <C-U> <C-G>u<C-U>
 "inoremap <silent> <C-W> <C-G>u<C-W>
 "inoremap <silent> <C-G><C-W> <ESC>"_ciW
@@ -1263,3 +1267,4 @@ lua require('statusline')
 lua require('file-icons')
 lua require('top-tabline')
 lua require('lsp')
+lua require('fzf')
