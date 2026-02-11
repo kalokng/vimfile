@@ -38,9 +38,11 @@ fzf.setup({
       ["ctrl-v"]  = actions.file_vsplit,
       ["ctrl-t"]  = actions.file_tabedit,
       ["alt-q"]   = actions.file_sel_to_qf,
-
-      -- Use Ctrl-p to go up one directory
-      ["ctrl-p"] = climb_up,
+	  ["alt-Q"]   = actions.file_sel_to_ll,
+      ["alt-i"]   = actions.toggle_ignore,
+      ["alt-h"]   = actions.toggle_hidden,
+      ["alt-f"]   = actions.toggle_follow,
+      ["ctrl-p"]  = climb_up,
     },
 	grep = {
 	  ["default"] = fzf.actions.file_edit_or_qf,
@@ -48,7 +50,7 @@ fzf.setup({
       ["ctrl-v"]  = actions.file_vsplit,
       ["ctrl-t"]  = actions.file_tabedit,
       ["alt-q"]   = actions.file_sel_to_qf,
-      ["ctrl-p"] = climb_up,
+      ["ctrl-p"]  = climb_up,
 	}
   }
 })
@@ -56,13 +58,18 @@ fzf.setup({
 vim.api.nvim_set_keymap("n", "<C-b>", [[<Cmd>lua require"fzf-lua".buffers()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<C-\\>", [[<Cmd>lua require"fzf-lua".history()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<C-k>", [[<Cmd>lua require"fzf-lua".builtin()<CR>]], {})
-vim.api.nvim_set_keymap("n", "<C-S-P>", [[<Cmd>lua require"fzf-lua".resume()<CR>]], {})
+vim.api.nvim_set_keymap("n", "<C-_>", [[<Cmd>lua require"fzf-lua".resume()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<C-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false})<CR>]], {})
 vim.api.nvim_set_keymap("n", "<C-l>", [[<Cmd>lua require"fzf-lua".live_grep()<CR>]], {})
---vim.api.nvim_set_keymap("n", "<C-g>", [[<Cmd>lua require"fzf-lua".grep_project()<CR>]], {})
+vim.api.nvim_set_keymap("n", "<C-g>", [[<Cmd>lua require"fzf-lua".grep_project()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<F1>", [[<Cmd>lua require"fzf-lua".help_tags()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<Space>f", [[<Cmd>lua require"fzf-lua".git_files()<CR>]], {})
+
+vim.keymap.set({ "n", "v", "i" }, "<C-x><C-f>",
+  function() FzfLua.complete_path() end,
+  { silent = true, desc = "Fuzzy complete path" })
 
 -- Change the 'Files in' and '>' part to a specific color
 vim.api.nvim_set_hl(0, "FzfLuaDirPart", { fg = "#ff9e64", bold = true, force = true })
 vim.api.nvim_set_hl(0, "FzfLuaFilePart", { fg = "#9ece6a", bold = true, force = true })
+
