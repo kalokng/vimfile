@@ -57,17 +57,21 @@ fzf.setup({
 
 vim.api.nvim_set_keymap("n", "<C-b>", [[<Cmd>lua require"fzf-lua".buffers()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<C-\\>", [[<Cmd>lua require"fzf-lua".history()<CR>]], {})
-vim.api.nvim_set_keymap("n", "<C-k>", [[<Cmd>lua require"fzf-lua".builtin()<CR>]], {})
+vim.api.nvim_set_keymap("n", "<C-f>", [[<Cmd>lua require"fzf-lua".builtin()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<C-_>", [[<Cmd>lua require"fzf-lua".resume()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<C-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false})<CR>]], {})
 vim.api.nvim_set_keymap("n", "<C-l>", [[<Cmd>lua require"fzf-lua".live_grep()<CR>]], {})
-vim.api.nvim_set_keymap("n", "<C-g>", [[<Cmd>lua require"fzf-lua".grep_project()<CR>]], {})
+--vim.api.nvim_set_keymap("n", "<C-g>", [[<Cmd>lua require"fzf-lua".grep_project()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<F1>", [[<Cmd>lua require"fzf-lua".help_tags()<CR>]], {})
 vim.api.nvim_set_keymap("n", "<Space>f", [[<Cmd>lua require"fzf-lua".git_files()<CR>]], {})
 
 vim.keymap.set({ "n", "v", "i" }, "<C-x><C-f>",
   function() FzfLua.complete_path() end,
   { silent = true, desc = "Fuzzy complete path" })
+
+vim.keymap.set({ "i" }, "<C-x><C-l>",
+  function() FzfLua.complete_line() end,
+  { silent = true, desc = "Fuzzy complete line" })
 
 -- Change the 'Files in' and '>' part to a specific color
 vim.api.nvim_set_hl(0, "FzfLuaDirPart", { fg = "#ff9e64", bold = true, force = true })
