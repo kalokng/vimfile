@@ -55,6 +55,8 @@ if exists('*plug#begin')
 	Plug 'CopilotC-Nvim/CopilotChat.nvim'
 	"Plug 'hrsh7th/cmp-nvim-lsp'
 	Plug 'ibhagwan/fzf-lua'
+	Plug 'nvim-treesitter/nvim-treesitter-textobjects'
+	Plug 'stevearc/aerial.nvim'
 	call plug#end()
 
 	let g:ctrlp_cmd = 'CtrlPMRU'
@@ -1268,3 +1270,4 @@ lua require('file-icons')
 lua require('top-tabline')
 lua require('lsp')
 lua require('fzf')
+lua require('aerialnvim')
