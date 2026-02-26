@@ -155,7 +155,7 @@ if exists('*plug#begin')
 	"vnoremap <Space>w :<C-U>call <SID>searchGit(GetSelectionEscaped("en"))<CR>
 	nnoremap <Space>w :FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR> query=<C-R>=expand("<cword>")<CR><CR>
 	vnoremap <Space>w :<C-U>FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR> query=<C-R>=GetSelectionEscaped("en")<CR><CR>
-	nnoremap <C-G> :FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR><CR>
+	nnoremap <Space>a :FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR><CR>
 	"nnoremap <Space>a :call <SID>searchGit('')<CR>
 	"nnoremap <Space>A :call <SID>searchGitAll('', 1)<CR>
 	"ctrl+`

@@ -9,7 +9,7 @@ local function climb_up(_, opts)
   local provider_name = opts.__resume_key or "files"
   --vim.print(opts)
   --vim.print(fzf)
-  vim.print(provider_name)
+  --vim.print(provider_name)
   local new_opts = {
 	cwd = parent_dir,
 	query = last_query,
@@ -27,6 +27,13 @@ local function climb_up(_, opts)
 end
 
 fzf.setup({
+  winopts = {
+	fullscreen = true,
+	preview = {
+	  layout = 'vertical',
+	  vertical = "up:45%",
+	},
+  },
   files = {
 	cwd_prompt = false,
   },
