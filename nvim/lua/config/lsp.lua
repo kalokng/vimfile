@@ -1,10 +1,3 @@
--- lsp.lua
-
-require("mason").setup()
-require("mason-lspconfig").setup({
-	ensure_installed = { "terraformls", "tflint" },
-})
-
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 if pcall(require, 'cmp_nvim_lsp') then
     capabilities = require('cmp_nvim_lsp').default_capabilities()

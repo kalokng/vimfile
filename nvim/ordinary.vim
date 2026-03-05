@@ -14,50 +14,51 @@ endfunction
 
 let g:barbar_auto_setup = v:false
 
-sil! call plug#begin()
-if exists('*plug#begin')
-	Plug 'neovim/nvim-lspconfig'
-	Plug 'tpope/vim-sensible'
-	"Plug 'fatih/vim-go', { 'tag': '*', 'do': ':GoInstallBinaries' }
-	Plug 'rust-lang/rust.vim'
-	"Plug 'govim/govim'
-	Plug 'junegunn/vim-easy-align'
-	Plug 'jreybert/vimagit'
-	Plug 'junegunn/seoul256.vim'
-	Plug 'mbbill/undotree'
-	"Plug 'ctrlpvim/ctrlp.vim'
-	Plug 'justinmk/vim-sneak'
+lua require("config.lazy")
+"sil! call plug#begin()
+"if exists('*plug#begin')
+	"Plug 'neovim/nvim-lspconfig'
+	"Plug 'tpope/vim-sensible'
+	""Plug 'fatih/vim-go', { 'tag': '*', 'do': ':GoInstallBinaries' }
 	"Plug 'rust-lang/rust.vim'
-	Plug 'PProvost/vim-ps1', { 'for': 'ps1' }
-	Plug 'inkarkat/vim-ingo-library'
-	Plug 'inkarkat/vim-mark'
-	Plug 'sindrets/diffview.nvim'
-	Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-	Plug 'junegunn/fzf.vim'
-	Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
-	Plug 'kyazdani42/nvim-web-devicons'
-	"Plug 'akinsho/nvim-bufferline.lua'
-	Plug 'mileszs/ack.vim'
-	Plug 'preservim/nerdtree'
-	Plug 'ryanoasis/vim-devicons'
-	"Plug 'neoclide/coc.nvim', Cond(!exists('g:vscode'), {'branch': 'release'})
-	"Plug 'seblj/nvim-tabline'
-	Plug 'romgrk/barbar.nvim'
-	"Plug 'dstein64/nvim-scrollview'
-	Plug 'petertriho/nvim-scrollbar'
-	"Plug '~/vimfiles/plugged/after'
-	Plug 'zbirenbaum/copilot.lua'
-	Plug 'tpope/vim-eunuch'
-	Plug 'will133/vim-dirdiff'
-	Plug 'mason-org/mason.nvim'
-	Plug 'mason-org/mason-lspconfig.nvim'
-	Plug 'nvim-lua/plenary.nvim'
-	Plug 'CopilotC-Nvim/CopilotChat.nvim'
-	"Plug 'hrsh7th/cmp-nvim-lsp'
-	Plug 'ibhagwan/fzf-lua'
-	Plug 'nvim-treesitter/nvim-treesitter-textobjects'
-	Plug 'stevearc/aerial.nvim'
-	call plug#end()
+	""Plug 'govim/govim'
+	"Plug 'junegunn/vim-easy-align'
+	"Plug 'jreybert/vimagit'
+	"Plug 'junegunn/seoul256.vim'
+	"Plug 'mbbill/undotree'
+	""Plug 'ctrlpvim/ctrlp.vim'
+	"Plug 'justinmk/vim-sneak'
+	""Plug 'rust-lang/rust.vim'
+	"Plug 'PProvost/vim-ps1', { 'for': 'ps1' }
+	"Plug 'inkarkat/vim-ingo-library'
+	"Plug 'inkarkat/vim-mark'
+	"Plug 'sindrets/diffview.nvim'
+	"Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+	"Plug 'junegunn/fzf.vim'
+	"Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
+	"Plug 'kyazdani42/nvim-web-devicons'
+	""Plug 'akinsho/nvim-bufferline.lua'
+	"Plug 'mileszs/ack.vim'
+	"Plug 'preservim/nerdtree'
+	"Plug 'ryanoasis/vim-devicons'
+	""Plug 'neoclide/coc.nvim', Cond(!exists('g:vscode'), {'branch': 'release'})
+	""Plug 'seblj/nvim-tabline'
+	"Plug 'romgrk/barbar.nvim'
+	""Plug 'dstein64/nvim-scrollview'
+	"Plug 'petertriho/nvim-scrollbar'
+	""Plug '~/vimfiles/plugged/after'
+	"Plug 'zbirenbaum/copilot.lua'
+	"Plug 'tpope/vim-eunuch'
+	"Plug 'will133/vim-dirdiff'
+	"Plug 'mason-org/mason.nvim'
+	"Plug 'mason-org/mason-lspconfig.nvim'
+	"Plug 'nvim-lua/plenary.nvim'
+	"Plug 'CopilotC-Nvim/CopilotChat.nvim'
+	""Plug 'hrsh7th/cmp-nvim-lsp'
+	"Plug 'ibhagwan/fzf-lua'
+	"Plug 'nvim-treesitter/nvim-treesitter-textobjects'
+	"Plug 'stevearc/aerial.nvim'
+	"call plug#end()
 
 	let g:ctrlp_cmd = 'CtrlPMRU'
 	let g:ctrlp_types = ['mru', 'fil', 'buf']
@@ -263,10 +264,7 @@ if exists('*plug#begin')
 	
 	"set diffopt+=iwhite,iwhiteall,iwhiteeol,iblank
 	let g:DirDiffAddArgs="-w"
-
-	lua require("copilot").setup({})
-	lua require("CopilotChat").setup({})
-endif
+"endif
 
 if executable('ag')
 	let g:ackprg = 'ag --vimgrep'
@@ -308,8 +306,6 @@ if executable('lazygit')
 	command! LG call LG()
 endif
 
-let g:seoul256_background = 234
-sil! color seoul256
 syn on
 
 se cursorline
@@ -470,7 +466,7 @@ endif
 "cnoremap <silent> <C-S-Tab> <C-C>gT
 "onoremap <silent> <C-S-Tab> <C-C>gT
 
-"nnoremap <C-G> 2<C-G>
+nnoremap <C-G> 2<C-G>
 inoremap <silent> <C-U> <C-G>u<C-U>
 "inoremap <silent> <C-W> <C-G>u<C-W>
 "inoremap <silent> <C-G><C-W> <ESC>"_ciW
@@ -1264,10 +1260,4 @@ function! AliasEnc()
 endfunction
 
 "lua require('top-bufferline')
-lua require('scrollbar').setup()
-lua require('statusline')
-lua require('file-icons')
-lua require('top-tabline')
-lua require('lsp')
-lua require('fzf')
-lua require('aerialnvim')
+lua require('config.lsp')
