@@ -12,7 +12,6 @@ return {
 	'mileszs/ack.vim',
 	'preservim/nerdtree',
 	'ryanoasis/vim-devicons',
-	'zbirenbaum/copilot.lua',
 	'tpope/vim-eunuch',
 	'will133/vim-dirdiff',
 	'nvim-lua/plenary.nvim',

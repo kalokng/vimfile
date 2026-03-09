@@ -84,6 +84,10 @@ return {
 		  ["ctrl-v"]  = actions.file_vsplit,
 		  ["ctrl-t"]  = actions.file_tabedit,
 		  ["alt-q"]   = actions.file_sel_to_qf,
+		  ["alt-Q"]   = actions.file_sel_to_ll,
+		  ["alt-i"]   = actions.toggle_ignore,
+		  ["alt-h"]   = actions.toggle_hidden,
+		  ["alt-f"]   = actions.toggle_follow,
 		  ["ctrl-p"]  = climb_up,
 		}
 	  }
