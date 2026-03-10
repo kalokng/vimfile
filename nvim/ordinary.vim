@@ -154,11 +154,8 @@ lua require("config.lazy")
 	nnoremap <Space>ga :call <SID>searchGitAllReload("", 1)<CR>
 	"nnoremap <Space>w :call <SID>searchGit(expand("<cword>"))<CR>
 	"vnoremap <Space>w :<C-U>call <SID>searchGit(GetSelectionEscaped("en"))<CR>
-	nnoremap <Space>w :FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR> query=<C-R>=expand("<cword>")<CR><CR>
-	vnoremap <Space>w :<C-U>FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR> query=<C-R>=GetSelectionEscaped("en")<CR><CR>
-	vnoremap <C-p> :FzfLua files query=<C-R>=GetSelectionEscaped("en")<CR><CR>
-	nnoremap <Space>a :FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR><CR>
-	nnoremap <silent><Space>A :lua require"fzf-lua".fzf_live(function(args) return 'rg --column --color=always ' .. args[1] end, { cwd="<C-R>=<SID>get_git_root()<CR>", actions=FzfLua.defaults.actions.files, previewer="builtin", prompt="rg> "})<CR>
+	"vnoremap <Space>w :<C-U>FzfLua live_grep cwd=<C-R>=<SID>get_git_root()<CR> query=<C-R>=GetSelectionEscaped("en")<CR><CR>
+	"vnoremap <C-p> :FzfLua files query=<C-R>=GetSelectionEscaped("en")<CR><CR>
 
 	"nnoremap <Space>a :call <SID>searchGit('')<CR>
 	"nnoremap <Space>A :call <SID>searchGitAll('', 1)<CR>
