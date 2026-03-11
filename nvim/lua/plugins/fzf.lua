@@ -30,6 +30,31 @@ return {
 	local fzf = require('fzf-lua')
 	local actions = require('fzf-lua.actions')
 
+	local function climb_up(_, opts)
+	  local last_query = fzf.get_last_query()
+	  local current_cwd = opts.cwd or vim.uv.cwd()
+	  local parent_dir = vim.fn.fnamemodify(current_cwd, ":h")
+
+	  local provider_name = opts.__resume_key or "files"
+	  --vim.print(opts)
+	  --vim.print(fzf)
+	  --vim.print(provider_name)
+	  local new_opts = {
+		cwd = parent_dir,
+		query = last_query,
+	  }
+	  if provider_name == "grep" then
+		new_opts.search = opts.__call_opts.search
+	  end
+
+	  if fzf[provider_name] then
+		fzf[provider_name](new_opts)
+	  else
+		-- Extreme fallback
+		fzf.files({ cwd = parent_dir, query = last_query })
+	  end
+	end
+
 	local custom_actions = {
 	  files = {
 		["default"] = fzf.actions.file_edit_or_qf,
@@ -56,31 +81,8 @@ return {
 		["ctrl-p"]  = climb_up,
 	  }
 	}
-
-	local function climb_up(_, opts)
-	  local last_query = fzf.get_last_query()
-	  local current_cwd = opts.cwd or vim.uv.cwd()
-	  local parent_dir = vim.fn.fnamemodify(current_cwd, ":h")
-
-	  local provider_name = opts.__resume_key or "files"
-	  --vim.print(opts)
-	  --vim.print(fzf)
-	  --vim.print(provider_name)
-	  local new_opts = {
-		cwd = parent_dir,
-		query = last_query,
-	  }
-	  if provider_name == "grep" then
-		new_opts.search = opts.__call_opts.search
-	  end
-
-	  if fzf[provider_name] then
-		fzf[provider_name](new_opts)
-	  else
-		-- Extreme fallback
-		fzf.files({ cwd = parent_dir, query = last_query })
-	  end
-	end
+	local custom_keymap = require('fzf-lua').defaults.keymap
+	custom_keymap.fzf["ctrl-q"] = "select-all+accept"
 
 	local function get_git_root()
 	  local out = vim.system({'git','rev-parse','--show-toplevel'}, {text = true}):wait()
@@ -104,18 +106,23 @@ return {
 	end
 
 	function rg_git_root()
-	  fzf.fzf_live(
-		function(args)
-		  return 'rg --column --color=always ' .. args[1]
-		end,
-		{
+	  opts = {
 		  prompt = 'rg> ',
 		  cwd = get_git_root(),
 		  actions = custom_actions.files,
 		  previewer = "builtin",
 		  keymap = fzf.defaults.keymap,
-		}
-	  )
+		  fzf_opts = {
+			  ['--multi'] = '',
+			  ['--bind'] = 'alt-a:toggle-all',
+		  },
+	  }
+	  opts.fn_transform = function(x)
+		return fzf.make_entry.file(x, opts)
+	  end
+	  fzf.fzf_live(function(args)
+		return 'rg --column --color=always ' .. args[1]
+	  end, opts)
 	end
 
 	vim.api.nvim_set_keymap("n", "<C-b>", [[<Cmd>lua require"fzf-lua".buffers()<CR>]], {})
@@ -127,6 +134,7 @@ return {
 	vim.api.nvim_set_keymap("n", "<C-l>", [[<Cmd>lua require"fzf-lua".live_grep()<CR>]], {})
 	--vim.api.nvim_set_keymap("n", "<C-g>", [[<Cmd>lua require"fzf-lua".grep_project()<CR>]], {})
 	vim.api.nvim_set_keymap("n", "<F1>", [[<Cmd>lua require"fzf-lua".help_tags()<CR>]], {})
+	vim.api.nvim_set_keymap("n", "<M-z>", [[<Cmd>lua require"fzf-lua".resume()<CR>]], {})
 	vim.api.nvim_set_keymap("n", "<Space>f", [[<Cmd>lua require"fzf-lua".git_files()<CR>]], {})
 	vim.api.nvim_set_keymap("n", "<Space>a", [[<Cmd>lua grep_git_root()<CR>]], {})
 	vim.api.nvim_set_keymap("n", "<Space>A", [[<Cmd>lua rg_git_root()<CR>]], {})
@@ -158,6 +166,7 @@ return {
 	  },
 	  -- Other configuration...
 	  actions = custom_actions,
+	  keymap = custom_keymap,
 	})
   end,
 }
