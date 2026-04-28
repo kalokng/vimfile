@@ -55,6 +55,7 @@ return {
 	--api.nvim_command('hi StatusLine cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
 	--api.nvim_command('hi StatusLine cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg..' guibg='..colors. bg..' guifg='..colors.fg)
 	sl=string.format("hi StatusLine cterm=NONE ctermfg='%s' ctermbg='%s' guibg='%s' guifg='%s'", cterms.fg, cterms.bg, colors.bg, "#2e3464")
+	api.nvim_command("hi StatusLine gui=NONE")
 	api.nvim_command(sl)
 	api.nvim_command('hi StatusLineNC cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
 	api.nvim_command('hi StatusLineTermNC cterm=NONE ctermfg='..cterms.fg..' ctermbg='..cterms.bg)
@@ -199,9 +200,9 @@ return {
 		  local mode = vim.fn.mode()
 		  api.nvim_command('hi GalaxyViMode guibg='..mode_color[mode])
 		  api.nvim_command('hi GalaxyViMode ctermbg='..cterm_color[mode])
-		  buf_binded('GalaxyLineInfo')
-		  buf_binded('GalaxyPerCent')
-		  buf_cur_dir('GalaxyFileName')
+		  --buf_binded('GalaxyLineInfo')
+		  --buf_binded('GalaxyPerCent')
+		  --buf_cur_dir('GalaxyFileName')
 		  local name = mode_name[mode]
 		  if name ~= nil then
 			mode = name
@@ -266,7 +267,6 @@ return {
 		separator = '',
 		separator_highlight = {colors.darkblue,colors.bg},
 		highlight = {colors.fg,colors.darkblue},
-		--highlight = "guifg="..colors.fg.." guibg="..colors.darkblue.." ctermfg="..colors.ctermbg.." ctermbg="..colors.ctermfg,
 	  },
 	}
 
@@ -274,7 +274,7 @@ return {
 	  DiagnosticError = {
 		provider = 'DiagnosticError',
 		icon = '  ',
-		highlight = {colors.red,colors.bg}
+		highlight = {colors.bg,colors.red}
 	  }
 	}
 
@@ -282,7 +282,7 @@ return {
 	  DiagnosticWarn = {
 		provider = 'DiagnosticWarn',
 		icon = '  ',
-		highlight = {colors.yellow,colors.bg},
+		highlight = {colors.bg,colors.yellow},
 	  }
 	}
 
@@ -290,7 +290,7 @@ return {
 	  DiagnosticHint = {
 		provider = 'DiagnosticHint',
 		icon = '  ',
-		highlight = {colors.cyan,colors.bg},
+		highlight = {colors.bg,colors.cyan},
 	  }
 	}
 
@@ -298,7 +298,7 @@ return {
 	  DiagnosticInfo = {
 		provider = 'DiagnosticInfo',
 		icon = '  ',
-		highlight = {colors.blue,colors.bg},
+		highlight = {colors.bg,colors.blue},
 	  }
 	}
 
@@ -310,7 +310,7 @@ return {
 		end,
 		condition = condition.hide_in_width,
 		icon = ':',
-		highlight = {colors.cyan,colors.bg,'bold'}
+		highlight = {colors.bg,colors.cyan,'bold'}
 	  }
 	}
 
@@ -329,6 +329,7 @@ return {
 		condition = function()
 		  if not special_filetype() then return false end
 		  if vim.fn.winwidth(0) >= 70 then
+		  --if vim.fn.getwininfo(vim.fn.win_getid())[0].width - vim.fn.getwininfo(vim.fn.win_getid())[0].textoff >= 70 then
 			return true
 		  end
 		  return false
@@ -372,16 +373,16 @@ return {
 	  BufferType = {
 		provider = 'FileTypeName',
 		separator = ' ',
-		separator_highlight = {'NONE',colors.bg},
+		separator_highlight = {colors.bg,'NONE'},
 		highlight = {colors.blue,colors.bg,'bold'}
 	  }
 	}
 
 	gls.short_line_left[2] = {
-	  FileSize = {
+	  SFileSize = {
 		provider = cache_filesize,
 		condition = condition.buffer_not_empty,
-		highlight = {colors.fg,colors.bg}
+		highlight = {colors.bg,colors.fg}
 	  }
 	}
 
@@ -396,7 +397,7 @@ return {
 		  return string.sub(path,0,vim.fn.strridx(path, name))
 		end,
 		condition = condition.buffer_not_empty,
-		highlight = {color_gray,colors.bg}
+		highlight = {colors.bg,color_gray}
 	  }
 	}
 
@@ -405,24 +406,24 @@ return {
 		provider = 'SFileName',
 		condition = condition.buffer_not_empty,
 		separator = '',
-		separator_highlight = {colors.darkblue,colors.bg},
-		highlight = {colors.fg,colors.bg,'bold'}
+		separator_highlight = {colors.bg,colors.darkblue},
+		highlight = {colors.bg,colors.fg,'bold'}
 	  }
 	}
 
 	gls.short_line_left[5] = {
-	  PerCent = {
+	  SPerCent = {
 		provider = current_line_percent,
-		highlight = {colors.fg,colors.darkblue,'bold'},
+		highlight = {colors.darkblue,colors.fg,'bold'},
 	  }
 	}
 
 	gls.short_line_left[6] = {
-	  LineInfo = {
+	  SLineInfo = {
 		provider = line_column,
 		separator = '',
-		separator_highlight = {colors.darkblue,colors.bg},
-		highlight = {colors.fg,colors.darkblue},
+		separator_highlight = {colors.bg,colors.darkblue},
+		highlight = {colors.darkblue,colors.fg},
 		--highlight = "guifg="..colors.fg.." guibg="..colors.darkblue.." ctermfg="..colors.ctermbg.." ctermbg="..colors.ctermfg,
 	  },
 	}
