@@ -202,7 +202,7 @@ return {
 		  api.nvim_command('hi GalaxyViMode ctermbg='..cterm_color[mode])
 		  --buf_binded('GalaxyLineInfo')
 		  --buf_binded('GalaxyPerCent')
-		  --buf_cur_dir('GalaxyFileName')
+		  buf_cur_dir('GalaxyFileName')
 		  local name = mode_name[mode]
 		  if name ~= nil then
 			mode = name
@@ -234,7 +234,7 @@ return {
 		provider =  function()
 		  local path = cache_expand('%:p')
 		  local name = cache_expand('%:p:t')
-		  if vim.fn.winwidth(0) < vim.fn.strdisplaywidth(path)+10 then
+		  if vim.fn.winwidth(0) < vim.fn.strdisplaywidth(path)+20 then
 			return ''
 		  end
 		  return string.sub(path,0,vim.fn.strridx(path, name))
@@ -317,7 +317,13 @@ return {
 	gls.mid[2] = {
 	  GitBranch = {
 		provider = 'GitBranch',
-		condition = condition.check_git_workspace,
+		--condition = condition.check_git_workspace,
+		condition = function()
+		  if vim.fn.winwidth(0) >= 80 then
+			return condition.check_git_workspace()
+		  end
+		  return false
+		end,
 		icon = ' ',
 		highlight = {colors.orange,colors.bg,'bold'}
 	  }
@@ -328,7 +334,7 @@ return {
 		provider = vim.fn.GetCacheFTimeStr,
 		condition = function()
 		  if not special_filetype() then return false end
-		  if vim.fn.winwidth(0) >= 70 then
+		  if vim.fn.winwidth(0) >= 80 then
 		  --if vim.fn.getwininfo(vim.fn.win_getid())[0].width - vim.fn.getwininfo(vim.fn.win_getid())[0].textoff >= 70 then
 			return true
 		  end
@@ -391,7 +397,7 @@ return {
 		provider =  function()
 		  local path = cache_expand('%:p')
 		  local name = cache_expand('%:p:t')
-		  if vim.fn.winwidth(0) < vim.fn.strdisplaywidth(path)+10 then
+		  if vim.fn.winwidth(0) < vim.fn.strdisplaywidth(path)+20 then
 			return ''
 		  end
 		  return string.sub(path,0,vim.fn.strridx(path, name))
