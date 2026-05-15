@@ -161,6 +161,7 @@ lua require("config.lazy")
 	"nnoremap <Space>A :call <SID>searchGitAll('', 1)<CR>
 	"ctrl+`
 	nnoremap <C-space> :sp +te<CR>A
+	nnoremap <C-`> :sp +te<CR>A
 	"nnoremap <space>w :Ag! <C-R><C-W><CR>
 	"nnoremap <space>a :Ag!<CR>
 
@@ -863,7 +864,7 @@ nnoremap <silent> <F8> :set list!<CR>
 nnoremap <silent> <M-F8> :let @z=@/<CR>:%s/\s\+$//<CR><C-O>:let @/=@z<CR>
 
 if has("win32")
-	nnoremap <Nul> :exec "exec \"sp\" \| exec \"te pwsh\" \| norm i"<CR>
+	nnoremap <C-`> :exec "exec \"sp\" \| exec \"te pwsh\" \| norm i"<CR>
 	function! <SID>startTerminal(name)
 		let namemap               = {}
 		let namemap["bash"]       = '"git bash"'
