@@ -18,6 +18,12 @@ return {
 	'CopilotC-Nvim/CopilotChat.nvim',
 	'nvim-treesitter/nvim-treesitter-textobjects',
 	'petertriho/nvim-scrollbar',
+	{
+	  'folke/tokyonight.nvim',
+	  lazy = false,
+	  priority = 1000,
+	  opts = { style = "moon" },
+	},
 
 	{
 		'PProvost/vim-ps1',
