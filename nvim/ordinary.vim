@@ -299,12 +299,12 @@ if executable('rg')
 endif
 
 if executable('lazygit')
-	function! LG()
-		exec "tabnew"
-		exec "term lazygit"
-		norm i
-	endfunction
-	command! LG call LG()
+  function! LG()
+	exec "tabe"
+	exec "term lazygit"
+	norm i
+  endfunction
+  command! LG call LG()
 endif
 
 syn on
@@ -320,7 +320,6 @@ hi User1	guibg=cyan guifg=black gui=none
 hi ColorColumn guibg=#800040
 "color default
 "color desert
-color tokyonight-moon
 hi WarningMsg guifg=black guibg=green
 hi NonText gui=bold guifg=#9F9FDF
 hi SpecialKey gui=bold guifg=#7FDF7F

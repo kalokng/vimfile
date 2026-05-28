@@ -395,7 +395,7 @@ return {
 	  SFileSize = {
 		provider = cache_filesize,
 		condition = condition.buffer_not_empty,
-		highlight = {colors.bg,colors.fg}
+		highlight = {colors.fg,colors.bg}
 	  }
 	}
 
@@ -410,7 +410,7 @@ return {
 		  return string.sub(path,0,vim.fn.strridx(path, name))
 		end,
 		condition = condition.buffer_not_empty,
-		highlight = {colors.bg,color_gray}
+		highlight = {color_gray,colors.bg}
 	  }
 	}
 
@@ -419,24 +419,23 @@ return {
 		provider = 'SFileName',
 		condition = condition.buffer_not_empty,
 		separator = '',
-		separator_highlight = {colors.bg,colors.darkblue},
-		highlight = {colors.bg,colors.fg,'bold'}
+		separator_highlight = {colors.darkblue,colors.bg},
+		highlight = {colors.fg,colors.bg,'bold'}
 	  }
 	}
 
 	gls.short_line_left[5] = {
 	  SPerCent = {
 		provider = current_line_percent,
-		highlight = {colors.darkblue,colors.fg,'bold'},
+		highlight = {colors.fg,colors.darkblue,'bold'},
 	  }
 	}
 
 	gls.short_line_left[6] = {
 	  SLineInfo = {
 		provider = line_column,
-		separator = '',
 		separator_highlight = {colors.bg,colors.darkblue},
-		highlight = {colors.darkblue,colors.fg},
+		highlight = {colors.fg,colors.darkblue},
 		--highlight = "guifg="..colors.fg.." guibg="..colors.darkblue.." ctermfg="..colors.ctermbg.." ctermbg="..colors.ctermfg,
 	  },
 	}
