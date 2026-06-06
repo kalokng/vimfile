@@ -36,15 +36,28 @@ return {
 	  local parent_dir = vim.fn.fnamemodify(current_cwd, ":h")
 
 	  local provider_name = opts.__resume_key or "files"
-	  --vim.print(opts)
-	  --vim.print(fzf)
-	  --vim.print(provider_name)
+	  local is_grep_provider = provider_name:match("grep") ~= nil
+
 	  local new_opts = {
 		cwd = parent_dir,
-		query = last_query,
 	  }
-	  if provider_name == "grep" then
-		new_opts.search = opts.__call_opts.search
+
+	  if is_grep_provider then
+		local call_opts = opts.__call_opts or {}
+		local search = call_opts.search or opts.search or ""
+		new_opts.search = search
+		new_opts.no_esc = call_opts.no_esc or opts.no_esc
+
+		-- Prefer current prompt text, then fall back to fzf's tracked last query.
+		local fuzzy_query = opts.last_query or last_query
+
+		-- Resume edge-case parity: only set `query` when non-empty.
+		-- Empty query must be omitted so grep keeps `search` as its prompt value.
+		if type(fuzzy_query) == "string" and #fuzzy_query > 0 and fuzzy_query ~= search then
+		  new_opts.query = fuzzy_query
+		end
+	  else
+		new_opts.query = last_query
 	  end
 
 	  if fzf[provider_name] then
