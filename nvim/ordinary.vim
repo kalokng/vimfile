@@ -6,6 +6,7 @@ set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
 			\sm:block-blinkwait175-blinkoff150-blinkon175
 "set shada="NONE"
 "set guioptions=egrL
+set background=dark
 
 function! Cond(cond, ...)
 	let opts = get(a:000, 0, {})
@@ -313,6 +314,9 @@ se cursorline
 "hi LineNr guibg=#F0F0FF guifg=Brown
 "hi CursorLine guibg=LightCyan
 hi CursorLine guibg=#401020
+" Make visual selections stand out more clearly on dark themes.
+hi Visual guifg=#ffffff guibg=#3f5f8f gui=none ctermfg=15 ctermbg=24 cterm=none
+hi VisualNOS guifg=#ffffff guibg=#3f5f8f gui=none ctermfg=15 ctermbg=24 cterm=none
 hi DiffText guibg=#FF7F7F
 "hi StatusLineNC	guibg=darkgrey guifg=white gui=none
 "hi ModeMsg guibg=Purple guifg=white
@@ -351,7 +355,7 @@ au filetype rust nmap <buffer> <leader>b :make check<CR>
 "php
 let g:PHP_default_indenting = 1
 
-let g:zip_unzipcmd= "7z"
+"let g:zip_unzipcmd= "7z"
 
 "java
 let java_allow_cpp_keywords = 1

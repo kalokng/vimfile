@@ -3,13 +3,14 @@ if pcall(require, 'cmp_nvim_lsp') then
     capabilities = require('cmp_nvim_lsp').default_capabilities()
 end
 
-vim.lsp.enable('teraformls', {
-    capabilities = capabilities,
+-- `vim.lsp.enable()` only takes a config name and an optional boolean.
+-- Put shared capabilities in the config layer so every server receives them.
+vim.lsp.config('*', {
+  capabilities = capabilities,
 })
 
-vim.lsp.enable('vtsls', {
-    capabilities = capabilities,
-})
+vim.lsp.enable('teraformls')
+vim.lsp.enable('vtsls')
 
 ---------------------------------------------------------
 -- Format on save for Go
@@ -74,16 +75,64 @@ vim.lsp.config('gopls', {
         useany = true,
       },
       staticcheck = true,
+
+      -- gopls advertises inlay-hint support, but most Go hints are disabled
+      -- unless they are explicitly enabled here.
+      hints = {
+        assignVariableTypes = true,
+        compositeLiteralFields = true,
+        compositeLiteralTypes = true,
+        constantValues = true,
+        functionTypeParameters = true,
+        parameterNames = true,
+        rangeVariableTypes = true,
+      },
     },
   },
 })
 
-vim.lsp.enable('gopls', {
-  capabilities = capabilities,
-})
+vim.lsp.enable('gopls')
 
 vim.lsp.enable('eslint')
 
+local function lsp_supports_inlay_hints(client, bufnr)
+  if not client then
+    return false
+  end
+
+  if client.supports_method then
+    return client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, bufnr)
+  end
+
+  return client.server_capabilities and client.server_capabilities.inlayHintProvider ~= nil
+end
+
+local function buffer_supports_inlay_hints(bufnr)
+  for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+    if lsp_supports_inlay_hints(client, bufnr) then
+      return true
+    end
+  end
+
+  return false
+end
+
+ToggleInlayHints = function(bufnr)
+  bufnr = bufnr == 0 and vim.api.nvim_get_current_buf() or (bufnr or vim.api.nvim_get_current_buf())
+
+  if not buffer_supports_inlay_hints(bufnr) then
+    vim.notify("No LSP inlay hints available for this buffer", vim.log.levels.WARN)
+    return
+  end
+
+  local enabled = vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr })
+  vim.lsp.inlay_hint.enable(not enabled, { bufnr = bufnr })
+  vim.notify("Inlay hints " .. (enabled and "hidden" or "shown"))
+end
+
+vim.api.nvim_create_user_command("LspInlayHintsToggle", function()
+  ToggleInlayHints(0)
+end, { desc = "Toggle LSP inlay hints for the current buffer" })
 
 ShowHoverSignatureInCmdline = function()
   local params = vim.lsp.util.make_position_params()
@@ -119,6 +168,13 @@ vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('UserLspConfig', {}),
   callback = function(ev)
     local opts = { noremap = true, silent = true, buffer = ev.buf }
+    local client = vim.lsp.get_client_by_id(ev.data.client_id)
+
+    if lsp_supports_inlay_hints(client, ev.buf) then
+      vim.keymap.set("n", "<leader>ih", function()
+        ToggleInlayHints(ev.buf)
+      end, { noremap = true, silent = true, buffer = ev.buf, desc = "Toggle inlay hints" })
+    end
 
     vim.keymap.set("n", "<space>e", vim.diagnostic.open_float)
     vim.keymap.set('n', '<space>i', ShowHoverSignatureInCmdline, { silent = true, buffer = true, desc = "Show hover info in cmdline" })
@@ -129,6 +185,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
     vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
     vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
     vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+	vim.keymap.set('i', '<C-k>', vim.lsp.buf.signature_help, { desc = 'LSP signature help' })
 
     -- show diagnostics
     vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, opts)
