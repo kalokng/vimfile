@@ -44,15 +44,12 @@ function M.setup()
       ["*"] = copy("*"),
     },
     -- Neovim requires a paste provider, but OSC52 paste sends a terminal query
-    -- and can block in herdr. Return only this session's cached yanks instead.
+    -- and can block in herdr. Return only this session's cached register writes.
     paste = {
       ["+"] = paste("+"),
       ["*"] = paste("*"),
     },
   }
-
-  -- In herdr, yanking a visual selection should publish it to the host clipboard.
-  vim.opt.clipboard:append("unnamedplus")
 end
 
 return M
