@@ -8,6 +8,8 @@ set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
 "set guioptions=egrL
 set background=dark
 
+lua require("config.clipboard").setup()
+
 function! Cond(cond, ...)
 	let opts = get(a:000, 0, {})
 	return a:cond ? opts : extend(opts, { 'on': [], 'for': [] })
