@@ -15,15 +15,39 @@ function M.setup()
     return
   end
 
+  local copied = {}
+
+  local function copy(reg)
+    local osc52_copy = osc52.copy(reg)
+
+    return function(lines, regtype)
+      copied[reg] = { lines = vim.deepcopy(lines), regtype = regtype }
+      osc52_copy(lines, regtype)
+    end
+  end
+
+  local function paste(reg)
+    return function()
+      local cached = copied[reg]
+      if not cached then
+        return 0
+      end
+
+      return cached.lines
+    end
+  end
+
   vim.g.clipboard = {
     name = "herdr OSC 52",
     copy = {
-      ["+"] = osc52.copy("+"),
-      ["*"] = osc52.copy("*"),
+      ["+"] = copy("+"),
+      ["*"] = copy("*"),
     },
+    -- Neovim requires a paste provider, but OSC52 paste sends a terminal query
+    -- and can block in herdr. Return only this session's cached yanks instead.
     paste = {
-      ["+"] = osc52.paste("+"),
-      ["*"] = osc52.paste("*"),
+      ["+"] = paste("+"),
+      ["*"] = paste("*"),
     },
   }
 
