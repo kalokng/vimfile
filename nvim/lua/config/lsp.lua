@@ -10,6 +10,40 @@ vim.lsp.config('*', {
 })
 
 vim.lsp.enable('teraformls')
+
+---------------------------------------------------------
+-- vtsls configuration (TypeScript/JavaScript)
+---------------------------------------------------------
+-- vtsls advertises inlayHintProvider, and the LspAttach autocmd below
+-- auto-enables hints on the Neovim side. The hint *kinds* are opt-in on
+-- the TypeScript side: vtsls reads the flat VS Code keys
+-- `typescript.inlayHints.*` / `javascript.inlayHints.*` (default: all off).
+-- Note: keys must use the exact TS schema names (functionLikeReturnTypes,
+-- enumMemberValues) -- the `vtsls.tsserver.inlayHints` path is ignored.
+vim.lsp.config('vtsls', {
+  settings = {
+    typescript = {
+      inlayHints = {
+        parameterNames           = { enabled = 'all', suppressWhenArgumentMatchesName = true },
+        parameterTypes           = { enabled = true },
+        variableTypes            = { enabled = true, suppressWhenTypeMatchesName = true },
+        propertyDeclarationTypes = { enabled = true },
+        functionLikeReturnTypes  = { enabled = true },
+        enumMemberValues         = { enabled = true },
+      },
+    },
+    javascript = {
+      inlayHints = {
+        parameterNames           = { enabled = 'all', suppressWhenArgumentMatchesName = true },
+        parameterTypes           = { enabled = true },
+        variableTypes            = { enabled = true, suppressWhenTypeMatchesName = true },
+        propertyDeclarationTypes = { enabled = true },
+        functionLikeReturnTypes  = { enabled = true },
+        enumMemberValues         = { enabled = true },
+      },
+    },
+  },
+})
 vim.lsp.enable('vtsls')
 
 ---------------------------------------------------------
@@ -47,6 +81,16 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 
 vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = { "*.tf", "*.tfvars" },
+  callback = function()
+    vim.lsp.buf.format({async = false})
+  end,
+})
+
+---------------------------------------------------------
+-- Format on save for Zig
+---------------------------------------------------------
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*.zig",
   callback = function()
     vim.lsp.buf.format({async = false})
   end,
@@ -93,6 +137,23 @@ vim.lsp.config('gopls', {
 
 vim.lsp.enable('gopls')
 
+---------------------------------------------------------
+-- zls configuration (Zig)
+---------------------------------------------------------
+vim.lsp.config('zls', {
+  settings = {
+    zls = {
+      -- Use the zig installed on PATH; set explicitly if needed:
+      -- zig_exe_path = '/usr/bin/zig',
+      enable_build_on_save = true,
+      warn_style = true,
+    },
+  },
+})
+vim.lsp.enable('zls', {
+  capabilities = capabilities,
+})
+
 vim.lsp.enable('eslint')
 
 local function lsp_supports_inlay_hints(client, bufnr)
@@ -134,6 +195,46 @@ vim.api.nvim_create_user_command("LspInlayHintsToggle", function()
   ToggleInlayHints(0)
 end, { desc = "Toggle LSP inlay hints for the current buffer" })
 
+vim.lsp.config('julials', {
+    cmd = {
+        "julia",
+        "--project=".."~/.julia/environments/lsp/",
+        "--startup-file=no",
+        "--history-file=no",
+        "-e", [[
+            using Pkg
+            Pkg.instantiate()
+            using LanguageServer
+        depot_path = get(ENV, "JULIA_DEPOT_PATH", "")
+        project_path = let
+            dirname(something(
+                ## 1. Finds an explicitly set project (JULIA_PROJECT)
+                Base.load_path_expand((
+                    p = get(ENV, "JULIA_PROJECT", nothing);
+                        p === nothing ? nothing : isempty(p) ? nothing : p
+                    )),
+                        ## 2. Look for a Project.toml file in the current working directory,
+                        ##    or parent directories, with $HOME as an upper boundary
+                        Base.current_project(),
+                        ## 3. First entry in the load path
+                        get(Base.load_path(), 1, nothing),
+                        ## 4. Fallback to default global environment,
+                        ##    this is more or less unreachable
+                    Base.load_path_expand("@v#.#"),
+                ))
+            end
+                    @info "Running language server" VERSION pwd() project_path depot_path
+                    server = LanguageServer.LanguageServerInstance(stdin, stdout, project_path, depot_path)
+        server.runlinter = true
+            run(server)
+        ]]
+    },
+    filetypes = { 'julia' },
+    root_markers = { "Project.toml", "JuliaProject.toml" },
+    settings = {}
+})
+vim.lsp.enable('julials')
+
 ShowHoverSignatureInCmdline = function()
   local params = vim.lsp.util.make_position_params()
   vim.lsp.buf_request(0, 'textDocument/hover', params, function(err, result)
@@ -171,6 +272,9 @@ vim.api.nvim_create_autocmd('LspAttach', {
     local client = vim.lsp.get_client_by_id(ev.data.client_id)
 
     if lsp_supports_inlay_hints(client, ev.buf) then
+      -- Auto-enable inlay hints for any server that advertises support
+      -- (e.g. gopls, zls). Toggle manually with <leader>ih.
+      vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
       vim.keymap.set("n", "<leader>ih", function()
         ToggleInlayHints(ev.buf)
       end, { noremap = true, silent = true, buffer = ev.buf, desc = "Toggle inlay hints" })

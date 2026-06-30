@@ -36,9 +36,18 @@ return {
 	  end,
 	},
 
-	{
-		'PProvost/vim-ps1',
-		ft = 'ps1',
-	},
+  {
+	'PProvost/vim-ps1',
+	ft = 'ps1',
+  },
+  {
+	"nicolasgb/jj.nvim",
+	version = "*", -- Use latest stable release
+	-- Or from the main branch (uncomment the branch line and comment the version line)
+	-- branch = "main",
+	config = function()
+	  require("jj").setup({})
+	end,
+  }
 }
 
