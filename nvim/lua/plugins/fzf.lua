@@ -145,6 +145,7 @@ return {
 	vim.api.nvim_set_keymap("n", "<C-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false})<CR>]], {})
 	vim.api.nvim_set_keymap("v", "<C-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false,query=require"plugins.fzf".get_selection_escaped("en")})<CR>]], {})
 	vim.api.nvim_set_keymap("n", "<C-l>", [[<Cmd>lua require"fzf-lua".live_grep()<CR>]], {})
+	vim.api.nvim_set_keymap("v", "<C-l>", [[<Cmd>lua require"fzf-lua".live_grep({query=require"plugins.fzf".get_selection_escaped("en")})<CR>]], {})
 	--vim.api.nvim_set_keymap("n", "<C-g>", [[<Cmd>lua require"fzf-lua".grep_project()<CR>]], {})
 	vim.api.nvim_set_keymap("n", "<F1>", [[<Cmd>lua require"fzf-lua".help_tags()<CR>]], {})
 	vim.api.nvim_set_keymap("n", "<M-z>", [[<Cmd>lua require"fzf-lua".resume()<CR>]], {})
@@ -154,7 +155,7 @@ return {
 	vim.api.nvim_set_keymap("n", "<Space>w", [[<Cmd>lua grep_git_root(vim.fn.expand("<cword>"))<CR>]], {})
 	vim.api.nvim_set_keymap("v", "<Space>w", [[<Cmd>lua grep_git_root(require"plugins.fzf".get_selection_escaped("en"))<CR>]], {})
 
-	vim.keymap.set({ "n", "v", "i" }, "<C-x><C-f>",
+	vim.keymap.set({ "v", "i" }, "<C-x><C-f>",
 	function() FzfLua.complete_path() end,
 	{ silent = true, desc = "Fuzzy complete path" })
 

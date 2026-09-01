@@ -1207,7 +1207,7 @@ command! -nargs=? -complete=file Admin :exec "silent !elevate ".$VIMRUNTIME."\\g
 "	\ execute "source " . $HOME . "/.vim/Session.vim.bak" |
 "	\ execute "call delete('"$HOME . "/.vim/Session.vim')"
 "
-"dw:call setline(2, getline(2).printf("%c", 0x"))
+"dw:call setline(2, getline(2).printf("%c", 0x"))
 "%s,\v\<([^<>]+)\>[^<>]+\</\1\>|\<[^<>]+/\>,&\r,g
 "%s,\v\<([^<>]+)\>((\<.{-}\>)|)\</\1\>,<\1>\r\2</\1>\r,g
 "call setline('$', getline('$') . printf("%c", 0x

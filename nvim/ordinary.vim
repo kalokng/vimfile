@@ -340,7 +340,7 @@ hi WarningMsg guifg=black guibg=#79ffc6
 "hi ModeMsg guibg=Purple guifg=white
 "hi LineNr guifg=#909194 guibg=#181a26
 
-inoremap <C-S> <C-G>u<C-C>:W<CR>
+"inoremap <C-S> <C-G>u<C-C>:W<CR>
 nnoremap <C-S> :W<CR>
 nnoremap <C-6> <C-^>
 

@@ -3,6 +3,8 @@ if pcall(require, 'cmp_nvim_lsp') then
     capabilities = require('cmp_nvim_lsp').default_capabilities()
 end
 
+vim.lsp.set_log_level("off")
+
 -- `vim.lsp.enable()` only takes a config name and an optional boolean.
 -- Put shared capabilities in the config layer so every server receives them.
 vim.lsp.config('*', {
@@ -10,6 +12,50 @@ vim.lsp.config('*', {
 })
 
 vim.lsp.enable('teraformls')
+-- Keep terraform-ls scoped to Terraform modules instead of the nearest .git
+-- folder; otherwise it can index large non-Terraform workspaces.
+local function terraform_root_dir(bufnr, on_dir)
+  local filename = vim.api.nvim_buf_get_name(bufnr)
+  if filename == "" then
+    return
+  end
+
+  local start_dir = vim.fs.dirname(filename)
+  if not start_dir then
+    return
+  end
+
+  on_dir(vim.fs.root(start_dir, { ".terraform", ".terraform.lock.hcl" }) or start_dir)
+end
+
+vim.lsp.config('terraformls', {
+  root_dir = terraform_root_dir,
+  on_attach = function(client)
+    -- terraform-ls semantic tokens can hang on large Terraform folders.
+    client.server_capabilities.semanticTokensProvider = nil
+  end,
+  init_options = {
+    terraform = {
+      languageServer = {
+        ignoreSingleFileWarning = true,
+        indexing = {
+          ignoreDirectoryNames = {
+            ".git",
+            ".hg",
+            ".svn",
+            ".terraform",
+            ".terragrunt-cache",
+            "node_modules",
+            "vendor",
+            "dist",
+            "build",
+            "target",
+          },
+        },
+      },
+    },
+  },
+})
 
 ---------------------------------------------------------
 -- vtsls configuration (TypeScript/JavaScript)
@@ -40,8 +86,8 @@ vim.lsp.config('vtsls', {
         propertyDeclarationTypes = { enabled = true },
         functionLikeReturnTypes  = { enabled = true },
         enumMemberValues         = { enabled = true },
-      },
-    },
+	  },
+	},
   },
 })
 vim.lsp.enable('vtsls')
