@@ -335,7 +335,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
     vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
     vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
     vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-	vim.keymap.set('i', '<C-k>', vim.lsp.buf.signature_help, { desc = 'LSP signature help' })
+	vim.keymap.set('i', '<C-S-k>', vim.lsp.buf.signature_help, { desc = 'LSP signature help' })
 
     -- show diagnostics
     vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, opts)

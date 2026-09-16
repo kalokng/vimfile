@@ -821,6 +821,7 @@ set autochdir
 
 map <silent> Q gq
 
+nnoremap <silent> <esc><esc> :nohl<CR>
 nnoremap <silent> <Space><Space> :call Auto_Highlight_Cword()\|set hls<CR>
 function! Auto_Highlight_Cword()
 	let word="\\<".expand("<cword>")."\\>"
