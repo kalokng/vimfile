@@ -817,7 +817,7 @@ function! GenPwd(...)
 	return join(l:pwd,'')
 endfunction
 
-set autochdir
+set noautochdir
 
 map <silent> Q gq
 

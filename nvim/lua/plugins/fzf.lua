@@ -30,16 +30,19 @@ return {
 	local fzf = require('fzf-lua')
 	local actions = require('fzf-lua.actions')
 
-	local function climb_up(_, opts)
+	local function file_directory(opts)
+	  local name = opts.__CTX.bname
+	  return name ~= "" and vim.fn.fnamemodify(name, ":p:h") or opts.cwd or vim.uv.cwd()
+	end
+
+	local function change_directory(opts, cwd)
 	  local last_query = fzf.get_last_query()
-	  local current_cwd = opts.cwd or vim.uv.cwd()
-	  local parent_dir = vim.fn.fnamemodify(current_cwd, ":h")
 
 	  local provider_name = opts.__resume_key or "files"
 	  local is_grep_provider = provider_name:match("grep") ~= nil
 
 	  local new_opts = {
-		cwd = parent_dir,
+		cwd = cwd,
 	  }
 
 	  if is_grep_provider then
@@ -64,10 +67,17 @@ return {
 		fzf[provider_name](new_opts)
 	  else
 		-- Extreme fallback
-		fzf.files({ cwd = parent_dir, query = last_query })
+		fzf.files({ cwd = cwd, query = last_query })
 	  end
 	end
 
+	local function climb_up(_, opts)
+	  change_directory(opts, vim.fn.fnamemodify(opts.cwd or vim.uv.cwd(), ":h"))
+	end
+
+	local function go_to_file_directory(_, opts)
+	  change_directory(opts, file_directory(opts))
+	end
 	local custom_actions = {
 	  files = {
 		["default"] = fzf.actions.file_edit_or_qf,
@@ -80,6 +90,7 @@ return {
 		["alt-h"]   = actions.toggle_hidden,
 		["alt-f"]   = actions.toggle_follow,
 		["ctrl-p"]  = climb_up,
+		["alt-p"]   = go_to_file_directory,
 	  },
 	  grep = {
 		["default"] = fzf.actions.file_edit_or_qf,
@@ -92,6 +103,7 @@ return {
 		["alt-h"]   = actions.toggle_hidden,
 		["alt-f"]   = actions.toggle_follow,
 		["ctrl-p"]  = climb_up,
+		["alt-p"]   = go_to_file_directory,
 	  }
 	}
 	local custom_keymap = require('fzf-lua').defaults.keymap
@@ -222,6 +234,15 @@ return {
 	  local function mode_actions()
 		local picker_actions = vim.deepcopy(custom_actions.grep)
 		picker_actions["ctrl-p"] = { fn = climb_parent, reuse = true, header = "parent directory" }
+		picker_actions["alt-p"] = {
+		  fn = function(_, opts)
+			capture_active_query()
+			base_opts.cwd = file_directory(opts)
+			reopen_active()
+		  end,
+		  reuse = true,
+		  header = "current file directory",
+		}
 		picker_actions["alt-i"] = { fn = toggle_option("no_ignore"), reuse = true, header = "toggle ignore" }
 		picker_actions["alt-h"] = { fn = toggle_option("hidden"), reuse = true, header = "toggle hidden" }
 		picker_actions["alt-f"] = { fn = toggle_option("follow"), reuse = true, header = "toggle follow" }
@@ -350,6 +371,8 @@ return {
 	vim.api.nvim_set_keymap("n", "<C-_>", [[<Cmd>lua require"fzf-lua".resume()<CR>]], {})
 	vim.api.nvim_set_keymap("n", "<C-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false})<CR>]], {})
 	vim.api.nvim_set_keymap("v", "<C-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false,query=require"plugins.fzf".get_selection_escaped("en")})<CR>]], {})
+	vim.api.nvim_set_keymap("n", "<M-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false,cwd=vim.fn.expand("%:p:h")})<CR>]], {})
+	vim.api.nvim_set_keymap("v", "<M-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false,cwd=vim.fn.expand("%:p:h"),query=require"plugins.fzf".get_selection_escaped("en")})<CR>]], {})
 	vim.keymap.set("n", "<C-l>", function()
 	  live_grep_with_filetypes()
 	end, { silent = true, desc = "Live grep" })
