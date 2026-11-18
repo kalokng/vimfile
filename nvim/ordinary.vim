@@ -301,6 +301,16 @@ if executable('rg')
 	"command! -nargs=* -bang RG call RipgrepFzf(<q-args>, <bang>0)
 endif
 
+lua << EOF
+vim.api.nvim_create_autocmd("TermClose", {
+  callback = function(ev)
+    if vim.v.event.status == 0 and vim.api.nvim_buf_is_loaded(ev.buf) then
+      vim.api.nvim_buf_delete(ev.buf, { force = true })
+    end
+  end,
+})
+EOF
+
 if executable('lazygit')
   function! LG()
 	exec "tabe"
