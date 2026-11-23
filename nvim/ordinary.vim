@@ -163,8 +163,9 @@ lua require("config.lazy")
 	"nnoremap <Space>a :call <SID>searchGit('')<CR>
 	"nnoremap <Space>A :call <SID>searchGitAll('', 1)<CR>
 	"ctrl+`
-	nnoremap <C-space> :sp +te<CR>A
-	nnoremap <C-`> :sp +te<CR>A
+	nnoremap <C-space> :hor te<CR>A
+	nnoremap <C-S-`> :hor te<CR>A
+	nnoremap <C-`> :sp<BAR>call chdir(expand('%:p:h'),"window")<BAR>te<CR>A
 	"nnoremap <space>w :Ag! <C-R><C-W><CR>
 	"nnoremap <space>a :Ag!<CR>
 
@@ -313,7 +314,9 @@ EOF
 
 if executable('lazygit')
   function! LG()
+	let dir = expand('%:p:h')
 	exec "tabe"
+	call chdir(dir, "window")
 	exec "term lazygit"
 	norm i
   endfunction
@@ -857,12 +860,19 @@ endif
 command! Bash :call <SID>rgInGit()<CR>
 
 nnoremap <M-/> :Fg<space>
+nnoremap ÷ :Fg<space>
 nnoremap <M-?> :Ack -Q "
+nnoremap ¿ :Ack -Q "
 cnoremap <M-v> vimgrep /
+cnoremap √ vimgrep /
 cnoremap <M-/> <SPACE><C-R>=fnameescape(getcwd())<CR>/
+cnoremap ÷ <SPACE><C-R>=fnameescape(getcwd())<CR>/
 cnoremap <M-?> <SPACE><C-R>=fnameescape(expand("%:p:h"))<CR>/
+cnoremap ¿ <SPACE><C-R>=fnameescape(expand("%:p:h"))<CR>/
 cnoremap <M-5> <SPACE><C-R>=fnameescape(expand('%:p'))<CR>
+cnoremap ∞ <SPACE><C-R>=fnameescape(expand('%:p'))<CR>
 inoremap <M-/> <C-R>=fnameescape(expand("%:p:t"))<CR>
+inoremap ÷ <C-R>=fnameescape(expand("%:p:t"))<CR>
 nmap <silent> <M-n> :cn<CR>
 nmap <silent> <M-N> :cN<CR>
 nmap <silent> <M-m> :lne<CR>
