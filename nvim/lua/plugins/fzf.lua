@@ -30,6 +30,17 @@ return {
 	local fzf = require('fzf-lua')
 	local actions = require('fzf-lua.actions')
 
+	local function get_git_root(cwd)
+	  if vim.fn.executable('git') == 0 then return '' end
+	  local out = vim.system({ 'git', '-C', cwd or '.', 'rev-parse', '--show-toplevel' }, { text = true }):wait()
+	  return out.code == 0 and vim.split(out.stdout, '\n')[1] or ''
+	end
+
+	local function git_root_or_cwd(cwd)
+	  local root = get_git_root(cwd)
+	  return root ~= '' and root or cwd
+	end
+
 	local function file_directory(opts)
 	  local name = opts.__CTX.bname
 	  return name ~= "" and vim.fn.fnamemodify(name, ":p:h") or opts.cwd or vim.uv.cwd()
@@ -78,6 +89,11 @@ return {
 	local function go_to_file_directory(_, opts)
 	  change_directory(opts, file_directory(opts))
 	end
+
+	local function go_to_git_root(_, opts)
+	  change_directory(opts, git_root_or_cwd(opts.cwd or vim.uv.cwd()))
+	end
+
 	local custom_actions = {
 	  files = {
 		["default"] = fzf.actions.file_edit_or_qf,
@@ -91,6 +107,7 @@ return {
 		["alt-f"]   = actions.toggle_follow,
 		["ctrl-p"]  = climb_up,
 		["alt-p"]   = go_to_file_directory,
+		["alt-r"]   = go_to_git_root,
 	  },
 	  grep = {
 		["default"] = fzf.actions.file_edit_or_qf,
@@ -104,6 +121,7 @@ return {
 		["alt-f"]   = actions.toggle_follow,
 		["ctrl-p"]  = climb_up,
 		["alt-p"]   = go_to_file_directory,
+		["alt-r"]   = go_to_git_root,
 	  }
 	}
 	local custom_keymap = require('fzf-lua').defaults.keymap
@@ -243,6 +261,15 @@ return {
 		  reuse = true,
 		  header = "current file directory",
 		}
+		picker_actions["alt-r"] = {
+		  fn = function(_, opts)
+			capture_active_query()
+			base_opts.cwd = git_root_or_cwd(opts.cwd or vim.uv.cwd())
+			reopen_active()
+		  end,
+		  reuse = true,
+		  header = "git root",
+		}
 		picker_actions["alt-i"] = { fn = toggle_option("no_ignore"), reuse = true, header = "toggle ignore" }
 		picker_actions["alt-h"] = { fn = toggle_option("hidden"), reuse = true, header = "toggle hidden" }
 		picker_actions["alt-f"] = { fn = toggle_option("follow"), reuse = true, header = "toggle follow" }
@@ -324,17 +351,6 @@ return {
 	  open_grep()
 	end
 
-	local function get_git_root()
-	  local out = vim.system({'git','rev-parse','--show-toplevel'}, {text = true}):wait()
-	  if out.code ~= 0 then
-		return ''
-	  end
-	  local root = vim.split(out.stdout, '\n')[1]
-	  --if vim.fn.has('win32') then
-	  return root
-	end
-
-
 	function grep_git_root(args)
 	  local opts = {
 		cwd = get_git_root(),
@@ -373,6 +389,14 @@ return {
 	vim.api.nvim_set_keymap("v", "<C-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false,query=require"plugins.fzf".get_selection_escaped("en")})<CR>]], {})
 	vim.api.nvim_set_keymap("n", "<M-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false,cwd=vim.fn.expand("%:p:h")})<CR>]], {})
 	vim.api.nvim_set_keymap("v", "<M-p>", [[<Cmd>lua require"fzf-lua".files({cwd_prompt=false,cwd=vim.fn.expand("%:p:h"),query=require"plugins.fzf".get_selection_escaped("en")})<CR>]], {})
+	local function git_root_files(query)
+	  local cwd = vim.fn.expand("%:p:h")
+	  fzf.files({ cwd_prompt = false, cwd = git_root_or_cwd(cwd ~= "" and cwd or vim.uv.cwd()), query = query })
+	end
+	vim.keymap.set("n", "<M-r>", function() git_root_files() end, { desc = "Find files at Git root" })
+	vim.keymap.set("v", "<M-r>", function()
+	  git_root_files(require("plugins.fzf").get_selection_escaped("en"))
+	end, { desc = "Find files at Git root with selection" })
 	vim.keymap.set("n", "<C-l>", function()
 	  live_grep_with_filetypes()
 	end, { silent = true, desc = "Live grep" })

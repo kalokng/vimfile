@@ -51,3 +51,36 @@ assert(last.opts.cwd == "/tmp/project with spaces/src")
 local _, _, globs = last.opts.rg_glob_fn("search text", { glob_flag = "--glob" })
 assert(vim.deep_equal(globs, { "*.lua", "*.vim" }), "filetype filters must survive directory changes")
 print("PASS: picker Alt-P preserves file/grep queries, fuzzy mode and filetypes; Ctrl-P still climbs")
+
+local outside = vim.fn.tempname()
+local root = outside .. "/repo with spaces"
+local subdir = root .. "/src"
+assert(vim.fn.mkdir(subdir, "p") == 1)
+assert(vim.system({ "git", "-C", root, "init", "--quiet" }):wait().code == 0)
+
+vim.api.nvim_buf_set_name(0, subdir .. "/main.lua")
+vim.fn.maparg("<M-r>", "n", false, true).callback()
+assert(last.provider == "files" and last.opts.cwd == root)
+assert(vim.fn.maparg("<M-r>", "v", false, true).callback)
+
+query = "needle"
+for _, provider in ipairs({ "files", "grep" }) do
+  local action = setup_opts.actions[provider]["alt-r"]
+  action({}, { cwd = subdir, __resume_key = provider, search = "text" })
+  assert(last.provider == provider and last.opts.cwd == root and last.opts.query == "needle")
+  action({}, { cwd = outside, __resume_key = provider })
+  assert(last.opts.cwd == outside, "outside Git, keep the picker directory")
+end
+
+rhs.callback()
+act("alt-t", "search text")
+last.opts.cwd = subdir
+act("alt-r", "lua, .vim")
+assert(last.opts.cwd == root and last.opts.prompt == "Filetype> " and last.opts.search == "lua, .vim")
+act("alt-t", "lua, .vim")
+act("ctrl-g", "search text")
+last.opts.cwd = subdir
+act("alt-r", "fuzzy text")
+assert(last.opts.cwd == root and last.provider == "grep" and last.opts.query == "fuzzy text")
+assert(last.opts.search == "search text")
+print("PASS: Alt-R uses the Git root and preserves picker mode and query")
