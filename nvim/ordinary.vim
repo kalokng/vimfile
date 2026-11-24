@@ -305,7 +305,9 @@ endif
 lua << EOF
 vim.api.nvim_create_autocmd("TermClose", {
   callback = function(ev)
-    if vim.v.event.status == 0 and vim.api.nvim_buf_is_loaded(ev.buf) then
+    -- fzf-lua owns this buffer and may reuse its window for the next picker.
+    if vim.v.event.status == 0 and vim.api.nvim_buf_is_loaded(ev.buf)
+        and vim.bo[ev.buf].filetype ~= "fzf" then
       vim.api.nvim_buf_delete(ev.buf, { force = true })
     end
   end,
