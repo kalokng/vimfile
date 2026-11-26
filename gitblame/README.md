@@ -44,7 +44,7 @@ Three panes:
 
 | pane | contents |
 | --- | --- |
-| top (~1/3 height) | `[focus][graph][short hash][author][subject]`, one row per commit of the file, merges and branch lanes included |
+| top (~1/3 height) | `[focus][graph][short hash][date][author][subject]`, one row per commit of the file, merges and branch lanes included |
 | left | per-line change marker, blame hash, author, date; deleted lines show the hash, author, and date of the commit that deleted them |
 | content | the file as of the focused commit, with `+` / `~` markers and inline `-` lines showing what the commit deleted |
 

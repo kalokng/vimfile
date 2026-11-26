@@ -61,7 +61,7 @@ printf 'l1\nl2\nl3\nmain\nfeature\nresolved\n' > renamed.txt
 git add -A
 git commit -qm 'merge feature resolved'
 printf 'l1\nl2\nl3\nmain\nfeature\nresolved\nextra\n' > renamed.txt
-git commit -qam 'add extra line' --author='Head Author <head@example.com>'
+git commit -qam 'add extra line' --author='Head Author <head@example.com>' --date='2024-02-04T12:00:00Z'
 printf 'scratch\n' > untracked.txt
 ]]
 assert(vim.system({ '/bin/sh', '-c', setup, 'sh', repo }, { text = true }):wait().code == 0,
@@ -265,8 +265,8 @@ assert(table.concat(lines(st.bufs.graph), '\n'):find('|\\'), 'merge/branch glyph
 local focused = focus_line(st.bufs.graph)
 assert(focused, 'a focused commit row is expected on open')
 assert(focused:find(head:sub(1, 8), 1, true), 'the default focus must be the HEAD commit of the file')
-assert(focused:find('Head Author | add extra line', 1, true),
-  'the graph must show the commit author before the subject')
+assert(focused:find('2024-02-04 Head Author | add extra line', 1, true),
+  'the graph must show the date and author before the subject')
 assert(vim.api.nvim_win_get_cursor(st.wins.graph)[1] == st.index[head],
   'the graph cursor must sit on the focused row')
 
@@ -315,8 +315,9 @@ press(st.wins.graph, '<CR>')
 assert(st.focus == rename_commit, '<CR> on a graph row must focus that commit')
 assert(focus_line(st.bufs.graph):find(rename_commit:sub(1, 8), 1, true),
   'the focus indicator must move to the selected row')
-assert(focus_line(st.bufs.graph):find('Tester | rename tracked to renamed', 1, true),
-  'the graph must show the author of each commit')
+local rename_date = git('show', '-s', '--date=short', '--format=%ad', rename_commit)
+assert(focus_line(st.bufs.graph):find(rename_date .. ' Tester | rename tracked to renamed', 1, true),
+  'the graph must show the date and author of each commit')
 assert(table.concat(lines(st.bufs.content), '\n')
     == table.concat(to_lines(git('show', rename_commit .. ':' .. FILE)), '\n'),
   'content pane must re-render for the focused commit')

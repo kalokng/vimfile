@@ -105,7 +105,7 @@ local function render_graph(state)
         focus_row = i
       end
       lines[i] = (focused and opts.focus_sign or ' ') .. ' ' .. art .. ' '
-        .. short(row.sha) .. ' ' .. row.author .. ' | ' .. row.subject
+        .. short(row.sha) .. ' ' .. row.date .. ' ' .. row.author .. ' | ' .. row.subject
     else
       lines[i] = '  ' .. art
     end
@@ -125,8 +125,12 @@ local function render_graph(state)
         end_col = hash_start + #short(row.sha),
         hl_group = 'GitBlameHash',
       })
+      local date_start = hash_start + #short(row.sha) + 1
+      vim.api.nvim_buf_set_extmark(buf, ns, i - 1, date_start, {
+        end_col = date_start + #row.date, hl_group = 'GitBlameDate',
+      })
       if row.author ~= '' then
-        local author_start = hash_start + #short(row.sha) + 1
+        local author_start = date_start + #row.date + 1
         vim.api.nvim_buf_set_extmark(buf, ns, i - 1, author_start, {
           end_col = author_start + #row.author, hl_group = 'GitBlameAuthor',
         })
