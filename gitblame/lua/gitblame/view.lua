@@ -15,6 +15,7 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace('gitblame')
 local views = {} -- tabpage id -> view state
+local saved_scrollopt
 local seq = 0
 
 -- Window-local options saved from the user's window so `q` can restore them.
@@ -147,6 +148,15 @@ local function render_graph(state)
   end
 end
 
+local function author_column(author, width)
+  local cells = vim.fn.strdisplaywidth(author)
+  while cells > width do
+    author = vim.fn.strcharpart(author, 0, vim.fn.strchars(author, true) - 1, true)
+    cells = vim.fn.strdisplaywidth(author)
+  end
+  return author .. string.rep(' ', width - cells)
+end
+
 local function render_meta(state, line_count)
   local opts = config.get()
   local buf = state.bufs.meta
@@ -154,6 +164,7 @@ local function render_meta(state, line_count)
     return
   end
   local lines = {}
+  local author_ends, authors = {}, {}
   for i = 1, line_count do
     local entry = state.blame[i]
     local mark = ' ' -- the change column; highlighted in the pass below
@@ -163,7 +174,8 @@ local function render_meta(state, line_count)
       elseif state.touched[i] then
         mark = '~'
       elseif state.changes.removed[i] then
-        mark = '-' .. state.changes.removed[i]
+        local count = state.changes.removed[i]
+        mark = count < 10 and ('-' .. count) or '-'
       end
     end
     local sha = entry and entry.sha or ''
@@ -171,13 +183,16 @@ local function render_meta(state, line_count)
     if sha ~= '' and sha:match('^0+$') then
       hash = 'WORKTREE'
     end
-    lines[i] = string.format('%-2s %-' .. opts.hash_length .. 's %-' .. opts.author_width
-      .. 's %s', mark, hash, entry and entry.author or '', entry and entry.date or '')
+    local prefix = string.format('%-2s %-' .. opts.hash_length .. 's ', mark, hash)
+    local name = entry and entry.author or ''
+    local author = authors[name] or author_column(name, opts.author_width)
+    authors[name] = author
+    author_ends[i] = #prefix + #author
+    lines[i] = prefix .. author .. ' ' .. (entry and entry.date or '')
   end
   set_lines(buf, lines)
 
   local hash_start, author_start = 3, 3 + opts.hash_length + 1
-  local date_start = author_start + opts.author_width + 1
   for i = 1, line_count do
     local entry = state.blame[i]
     local mark = lines[i]:sub(1, 1)
@@ -192,8 +207,9 @@ local function render_meta(state, line_count)
         end_col = hash_start + opts.hash_length, hl_group = 'GitBlameHash',
       })
       vim.api.nvim_buf_set_extmark(buf, ns, i - 1, author_start, {
-        end_col = author_start + opts.author_width, hl_group = 'GitBlameAuthor',
+        end_col = author_ends[i], hl_group = 'GitBlameAuthor',
       })
+      local date_start = author_ends[i] + 1
       vim.api.nvim_buf_set_extmark(buf, ns, i - 1, date_start, {
         end_col = date_start + #((entry and entry.date) or ''), hl_group = 'GitBlameDate',
       })
@@ -261,11 +277,11 @@ local function render_main(state)
 
   local changes = state.changes
   if state.show_changes and next(changes.removed_text) then
-    local commit = state.rows[state.index[state.focus]]
+    local commit = state.rows[state.index[state.focus]] or git.commit_author_date(state.root, state.focus)
     local deleted_by = {
       { '-  ', 'GitBlameRemoved' },
       { short(state.focus), 'GitBlameHash' },
-      { (' %-' .. config.get().author_width .. 's '):format(commit.author), 'GitBlameAuthor' },
+      { ' ' .. author_column(commit.author, config.get().author_width) .. ' ', 'GitBlameAuthor' },
       { commit.date, 'GitBlameDate' },
     }
     for before, deleted in pairs(changes.removed_text) do
@@ -437,7 +453,8 @@ end
 local function change_lines(state)
   local seen, out = {}, {}
   for _, counts in ipairs({ state.changes.added, state.touched, state.changes.removed }) do
-    for lnum in pairs(counts or {}) do
+    for position in pairs(counts or {}) do
+      local lnum = counts == state.changes.removed and math.min(position, state.line_count) or position
       if not seen[lnum] and lnum >= 1 and lnum <= (state.line_count or 0) then
         seen[lnum] = true
         out[#out + 1] = lnum
@@ -605,6 +622,14 @@ function M.open(path)
     return fail('not tracked by git: ' .. file)
   end
 
+  local state = { root = root, rel = rel, abs = file, follow = opts.follow, show_changes = opts.show_changes }
+  local built, build_err = pcall(rebuild, state)
+  if not built then
+    return fail('could not read git history: ' .. tostring(build_err))
+  end
+  if not state.focus then
+    return fail('no committed history for ' .. rel)
+  end
   if state_for() then
     M.close()
   end
@@ -612,7 +637,7 @@ function M.open(path)
   local tabpage = vim.api.nvim_get_current_tabpage()
   local orig_win = vim.api.nvim_get_current_win()
   local orig_buf = vim.api.nvim_win_get_buf(orig_win)
-  local saved = { win = {}, scrollopt = vim.opt_global.scrollopt:get() }
+  local saved = { win = {} }
   for _, name in ipairs(WINOPTS) do
     saved.win[name] = vim.api.nvim_get_option_value(name, { win = orig_win })
   end
@@ -626,63 +651,51 @@ function M.open(path)
   local meta_win = vim.api.nvim_get_current_win()
 
   seq = seq + 1
-  local state = {
-    tabpage = tabpage,
-    orig_win = orig_win,
-    orig_buf = orig_buf,
-    saved = saved,
-    root = root,
-    rel = rel,
-    abs = file,
-    follow = opts.follow,
-    show_changes = opts.show_changes,
-    wins = { graph = graph_win, meta = meta_win, content = content_win },
-    bufs = {
-      graph = scratch_buf('gitblame://' .. seq .. '/graph'),
-      meta = scratch_buf('gitblame://' .. seq .. '/meta'),
-      content = scratch_buf('gitblame://' .. seq .. '/content'),
-    },
-    blame = {},
-    changes = { added = {}, removed = {}, removed_text = {} },
-    touched = {},
+  state.tabpage, state.orig_win, state.orig_buf, state.saved = tabpage, orig_win, orig_buf, saved
+  state.wins = { graph = graph_win, meta = meta_win, content = content_win }
+  state.bufs = {
+    graph = scratch_buf('gitblame://' .. seq .. '/graph'),
+    meta = scratch_buf('gitblame://' .. seq .. '/meta'),
+    content = scratch_buf('gitblame://' .. seq .. '/content'),
   }
+  -- scrollopt is global, so the first view owns the snapshot until the last closes.
+  if not next(views) then
+    saved_scrollopt = vim.opt_global.scrollopt:get()
+    vim.opt_global.scrollopt = { 'ver', 'jump' }
+  end
   views[tabpage] = state
 
-  vim.api.nvim_win_set_buf(graph_win, state.bufs.graph)
-  vim.api.nvim_win_set_buf(meta_win, state.bufs.meta)
-  vim.api.nvim_win_set_buf(content_win, state.bufs.content)
+  local ready, render_err = pcall(function()
+    vim.api.nvim_win_set_buf(graph_win, state.bufs.graph)
+    vim.api.nvim_win_set_buf(meta_win, state.bufs.meta)
+    vim.api.nvim_win_set_buf(content_win, state.bufs.content)
 
-  wset(graph_win, {
-    wrap = false, number = false, relativenumber = false, foldcolumn = '0', signcolumn = 'no',
-    cursorline = true, spell = false, list = false, winfixheight = true, foldenable = false,
-    scrolloff = 1, winfixbuf = vim.fn.exists('+winfixbuf') == 1 and true or false,
-  })
-  wset(meta_win, {
-    scrollbind = true, scrolloff = 0, wrap = false, number = false, relativenumber = false,
-    foldcolumn = '0', signcolumn = 'no', cursorline = true, spell = false, list = false,
-    winfixwidth = true, foldenable = false, colorcolumn = '',
-  })
-  wset(content_win, {
-    scrollbind = true, scrolloff = 0, wrap = false, number = true, relativenumber = false,
-    signcolumn = 'yes', cursorline = true, spell = false, list = false, foldenable = false,
-    foldcolumn = saved.win.foldcolumn,
-  })
-  -- vertical-only scroll binding keeps the two panes line aligned
-  pcall(function()
-    vim.opt_global.scrollopt = { 'ver', 'jump' }
+    wset(graph_win, {
+      wrap = false, number = false, relativenumber = false, foldcolumn = '0', signcolumn = 'no',
+      cursorline = true, spell = false, list = false, winfixheight = true, foldenable = false,
+      scrolloff = 1, winfixbuf = vim.fn.exists('+winfixbuf') == 1 and true or false,
+    })
+    wset(meta_win, {
+      scrollbind = true, scrolloff = 0, wrap = false, number = false, relativenumber = false,
+      foldcolumn = '0', signcolumn = 'no', cursorline = true, spell = false, list = false,
+      winfixwidth = true, foldenable = false, colorcolumn = '',
+    })
+    wset(content_win, {
+      scrollbind = true, scrolloff = 0, wrap = false, number = true, relativenumber = false,
+      signcolumn = 'yes', cursorline = true, spell = false, list = false, foldenable = false,
+      foldcolumn = saved.win.foldcolumn,
+    })
+
+    pcall(vim.api.nvim_win_set_height, graph_win,
+      math.max(4, math.floor((vim.o.lines - 2) * opts.top_ratio)))
+    pcall(vim.api.nvim_win_set_width, meta_win, opts.meta_width)
+    render_all(state)
+    bind_all(state)
   end)
-
-  pcall(vim.api.nvim_win_set_height, graph_win,
-    math.max(4, math.floor((vim.o.lines - 2) * opts.top_ratio)))
-  pcall(vim.api.nvim_win_set_width, meta_win, opts.meta_width)
-
-  local ok, build_err = pcall(rebuild, state)
-  if not ok then
-    views[tabpage] = nil
-    return fail('could not read git history: ' .. tostring(build_err))
+  if not ready then
+    M.close(tabpage)
+    return fail('could not render git history: ' .. tostring(render_err))
   end
-  render_all(state)
-  bind_all(state)
 
   state.augroup = vim.api.nvim_create_augroup('gitblame' .. seq, { clear = true })
   vim.api.nvim_create_autocmd('WinClosed', {
@@ -731,9 +744,10 @@ function M.close(tabpage)
       pcall(vim.api.nvim_win_close, win, true)
     end
   end
-  pcall(function()
-    vim.opt_global.scrollopt = state.saved.scrollopt
-  end)
+  if not next(views) and saved_scrollopt then
+    vim.opt_global.scrollopt = saved_scrollopt
+    saved_scrollopt = nil
+  end
   for _, buf in pairs(state.bufs) do
     if vim.api.nvim_buf_is_valid(buf) then
       pcall(vim.api.nvim_buf_delete, buf, { force = true })

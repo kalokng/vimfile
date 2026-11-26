@@ -175,10 +175,9 @@ function M.changed_lines(root, rev, path)
         added[i] = true
       end
       if o_count > 0 then
-        local at = math.max(1, n_start)
-        removed[at] = (removed[at] or 0) + o_count
         -- With no new lines, Git reports the line *before* the deletion.
         local before = n_start + (n_count == 0 and 1 or 0)
+        removed[before] = (removed[before] or 0) + o_count
         deleted = removed_text[before] or {}
         removed_text[before] = deleted
       end
@@ -240,6 +239,12 @@ function M.blame(root, rev, path)
     end
   end
   return entries
+end
+
+function M.commit_author_date(root, rev)
+  local out = M.run({ 'show', '-s', '--date=short', '--format=%ad%n%an', '--end-of-options', rev, '--' }, root)
+  local date, author = unpack(M.lines(out))
+  return { date = date or '', author = author or '' }
 end
 
 --- Commit header + message (author, committer, date, subject, body).

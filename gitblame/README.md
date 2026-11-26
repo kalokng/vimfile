@@ -114,8 +114,8 @@ gb.state()             -- the live view state (used by the tests)
 
 - The content pane shows the **committed** version of the file, never your live buffer.
   Lines that differ from the focused commit in your working tree are marked `~`.
-- Removed lines cannot be shown in the content pane (they are gone from that revision);
-  the meta pane marks the position with `-<count>`.
+- Removed lines are shown inline as display-only `-` rows. They do not change the
+  committed file's line numbers. The left pane identifies the deleting commit.
 - Only the history of one path is listed. `git log -- <path>` simplifies history, so a
   merge that did not change the file does not appear; `--follow` trades some merge rows
   for commits from before a rename.

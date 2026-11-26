@@ -191,6 +191,16 @@ assert(not ok and err:match('not inside a git repository'), 'files outside a rep
 ok, err = gb.open(repo .. '/untracked.txt')
 assert(not ok and err:match('not tracked by git'), 'untracked files must be refused')
 
+local staged = repo .. '/staged.txt'
+vim.fn.writefile({ 'new' }, staged)
+git('add', 'staged.txt')
+local before_staged = vim.api.nvim_get_current_win()
+ok, err = gb.open(staged)
+assert(not ok and err:match('no committed history'), 'staged new files must be refused without throwing')
+assert(not gb.state() and #vim.api.nvim_list_wins() == 1 and vim.api.nvim_get_current_win() == before_staged,
+  'opening an uncommitted file must leave the layout alone')
+git('reset', '-q', '--', 'staged.txt')
+
 -- ------------------------------------------------------------------- opening
 vim.cmd('edit ' .. vim.fn.fnameescape(repo .. '/' .. FILE))
 local orig_win = vim.api.nvim_get_current_win()
@@ -570,7 +580,8 @@ gb.close()
 -- Removed text renders at the diff positions without shifting real lines.
 local remaining = { 'l2', 'l3', 'changed', 'feature', 'resolved' }
 vim.fn.writefile(remaining, repo .. '/' .. FILE)
-git('commit', '-am', 'delete and replace lines', '--author=Delete Author <delete@example.com>',
+local wide_author = '田田田田田田田'
+git('commit', '-am', 'delete and replace lines', '--author=' .. wide_author .. 'Extra <delete@example.com>',
   '--date=2024-02-03T12:00:00Z')
 assert(gb.open(repo .. '/' .. FILE))
 local removed_view = gb.state()
@@ -596,13 +607,64 @@ for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(cb, -1, 0, -1, { details = t
     assert(row[1][2] == 'GitBlameRemovedLine', 'deleted text must use the red background highlight')
   end
 end
-local deletion = '-  ' .. git('rev-parse', '--short=8', 'HEAD') .. ' Delete Author  2024-02-03'
-assert(vim.api.nvim_win_get_width(removed_view.wins.meta) >= #deletion, 'the full date must fit by default')
+local deletion = '-  ' .. git('rev-parse', '--short=8', 'HEAD') .. ' ' .. wide_author .. ' 2024-02-03'
+local width = vim.api.nvim_win_get_width(removed_view.wins.meta)
+local normal_row = lines(mb)[3]
+assert(normal_row:find(wide_author .. ' ', 1, true) and not normal_row:find('Extra', 1, true),
+  'regular blame rows must truncate wide authors before the date')
+assert(vim.fn.strdisplaywidth(deletion) == width and vim.fn.strdisplaywidth(normal_row) == width,
+  'the full dates must fit and align in both kinds of rows')
 assert(vim.deep_equal(virtual_rows(mb), { { 0, true, deletion }, { 1, false, deletion }, { 4, false, deletion } }),
   'each deleted row must show the deleting commit hash, author, and aligned date in the left pane')
+vim.api.nvim_win_set_cursor(removed_view.wins.content, { 3, 0 })
+press(removed_view.wins.content, ']c')
+assert(vim.api.nvim_win_get_cursor(removed_view.wins.content)[1] == #remaining,
+  'a deletion after EOF must be reachable on the last real line')
 press(removed_view.wins.content, 't')
 assert(#virtual_rows(cb) == 0 and #virtual_rows(mb) == 0, 't must hide the deleted rows in both panes')
 gb.close()
+
+-- An off-branch deletion has no graph row, but still has commit metadata.
+git('switch', '-qc', 'off-graph')
+vim.fn.writefile({ 'l2', 'changed', 'feature', 'resolved' }, repo .. '/' .. FILE)
+git('commit', '-am', 'delete middle line', '--date=2024-02-05T12:00:00Z')
+local off_graph = git('rev-parse', 'HEAD')
+git('switch', '-q', 'main')
+assert(gb.open(repo .. '/' .. FILE))
+local off_view = gb.state()
+assert(not off_view.index[off_graph] and gb.focus_commit(off_graph), 'an off-graph deletion must render')
+local off_meta = virtual_rows(off_view.bufs.meta)
+assert(#off_meta == 1 and off_meta[1][3] == '-  ' .. off_graph:sub(1, 8) .. ' Tester         2024-02-05',
+  'an off-graph deletion must still show its author and date')
+vim.api.nvim_win_set_cursor(off_view.wins.content, { 1, 0 })
+press(off_view.wins.content, ']c')
+assert(vim.api.nvim_win_get_cursor(off_view.wins.content)[1] == 2,
+  'a pure deletion must navigate to the first real line after the deleted text')
+gb.close()
+
+-- Both views share a global scroll setting, even if closed out of order.
+local saved_scrollopt = vim.o.scrollopt
+vim.o.scrollopt = 'ver,hor,jump'
+assert(gb.open(repo .. '/' .. FILE))
+local first_tab = vim.api.nvim_get_current_tabpage()
+vim.cmd.tabnew()
+assert(gb.open(repo .. '/' .. FILE))
+local second_tab = vim.api.nvim_get_current_tabpage()
+assert(gb.close(first_tab) and vim.o.scrollopt == 'ver,jump', 'the remaining view must keep vertical-only scroll')
+assert(gb.close(second_tab) and vim.o.scrollopt == 'ver,hor,jump', 'the last close must restore scrollopt')
+vim.api.nvim_set_current_tabpage(second_tab)
+vim.cmd.tabclose()
+vim.o.scrollopt = saved_scrollopt
+
+-- A rendering error after splits are created must unwind the view.
+local git_module = require('gitblame.git')
+local saved_show_file = git_module.show_file
+git_module.show_file = function() error('test rendering failure') end
+ok, err = gb.open(repo .. '/' .. FILE)
+git_module.show_file = saved_show_file
+assert(not ok and err:match('test rendering failure'), 'initial render failures must be returned')
+assert(not gb.state() and #vim.api.nvim_list_wins() == 1 and vim.o.scrollopt == saved_scrollopt,
+  'render failure must restore the layout and scroll settings')
 
 os.remove(outside)
 vim.system({ '/bin/sh', '-c', 'rm -rf "$1"', 'sh', sandbox }):wait()

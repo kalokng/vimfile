@@ -168,8 +168,8 @@ GitBlameModified, GitBlameModifiedLine.
   * The content pane shows the committed version of the file, never your live
     buffer. Lines your working tree changed since the focused commit are marked
     '~' in the left pane and the sign column.
-  * Deleted lines cannot be shown in the content pane, because they do not exist
-    in that revision. The left pane marks the position with '-<count>'.
+  * Deleted lines are shown as display-only '-' rows without changing file line
+    numbers. The left pane identifies the deleting commit.
   * Only the history of one path is listed. `git log -- <path>` simplifies
     history, so a merge that did not change the file is not listed, and the
     oldest listed commit may look parentless. `F`/`--follow` trades some merge
