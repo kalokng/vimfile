@@ -48,7 +48,9 @@ Top pane (about one third of the screen by default): >
   column 1   focus indicator (default '>')
   column 2.. graph art from `git log --graph`, including merge forks
   next       short hash of the commit
-  rest       commit date (YYYY-MM-DD), author, and subject
+  rest       commit date (YYYY-MM-DD), +added/-removed, author, and subject.
+             Counts are for the selected file; each column fits its widest count.
+             Merges use the first parent.
 
 Main area, split left and right:
 

@@ -40,9 +40,9 @@ function M.set_highlights()
     GitBlameHash = 'Statement',
     GitBlameAuthor = 'Identifier',
     GitBlameDate = 'Comment',
-    GitBlameAdded = 'DiffAdded',
+    GitBlameAdded = 'Added',
     GitBlameAddedLine = 'DiffAdd',
-    GitBlameRemoved = 'DiffDeleted',
+    GitBlameRemoved = 'Removed',
     GitBlameModified = 'DiffChange',
     GitBlameModifiedLine = 'DiffChange',
   }

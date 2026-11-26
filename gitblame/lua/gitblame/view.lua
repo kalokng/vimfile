@@ -97,6 +97,8 @@ local function render_graph(state)
   if not vim.api.nvim_buf_is_valid(buf) then
     return
   end
+  local added_width, removed_width = unpack(state.count_widths)
+  local counts_format = ('%%%ds %%%ds'):format(added_width, removed_width)
   local lines, focus_row = {}, nil
   for i, row in ipairs(state.rows) do
     local art = row.art .. string.rep(' ', state.art_width - #row.art)
@@ -105,8 +107,12 @@ local function render_graph(state)
       if focused then
         focus_row = i
       end
+      local count = state.counts[row.sha]
+      local counts = counts_format:format('+' .. (count and count.added or '?'), '-' .. (count and count.removed or '?'))
+      local binary = count and count.binary and ' binary' or ''
       lines[i] = (focused and opts.focus_sign or ' ') .. ' ' .. art .. ' '
-        .. short(row.sha) .. ' ' .. row.date .. ' ' .. row.author .. ' | ' .. row.subject
+        .. short(row.sha) .. ' ' .. row.date .. ' | ' .. counts .. binary
+        .. ' | ' .. row.author .. ' | ' .. row.subject
     else
       lines[i] = '  ' .. art
     end
@@ -130,8 +136,18 @@ local function render_graph(state)
       vim.api.nvim_buf_set_extmark(buf, ns, i - 1, date_start, {
         end_col = date_start + #row.date, hl_group = 'GitBlameDate',
       })
+      local added_start = date_start + #row.date + 3
+      local removed_start = added_start + added_width + 1
+      local removed_end = removed_start + removed_width
+      vim.api.nvim_buf_set_extmark(buf, ns, i - 1, added_start, {
+        end_col = added_start + added_width, hl_group = 'GitBlameAdded',
+      })
+      vim.api.nvim_buf_set_extmark(buf, ns, i - 1, removed_start, {
+        end_col = removed_end, hl_group = 'GitBlameRemoved',
+      })
       if row.author ~= '' then
-        local author_start = date_start + #row.date + 1
+        local count = state.counts[row.sha]
+        local author_start = removed_end + (count and count.binary and #' binary' or 0) + 3
         vim.api.nvim_buf_set_extmark(buf, ns, i - 1, author_start, {
           end_col = author_start + #row.author, hl_group = 'GitBlameAuthor',
         })
@@ -318,8 +334,18 @@ end
 local function rebuild(state)
   local parsed = graph.parse(git.log_graph(state.root, state.rel, state.follow) or '')
   state.rows = parsed.rows
+  state.counts = git.change_counts(state.root, state.rel, state.follow)
   state.art_width = parsed.art_width
   state.index = graph.index(parsed.rows)
+  local added_width, removed_width = 2, 2 -- one sign and at least one digit
+  for sha in pairs(state.index) do
+    local count = state.counts[sha]
+    if count then
+      added_width = math.max(added_width, 1 + #tostring(count.added))
+      removed_width = math.max(removed_width, 1 + #tostring(count.removed))
+    end
+  end
+  state.count_widths = { added_width, removed_width }
   state.children = graph.children(parsed.rows)
   state.paths = git.paths_at(state.root, state.rel, state.follow)
   state.head = git.head_file_commit(state.root, state.rel, state.follow)

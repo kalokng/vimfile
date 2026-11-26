@@ -61,6 +61,8 @@ printf 'l1\nl2\nl3\nmain\nfeature\nresolved\n' > renamed.txt
 git add -A
 git commit -qm 'merge feature resolved'
 printf 'l1\nl2\nl3\nmain\nfeature\nresolved\nextra\n' > renamed.txt
+printf 'unrelated\n' > other.txt
+git add other.txt
 git commit -qam 'add extra line' --author='Head Author <head@example.com>' --date='2024-02-04T12:00:00Z'
 printf 'scratch\n' > untracked.txt
 ]]
@@ -275,8 +277,10 @@ assert(table.concat(lines(st.bufs.graph), '\n'):find('|\\'), 'merge/branch glyph
 local focused = focus_line(st.bufs.graph)
 assert(focused, 'a focused commit row is expected on open')
 assert(focused:find(head:sub(1, 8), 1, true), 'the default focus must be the HEAD commit of the file')
-assert(focused:find('2024-02-04 Head Author | add extra line', 1, true),
-  'the graph must show the date and author before the subject')
+assert(focused:find('2024-02-04 | +1 -0 | Head Author | add extra line', 1, true),
+  'the graph must show the date, author, and counts for this file only')
+assert(lines(st.bufs.graph)[st.index[merge_commit]]:find('+2 -0 | Tester | merge feature resolved', 1, true),
+  'merge counts must be relative to the first parent')
 assert(vim.api.nvim_win_get_cursor(st.wins.graph)[1] == st.index[head],
   'the graph cursor must sit on the focused row')
 
@@ -326,7 +330,7 @@ assert(st.focus == rename_commit, '<CR> on a graph row must focus that commit')
 assert(focus_line(st.bufs.graph):find(rename_commit:sub(1, 8), 1, true),
   'the focus indicator must move to the selected row')
 local rename_date = git('show', '-s', '--date=short', '--format=%ad', rename_commit)
-assert(focus_line(st.bufs.graph):find(rename_date .. ' Tester | rename tracked to renamed', 1, true),
+assert(focus_line(st.bufs.graph):find(rename_date .. ' | +4 -0 | Tester | rename tracked to renamed', 1, true),
   'the graph must show the date and author of each commit')
 assert(table.concat(lines(st.bufs.content), '\n')
     == table.concat(to_lines(git('show', rename_commit .. ':' .. FILE)), '\n'),
@@ -451,6 +455,11 @@ for _, pane in ipairs({ 'graph', 'meta', 'content' }) do
   local set, count = commit_rows()
   assert(count == #followed and count ~= #listed,
     ('%s: --follow must list %d commits, listed %d'):format(pane, #followed, count))
+  local followed_graph = lines(st.bufs.graph)
+  assert(followed_graph[st.index[rename_commit]]:find('+0 -0 | Tester | rename tracked to renamed', 1, true),
+    'following a pure rename must not count the file as new')
+  assert(followed_graph[st.index[head]]:find('+1 -0 | Head Author | add extra line', 1, true),
+    'following renames must still exclude changes to other files')
   assert(set[root_commit] and set[second_commit],
     pane .. ': --follow must list the pre-rename commits')
   assert(st.focus == head, pane .. ': --follow must keep the focused commit')
@@ -585,6 +594,20 @@ git('commit', '-am', 'delete and replace lines', '--author=' .. wide_author .. '
   '--date=2024-02-03T12:00:00Z')
 assert(gb.open(repo .. '/' .. FILE))
 local removed_view = gb.state()
+assert(focus_line(removed_view.bufs.graph):find('+1 -3', 1, true),
+  'the graph must show both added and removed line counts')
+local graph_buf = removed_view.bufs.graph
+local graph_row = removed_view.index[removed_view.focus] - 1
+local graph_text = lines(graph_buf)[graph_row + 1]
+local colored = {}
+for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(graph_buf, -1, { graph_row, 0 }, { graph_row, -1 }, { details = true })) do
+  local details = mark[4]
+  if details.hl_group and details.end_col then
+    colored[details.hl_group] = graph_text:sub(mark[3] + 1, details.end_col)
+  end
+end
+assert(colored.GitBlameAdded == '+1' and colored.GitBlameRemoved == '-3',
+  'the addition and deletion columns must use their own highlights')
 local function virtual_rows(buf)
   local rows = {}
   for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, -1, 0, -1, { details = true })) do
@@ -665,6 +688,21 @@ git_module.show_file = saved_show_file
 assert(not ok and err:match('test rendering failure'), 'initial render failures must be returned')
 assert(not gb.state() and #vim.api.nvim_list_wins() == 1 and vim.o.scrollopt == saved_scrollopt,
   'render failure must restore the layout and scroll settings')
+
+local expanded = vim.list_extend(vim.deepcopy(remaining), vim.fn['repeat']({ 'new line' }, 1000))
+vim.fn.writefile(expanded, repo .. '/' .. FILE)
+git('commit', '-am', 'add four-digit count')
+assert(gb.open(repo .. '/' .. FILE))
+local wide_view = gb.state()
+local wide_graph = lines(wide_view.bufs.graph)
+local wide_row = wide_graph[wide_view.index[wide_view.focus]]
+local narrow_row = wide_graph[wide_view.index[head]]
+local _, wide_end = wide_row:find('+1000', 1, true)
+local _, narrow_end = narrow_row:find('+1', 1, true)
+assert(wide_end and wide_end == narrow_end, 'one- and four-digit counts must end in the same column')
+assert(wide_row:find(' | +1000 -0 | ', 1, true) and narrow_row:find(' |    +1 -0 | ', 1, true),
+  'the additions column must grow without widening the deletions column')
+gb.close()
 
 os.remove(outside)
 vim.system({ '/bin/sh', '-c', 'rm -rf "$1"', 'sh', sandbox }):wait()

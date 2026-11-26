@@ -110,6 +110,30 @@ function M.log_graph(root, rel, follow)
   return M.run(args, root)
 end
 
+function M.change_counts(root, rel, follow)
+  -- Keep --numstat out of the graph query: merge diff options can change which commits Git lists.
+  local args = { 'log', '--numstat', '--diff-merges=first-parent', '--format=%x1f%H' }
+  if follow then
+    args[#args + 1] = '--follow'
+  end
+  args[#args + 1] = '--'
+  args[#args + 1] = rel
+  local counts, commit = {}, nil
+  for _, line in ipairs(M.lines(M.run(args, root))) do
+    local sha = line:match('^\31(%x+)$')
+    local added, removed = line:match('^(%S+)\t(%S+)\t')
+    if sha then
+      commit = counts[sha] or { added = 0, removed = 0 }
+      counts[sha] = commit
+    elseif commit and added then
+      commit.added = commit.added + (tonumber(added) or 0)
+      commit.removed = commit.removed + (tonumber(removed) or 0)
+      commit.binary = commit.binary or (added == '-' and removed == '-')
+    end
+  end
+  return counts
+end
+
 --- Map commit -> the path that commit touched, so content/blame work across renames.
 function M.paths_at(root, rel, follow)
   local args = { 'log', '--format=%H', '--name-only' }
