@@ -53,6 +53,7 @@ Top pane (about one third of the screen by default): >
 Main area, split left and right:
 
   left       one row per content line: change marker, blame hash, author, date.
+             Deleted lines show the hash, author, and date of the deleting commit.
              Scroll-bound to the content pane, so the two never drift apart.
   content    the file as of the focused commit, read-only. The sign column shows
              '+' for lines the focus commit added and '~' for lines your working
@@ -124,7 +125,7 @@ is configurable, see |gitblame-config|.
     follow = false,          -- start with --follow on
     show_changes = true,     -- start with change markers visible
     top_ratio = 0.34,        -- top pane height as a fraction of the screen
-    meta_width = 36,         -- left pane width
+    meta_width = 37,         -- left pane width
     focus_sign = '>',        -- marker in the left-most column of the focus row
     hash_length = 8,         -- characters of the hash shown
     author_width = 14,       -- author column width in the left pane

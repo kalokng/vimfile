@@ -255,14 +255,22 @@ local function render_main(state)
 
   render_meta(state, #lines)
 
-  if state.show_changes then
-    for before, deleted in pairs(state.changes.removed_text) do
+  local changes = state.changes
+  if state.show_changes and next(changes.removed_text) then
+    local commit = state.rows[state.index[state.focus]]
+    local deleted_by = {
+      { '-  ', 'GitBlameRemoved' },
+      { short(state.focus), 'GitBlameHash' },
+      { (' %-' .. config.get().author_width .. 's '):format(commit.author), 'GitBlameAuthor' },
+      { commit.date, 'GitBlameDate' },
+    }
+    for before, deleted in pairs(changes.removed_text) do
       local content_rows, meta_rows = {}, {}
       for i, line in ipairs(deleted) do
         content_rows[i] = { { line, 'GitBlameRemovedLine' } }
-        meta_rows[i] = { { '' } }
+        meta_rows[i] = deleted_by
       end
-      -- Pad both panes without changing file line numbers or blame indices.
+      -- Pair the virtual rows without changing file line numbers or blame indices.
       local row = math.max(0, before - 2)
       vim.api.nvim_buf_set_extmark(cbuf, ns, row, 0, { virt_lines = content_rows, virt_lines_above = before == 1 })
       vim.api.nvim_buf_set_extmark(mbuf, ns, row, 0, { virt_lines = meta_rows, virt_lines_above = before == 1 })

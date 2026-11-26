@@ -45,7 +45,7 @@ Three panes:
 | pane | contents |
 | --- | --- |
 | top (~1/3 height) | `[focus][graph][short hash][author][subject]`, one row per commit of the file, merges and branch lanes included |
-| left | per-line change marker, blame hash, author, date — line-for-line aligned with the content pane and scroll-locked to it |
+| left | per-line change marker, blame hash, author, date; deleted lines show the hash, author, and date of the commit that deleted them |
 | content | the file as of the focused commit, with `+` / `~` markers and inline `-` lines showing what the commit deleted |
 
 ## Keys
@@ -77,7 +77,7 @@ require('gitblame').setup({
   follow = false,          -- start with --follow on
   show_changes = true,     -- start with change markers visible
   top_ratio = 0.34,        -- top pane height as a fraction of the screen
-  meta_width = 36,         -- left pane width
+  meta_width = 37,         -- left pane width
   focus_sign = '>',        -- marker in the left-most column of the focused row
   hash_length = 8,         -- characters of the hash shown
   author_width = 14,       -- author column width in the meta pane

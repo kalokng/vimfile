@@ -9,7 +9,7 @@ local defaults = {
   -- Height of the top commit-graph pane as a ratio of the editor height.
   top_ratio = 0.34,
   -- Width of the left blame-meta pane.
-  meta_width = 36,
+  meta_width = 37,
   -- Marker written in the left-most column of the focused commit row.
   focus_sign = '>',
   -- How many characters of the commit hash are shown.

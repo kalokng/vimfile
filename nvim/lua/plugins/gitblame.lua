@@ -32,7 +32,7 @@ return {
       -- Top commit-graph pane height as a ratio of the screen.
       top_ratio = 0.34,
       -- Width of the left blame-meta pane.
-      meta_width = 36,
+      meta_width = 37,
     })
   end,
 }

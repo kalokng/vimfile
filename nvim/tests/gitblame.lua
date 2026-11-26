@@ -569,7 +569,8 @@ gb.close()
 -- Removed text renders at the diff positions without shifting real lines.
 local remaining = { 'l2', 'l3', 'changed', 'feature', 'resolved' }
 vim.fn.writefile(remaining, repo .. '/' .. FILE)
-git('commit', '-am', 'delete and replace lines')
+git('commit', '-am', 'delete and replace lines', '--author=Delete Author <delete@example.com>',
+  '--date=2024-02-03T12:00:00Z')
 assert(gb.open(repo .. '/' .. FILE))
 local removed_view = gb.state()
 local function virtual_rows(buf)
@@ -577,7 +578,8 @@ local function virtual_rows(buf)
   for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, -1, 0, -1, { details = true })) do
     local details = mark[4]
     for _, line in ipairs(details.virt_lines or {}) do
-      rows[#rows + 1] = { mark[2], details.virt_lines_above or false, line[1][1] }
+      local text = table.concat(vim.tbl_map(function(chunk) return chunk[1] end, line))
+      rows[#rows + 1] = { mark[2], details.virt_lines_above or false, text }
     end
   end
   return rows
@@ -593,8 +595,10 @@ for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(cb, -1, 0, -1, { details = t
     assert(row[1][2] == 'GitBlameRemovedLine', 'deleted text must use the red background highlight')
   end
 end
-assert(vim.deep_equal(virtual_rows(mb), { { 0, true, '' }, { 1, false, '' }, { 4, false, '' } }),
-  'the meta pane must have matching padding for the deleted lines')
+local deletion = '-  ' .. git('rev-parse', '--short=8', 'HEAD') .. ' Delete Author  2024-02-03'
+assert(vim.api.nvim_win_get_width(removed_view.wins.meta) >= #deletion, 'the full date must fit by default')
+assert(vim.deep_equal(virtual_rows(mb), { { 0, true, deletion }, { 1, false, deletion }, { 4, false, deletion } }),
+  'each deleted row must show the deleting commit hash, author, and aligned date in the left pane')
 press(removed_view.wins.content, 't')
 assert(#virtual_rows(cb) == 0 and #virtual_rows(mb) == 0, 't must hide the deleted rows in both panes')
 gb.close()
