@@ -9,6 +9,7 @@ set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
 set background=dark
 
 lua require("config.clipboard").setup()
+lua require("config.file-jump")
 
 function! Cond(cond, ...)
 	let opts = get(a:000, 0, {})

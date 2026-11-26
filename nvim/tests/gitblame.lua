@@ -61,7 +61,7 @@ printf 'l1\nl2\nl3\nmain\nfeature\nresolved\n' > renamed.txt
 git add -A
 git commit -qm 'merge feature resolved'
 printf 'l1\nl2\nl3\nmain\nfeature\nresolved\nextra\n' > renamed.txt
-git commit -qam 'add extra line'
+git commit -qam 'add extra line' --author='Head Author <head@example.com>'
 printf 'scratch\n' > untracked.txt
 ]]
 assert(vim.system({ '/bin/sh', '-c', setup, 'sh', repo }, { text = true }):wait().code == 0,
@@ -210,6 +210,20 @@ assert(vim.api.nvim_win_get_cursor(st.wins.content)[1] == 1,
 assert(vim.api.nvim_win_get_cursor(st.wins.meta)[1] == 1,
   'the meta pane must start at the first line too')
 
+-- Help is available in every pane and does not close or move the blame view.
+for _, win in pairs(st.wins) do
+  press(win, 'h')
+  local popup = vim.api.nvim_get_current_win()
+  assert(vim.api.nvim_win_get_config(popup).relative == 'editor', 'h must open a floating popup')
+  local shown = table.concat(lines(vim.api.nvim_win_get_buf(popup)), '\n')
+  for _, key in ipairs({ '<CR>', 'p', 'P', 't', 'F', 'o', ']c', '[c', 'q', 'h' }) do
+    assert(('\n' .. shown):find('\n' .. key .. '  ', 1, true), 'help must list ' .. key)
+  end
+  press(popup, win == st.wins.graph and 'q' or '<Esc>')
+  assert(vim.api.nvim_get_current_win() == win and #vim.api.nvim_list_wins() == 3,
+    'closing help must return to the pane and leave blame open')
+end
+
 vim.api.nvim_set_current_win(st.wins.content)
 local function neighbour_buf(direction)
   local nr = vim.fn.winnr(direction)
@@ -251,6 +265,8 @@ assert(table.concat(lines(st.bufs.graph), '\n'):find('|\\'), 'merge/branch glyph
 local focused = focus_line(st.bufs.graph)
 assert(focused, 'a focused commit row is expected on open')
 assert(focused:find(head:sub(1, 8), 1, true), 'the default focus must be the HEAD commit of the file')
+assert(focused:find('Head Author | add extra line', 1, true),
+  'the graph must show the commit author before the subject')
 assert(vim.api.nvim_win_get_cursor(st.wins.graph)[1] == st.index[head],
   'the graph cursor must sit on the focused row')
 
@@ -299,6 +315,8 @@ press(st.wins.graph, '<CR>')
 assert(st.focus == rename_commit, '<CR> on a graph row must focus that commit')
 assert(focus_line(st.bufs.graph):find(rename_commit:sub(1, 8), 1, true),
   'the focus indicator must move to the selected row')
+assert(focus_line(st.bufs.graph):find('Tester | rename tracked to renamed', 1, true),
+  'the graph must show the author of each commit')
 assert(table.concat(lines(st.bufs.content), '\n')
     == table.concat(to_lines(git('show', rename_commit .. ':' .. FILE)), '\n'),
   'content pane must re-render for the focused commit')
@@ -536,9 +554,49 @@ end
 assert(#markers(orig_buf) == 0, 'plugin markers must be gone on close')
 
 -- reopening for an explicit path works and focuses HEAD again
+gb.setup({ keymaps = { help = '?', parent = 'gp', child = '' } })
 gb.open(repo .. '/' .. FILE)
 local st2 = gb.state()
 assert(st2 and st2.focus == head, 'opening an explicit path must work')
+press(st2.wins.content, '?')
+local popup = vim.api.nvim_get_current_win()
+local shown = '\n' .. table.concat(lines(vim.api.nvim_win_get_buf(popup)), '\n')
+assert(shown:find('\ngp  ', 1, true) and shown:find('\n?  ', 1, true), 'help must list remapped keys')
+assert(not shown:find('\nP  ', 1, true), 'help must omit disabled mappings')
+press(popup, '<Esc>')
+gb.close()
+
+-- Removed text renders at the diff positions without shifting real lines.
+local remaining = { 'l2', 'l3', 'changed', 'feature', 'resolved' }
+vim.fn.writefile(remaining, repo .. '/' .. FILE)
+git('commit', '-am', 'delete and replace lines')
+assert(gb.open(repo .. '/' .. FILE))
+local removed_view = gb.state()
+local function virtual_rows(buf)
+  local rows = {}
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, -1, 0, -1, { details = true })) do
+    local details = mark[4]
+    for _, line in ipairs(details.virt_lines or {}) do
+      rows[#rows + 1] = { mark[2], details.virt_lines_above or false, line[1][1] }
+    end
+  end
+  return rows
+end
+local cb, mb = removed_view.bufs.content, removed_view.bufs.meta
+assert(vim.deep_equal(lines(cb), remaining), 'deleted lines must not enter the content buffer')
+assert(vim.deep_equal(virtual_rows(cb), { { 0, true, '-l1' }, { 1, false, '-main' }, { 4, false, '-extra' } }),
+  'deleted text must appear at the beginning, before the replacement, and at the end')
+local removed_hl = vim.api.nvim_get_hl(0, { name = 'GitBlameRemovedLine' })
+assert(removed_hl.bg == 0x652626, 'deleted rows must have a red background by default')
+for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(cb, -1, 0, -1, { details = true })) do
+  for _, row in ipairs(mark[4].virt_lines or {}) do
+    assert(row[1][2] == 'GitBlameRemovedLine', 'deleted text must use the red background highlight')
+  end
+end
+assert(vim.deep_equal(virtual_rows(mb), { { 0, true, '' }, { 1, false, '' }, { 4, false, '' } }),
+  'the meta pane must have matching padding for the deleted lines')
+press(removed_view.wins.content, 't')
+assert(#virtual_rows(cb) == 0 and #virtual_rows(mb) == 0, 't must hide the deleted rows in both panes')
 gb.close()
 
 os.remove(outside)
