@@ -99,25 +99,33 @@ is configurable, see |gitblame-config|.
 
                                                 *gitblame-CR*
   <CR>              Top pane: focus the commit on the row under the cursor.
-                    Left pane: focus the commit that last changed that line.
+                    Left and content panes: focus the commit that last changed
+                    that line.
+
+  f                 Top pane: return the cursor to the focused commit.
+  c                 Top pane: copy the full hash under the cursor. If no system
+                    clipboard is available, paste from the unnamed register.
 
                                                 *gitblame-o*
   o                 All three panes: open a new tabpage with the commit header and
-                    message on top and that commit's file diff below. Top pane: the
+                    message on top and the diff for all changed files below. Top pane: the
                     row under the cursor. Left pane: the line under the cursor.
                     Content pane: the focused commit.
 
                                                 *gitblame-]c* *gitblame-[c*
-  ]c  [c            Content pane: jump to the start of the next / previous change
+  ]c  [c            Left and content panes: jump to the next / previous change
                     block of the focused commit, i.e. lines it added, lines your
                     working tree changed since, or where it removed lines. Lines
                     next to each other form one block, so a two-line addition is
                     one stop and ]c on its first line goes to the next block.
                     No wrapping; when there is nothing left in that direction the
-                    cursor stays and the reason is reported. The left pane cursor
-                    follows so both panes mark the same line.
+                    cursor stays and the reason is reported. Both file panes move
+                    to the same line.
                     Commit diff pane: jump between diff hunks without wrapping.
                     Hunks start open. Use zc to fold, zo to open, or za to toggle.
+
+  CTRL-O CTRL-I     Left and content panes: go back or forward through focused
+                    commits. A new focus jump discards the forward history.
 
                                                 *gitblame-h*
   h                 All three panes: show the active shortcuts. Press <Esc> or
@@ -142,6 +150,8 @@ is configurable, see |gitblame-config|.
     keymaps = {
       parent = 'p', child = 'P', toggle_changes = 't', toggle_follow = 'F',
       close = 'q', select = '<CR>', open_commit = 'o',
+      jump_to_focus = 'f', copy_hash = 'c',
+      focus_back = '<C-o>', focus_forward = '<C-i>',
       help = 'h',
       next_change = ']c', prev_change = '[c',
     },
@@ -178,7 +188,7 @@ GitBlameModified, GitBlameModifiedLine.
   * The content pane shows the committed version of the file, never your live
     buffer. Lines your working tree changed since the focused commit are marked
     '~' in the left pane and the sign column.
-  * Deleted lines are shown as display-only '-' rows without changing file line
+  * Deleted lines are shown as display-only rows with a red background, without changing file line
     numbers. The left pane identifies the deleting commit.
   * Only the history of one path is listed. `git log -- <path>` simplifies
     history, so a merge that did not change the file is not listed, and the

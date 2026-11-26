@@ -27,10 +27,14 @@ local defaults = {
     toggle_follow = 'F',
     close = 'q',
     help = 'h',
-    select = '<CR>', -- graph row / meta line -> focus that commit
+    select = '<CR>', -- graph row / file line -> focus that commit
+    focus_back = '<C-o>',
+    focus_forward = '<C-i>',
     open_commit = 'o', -- open the full commit in a new tab
-    next_change = ']c', -- content pane: next change of the focus commit
-    prev_change = '[c', -- content pane: previous change of the focus commit
+    jump_to_focus = 'f', -- graph pane
+    copy_hash = 'c', -- graph pane
+    next_change = ']c', -- next change of the focus commit
+    prev_change = '[c', -- previous change of the focus commit
   },
 }
 

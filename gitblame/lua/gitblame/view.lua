@@ -391,7 +391,7 @@ local function render_main(state, redraw_only)
     for before, deleted in pairs(changes.removed_text) do
       local content_rows, meta_rows = {}, {}
       for i, line in ipairs(deleted) do
-        content_rows[i] = { { line, 'GitBlameRemovedLine' } }
+        content_rows[i] = { { line:sub(2), 'GitBlameRemovedLine' } }
         meta_rows[i] = deleted_by
       end
       -- Pair the virtual rows without changing file line numbers or blame indices.
@@ -416,6 +416,13 @@ end
 
 -- ---------------------------------------------------------------- data
 
+local function remember_focus(state)
+  if state.focus then
+    table.insert(state.focus_back, state.focus)
+    state.focus_forward = {}
+  end
+end
+
 local function rebuild(state)
   local parsed = graph.parse(git.log_graph(state.root, state.rel, state.follow) or '')
   state.rows = parsed.rows
@@ -435,20 +442,36 @@ local function rebuild(state)
   state.paths = git.paths_at(state.root, state.rel, state.follow)
   state.head = git.head_file_commit(state.root, state.rel, state.follow)
   if not state.focus or not state.index[state.focus] then
-    state.focus = state.head or next(state.index)
+    local sha = state.head or next(state.index)
+    if sha ~= state.focus then
+      remember_focus(state)
+      state.focus = sha
+    end
   end
 end
 
 -- ---------------------------------------------------------------- actions
 
-local function set_focus(state, sha)
+local function set_focus(state, sha, from_history)
   if sha == state.focus then
     return say(state, 'already on ' .. short(sha))
+  end
+  if not from_history then
+    remember_focus(state)
   end
   state.focus = sha
   render_all(state)
   local where = state.index[sha] and '' or ' (outside the listed history)'
   return say(state, 'focus ' .. short(sha) .. where)
+end
+
+local function jump_focus(state, from, to, direction)
+  local sha = table.remove(state[from])
+  if not sha then
+    return say(state, 'no ' .. direction .. ' focused commit')
+  end
+  table.insert(state[to], state.focus)
+  return set_focus(state, sha, true)
 end
 
 function M.focus_commit(sha)
@@ -525,7 +548,7 @@ function M.toggle_follow()
   return say(state, '--follow: ' .. (state.follow and 'on' or 'off'))
 end
 
---- <CR> in the graph pane focuses the row; in the meta pane, the line's commit.
+--- <CR> focuses the graph row or the commit that last changed the current file line.
 function M.select()
   local state, err = current()
   if not state then
@@ -538,13 +561,13 @@ function M.select()
       return say(state, 'no commit on this row')
     end
     return set_focus(state, row.sha)
-  elseif win == state.wins.meta then
+  elseif win == state.wins.meta or win == state.wins.content then
     return M.focus_line_commit()
   end
   return say(state, 'nothing to select here')
 end
 
---- Focus the commit that last changed the line under the cursor (meta pane).
+--- Focus the commit that last changed the line under the cursor.
 function M.focus_line_commit()
   local state, err = current()
   if not state then
@@ -585,7 +608,7 @@ local function change_blocks(state)
   return blocks
 end
 
---- Jump the content pane to the next (step > 0) or previous (step < 0) change block of
+--- Jump both file panes to the next (step > 0) or previous (step < 0) change block of
 --- the focus commit. A run of adjacent changed lines is one stop, so `]c` from the first
 --- line of a two-line addition goes to the next block, not to its second line. No wrapping.
 local function jump_change(state, step)
@@ -597,7 +620,8 @@ local function jump_change(state, step)
   if #changes == 0 then
     return say(state, 'the focus commit changed no lines in this view')
   end
-  local cursor_line = vim.api.nvim_win_get_cursor(win)[1]
+  local source = vim.api.nvim_get_current_win() == state.wins.meta and state.wins.meta or win
+  local cursor_line = vim.api.nvim_win_get_cursor(source)[1]
   local target, index
   if step > 0 then
     for i, lnum in ipairs(changes) do
@@ -628,7 +652,7 @@ local function jump_change(state, step)
   return say(state, ('change %d of %d, line %d'):format(index, #changes, target))
 end
 
---- `]c` in the content pane.
+--- `]c` in either file pane.
 function M.next_change()
   local state, err = current()
   if not state then
@@ -637,7 +661,7 @@ function M.next_change()
   return jump_change(state, 1)
 end
 
---- `[c` in the content pane.
+--- `[c` in either file pane.
 function M.prev_change()
   local state, err = current()
   if not state then
@@ -683,16 +707,15 @@ local function setup_diff(buf, lines)
   bind(buf, 'prev_change', function() jump(-1) end, 'previous diff hunk')
 end
 
---- Open the commit header + file diff in a new tabpage.
+--- Open the commit header and full repository diff in a new tabpage.
 function M.open_commit(sha)
   local state, err = current()
   if not state then
     return fail(err)
   end
   sha = sha or state.focus
-  local path = path_at(state, sha)
   local header = git.lines(git.commit_text(state.root, sha) or ('no such commit: ' .. sha))
-  local diff = git.lines(git.commit_diff(state.root, sha, path) or '')
+  local diff = git.lines(git.commit_diff(state.root, sha) or '')
 
   vim.cmd('tabnew')
   seq = seq + 1
@@ -779,7 +802,10 @@ function M.open(path)
     return fail('not tracked by git: ' .. file)
   end
 
-  local state = { root = root, rel = rel, abs = file, follow = opts.follow, show_changes = opts.show_changes }
+  local state = {
+    root = root, rel = rel, abs = file, follow = opts.follow, show_changes = opts.show_changes,
+    focus_back = {}, focus_forward = {},
+  }
   local built, build_err = pcall(rebuild, state)
   if not built then
     return fail('could not read git history: ' .. tostring(build_err))
@@ -1002,13 +1028,38 @@ bind_all = function(state)
   -- `o` is available in all three panes: the commit under the cursor (graph, meta)
   -- or the focused commit (content).
   bind(state.bufs.graph, 'select', M.select, 'focus the commit under the cursor (graph)')
+  bind(state.bufs.graph, 'jump_to_focus', function()
+    local line = state.index[state.focus]
+    if not line then
+      return say(state, 'the focused commit is outside the listed history')
+    end
+    vim.api.nvim_win_set_cursor(state.wins.graph, { line, 0 })
+    highlight_connection(state, line)
+  end, 'jump to the focused commit (graph)')
+  bind(state.bufs.graph, 'copy_hash', function()
+    local row = state.rows[vim.api.nvim_win_get_cursor(state.wins.graph)[1]]
+    if not row or row.kind ~= 'commit' then
+      return say(state, 'no commit on this row')
+    end
+    vim.fn.setreg('"', row.sha, 'v')
+    if vim.fn.has('clipboard') == 1 and vim.fn.setreg('+', row.sha, 'v') == 0 then
+      return say(state, 'copied ' .. short(row.sha) .. ' to the clipboard')
+    end
+    return say(state, 'yanked ' .. short(row.sha) .. ' into the unnamed register')
+  end, 'copy the full commit hash (graph)')
   bind(state.bufs.graph, 'open_commit', M.open_commit_at_cursor, 'show the full commit')
-  bind(state.bufs.meta, 'select', M.select, 'focus the commit of this line (meta)')
-  bind(state.bufs.meta, 'open_commit', M.open_commit_at_cursor, 'show the full commit')
-  bind(state.bufs.content, 'open_commit', M.open_commit_at_cursor, 'show the full commit')
-  -- ]c / [c walk the focus commit's changes inside the content pane
-  bind(state.bufs.content, 'next_change', M.next_change, 'next change of the focus commit (content)')
-  bind(state.bufs.content, 'prev_change', M.prev_change, 'previous change of the focus commit (content)')
+  for _, buf in ipairs({ state.bufs.meta, state.bufs.content }) do
+    bind(buf, 'select', M.select, 'focus the commit of this line (left/content)')
+    bind(buf, 'open_commit', M.open_commit_at_cursor, 'show the full commit')
+    bind(buf, 'next_change', M.next_change, 'next change block (left/content)')
+    bind(buf, 'prev_change', M.prev_change, 'previous change block (left/content)')
+    bind(buf, 'focus_back', function()
+      jump_focus(state, 'focus_back', 'focus_forward', 'previous')
+    end, 'go back in commit focus history (left/content)')
+    bind(buf, 'focus_forward', function()
+      jump_focus(state, 'focus_forward', 'focus_back', 'next')
+    end, 'go forward in commit focus history (left/content)')
+  end
 end
 
 return M

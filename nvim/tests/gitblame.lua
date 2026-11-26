@@ -234,7 +234,7 @@ for _, win in pairs(st.wins) do
   local popup = vim.api.nvim_get_current_win()
   assert(vim.api.nvim_win_get_config(popup).relative == 'editor', 'h must open a floating popup')
   local shown = table.concat(lines(vim.api.nvim_win_get_buf(popup)), '\n')
-  for _, key in ipairs({ '<CR>', 'p', 'P', 't', 'F', 'o', ']c', '[c', 'q', 'h' }) do
+  for _, key in ipairs({ '<CR>', 'p', 'P', 't', 'F', 'o', 'f', 'c', ']c', '[c', 'q', 'h' }) do
     assert(('\n' .. shown):find('\n' .. key .. '  ', 1, true), 'help must list ' .. key)
   end
   press(popup, win == st.wins.graph and 'q' or '<Esc>')
@@ -550,6 +550,22 @@ assert(table.concat(lines(st.bufs.content), '\n')
     == table.concat(to_lines(git('show', main_commit .. ':' .. FILE)), '\n'),
   'content pane must re-render the focused commit')
 
+press(st.wins.content, '<C-o>')
+assert(st.focus == head, 'Ctrl-O in content must return to the previous focused commit')
+press(st.wins.meta, '<C-i>')
+assert(st.focus == main_commit, 'Ctrl-I in the left pane must redo the focus shared with content')
+press(st.wins.meta, '<C-o>')
+assert(st.focus == head, 'Ctrl-O must also work in the left pane')
+press(st.wins.content, '<C-i>')
+assert(st.focus == main_commit, 'Ctrl-I must also work in content')
+press(st.wins.content, '<C-o>')
+vim.api.nvim_win_set_cursor(st.wins.content, { line_of_main, 0 })
+press(st.wins.content, '<CR>')
+assert(st.focus == main_commit, '<CR> in content must focus the same line commit as the left pane')
+press(st.wins.content, '<C-i>')
+assert(st.focus == main_commit and last_notice():match('no next focused commit'),
+  'a new focus jump must discard forward history')
+
 local tabs_before = #vim.api.nvim_list_tabpages()
 press(st.wins.meta, 'o')
 local commit_win = vim.api.nvim_get_current_win()
@@ -590,6 +606,28 @@ assert(graph_header:find(main_commit, 1, true),
   'o in the top pane must show the commit under the cursor, not the focused commit')
 press(graph_commit_win, 'q')
 assert(#vim.api.nvim_list_tabpages() == tabs_before, 'q must close the commit tab opened from the top pane')
+
+press(st.wins.graph, 'c')
+assert(vim.fn.getreg('"') == main_commit, 'c must copy the full hash of the cursor row, not the focused commit')
+press(st.wins.graph, 'f')
+assert(st.focus == head and vim.api.nvim_win_get_cursor(st.wins.graph)[1] == st.index[head],
+  'f must return the graph cursor to the focused commit without changing focus')
+press(st.wins.graph, 'o')
+local full_diff_win = vim.api.nvim_get_current_win()
+local full_diff = table.concat(lines(vim.api.nvim_win_get_buf(full_diff_win)), '\n')
+assert(full_diff:find('+extra', 1, true) and full_diff:find('+unrelated', 1, true),
+  'commit details must show changes to both the viewed file and other files')
+press(full_diff_win, ']c')
+press(full_diff_win, ']c')
+local second_hunk = vim.api.nvim_win_get_cursor(full_diff_win)[1]
+local all_diff_lines = lines(vim.api.nvim_win_get_buf(full_diff_win))
+local file_headers = {}
+for i, line in ipairs(all_diff_lines) do
+  if line:match('^diff %-%-git ') then file_headers[#file_headers + 1] = i end
+end
+assert(#file_headers == 2 and second_hunk > file_headers[2] and all_diff_lines[second_hunk]:match('^@@ '),
+  'diff navigation must jump between files in the full commit')
+press(full_diff_win, 'q')
 
 -- ------------------------------------------------------------------ teardown
 gb.focus_commit(head)
@@ -663,7 +701,7 @@ local function virtual_rows(buf)
 end
 local cb, mb = removed_view.bufs.content, removed_view.bufs.meta
 assert(vim.deep_equal(lines(cb), remaining), 'deleted lines must not enter the content buffer')
-assert(vim.deep_equal(virtual_rows(cb), { { 0, true, '-l1' }, { 1, false, '-main' }, { 4, false, '-extra' } }),
+assert(vim.deep_equal(virtual_rows(cb), { { 0, true, 'l1' }, { 1, false, 'main' }, { 4, false, 'extra' } }),
   'deleted text must appear at the beginning, before the replacement, and at the end')
 local removed_hl = vim.api.nvim_get_hl(0, { name = 'GitBlameRemovedLine' })
 assert(removed_hl.bg == 0x652626, 'deleted rows must have a red background by default')
@@ -806,13 +844,23 @@ assert(vim.api.nvim_win_get_cursor(block_view.wins.content)[1] == 2,
 press(block_view.wins.content, '[c')
 assert(vim.api.nvim_win_get_cursor(block_view.wins.content)[1] == 2
     and last_notice():match('no previous change'), '[c must not wrap before the first block')
+vim.api.nvim_win_set_cursor(block_view.wins.meta, { 2, 0 })
+vim.api.nvim_win_set_cursor(block_view.wins.content, { 1, 0 })
+press(block_view.wins.meta, ']c')
+assert(vim.api.nvim_win_get_cursor(block_view.wins.meta)[1] == 6
+  and vim.api.nvim_win_get_cursor(block_view.wins.content)[1] == 6,
+  ']c in the left pane must start at its cursor and move both panes')
+press(block_view.wins.meta, '[c')
+assert(vim.api.nvim_win_get_cursor(block_view.wins.meta)[1] == 2
+  and vim.api.nvim_win_get_cursor(block_view.wins.content)[1] == 2,
+  '[c in the left pane must return both panes to the previous change block')
 gb.close()
 -- A commit where the file is gone, and one where it is empty.
 git('switch', '-qc', 'gone')
 vim.fn.delete(repo .. '/' .. FILE)
 git('commit', '-qam', 'delete the file', '--date=2024-03-01T12:00:00Z')
 local gone_commit = git('rev-parse', 'HEAD')
-vim.fn.writefile({ 'back' }, repo .. '/' .. FILE)
+vim.fn.writefile({ '-back' }, repo .. '/' .. FILE)
 git('add', FILE)
 git('commit', '-qm', 'bring it back', '--date=2024-03-02T12:00:00Z')
 vim.fn.writefile({}, repo .. '/' .. FILE)
@@ -828,6 +876,8 @@ assert(#lines(gone_view.bufs.meta) == 1, 'the left pane collapses to one row whe
 local empty_commit = git('log', '--format=%H', '-1', '--grep', 'empty the file', '--', FILE)
 assert(gb.focus_commit(empty_commit), 'the commit that emptied the file must not throw')
 assert(gone_view.line_count == 0, 'an emptied file has no lines')
+assert(vim.deep_equal(virtual_rows(gone_view.bufs.content), { { 0, true, '-back' } }),
+  'only the diff prefix is removed; a dash in the original text must stay')
 press(gone_view.wins.content, ']c')
 assert(not last_notice():match('changed no lines'),
   'a commit that deleted every line must not report that it changed nothing: ' .. last_notice())

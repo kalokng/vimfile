@@ -276,13 +276,10 @@ function M.commit_text(root, rev)
   return M.run({ 'show', '--no-patch', '--format=fuller', rev }, root)
 end
 
---- Full diff of `rev` for `path`, against the first parent (or the empty tree for a root commit).
-function M.commit_diff(root, rev, path)
-  local parents = M.parents(root, rev)
-  if parents[1] then
-    return M.run({ 'diff', '--no-color', parents[1], rev, '--', path }, root)
-  end
-  return M.run({ 'show', '--no-color', '--format=', rev, '--', path }, root)
+--- Full commit diff, against the first parent (or the empty tree for a root commit).
+function M.commit_diff(root, rev)
+  return M.run({ 'show', '--no-color', '--format=', '--patch', '--diff-merges=first-parent',
+    '--end-of-options', rev, '--' }, root)
 end
 
 return M
