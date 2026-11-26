@@ -49,6 +49,7 @@ Three panes:
 | content | the file as of the focused commit, with `+` / `~` markers and inline `-` lines showing what the commit deleted |
 
 Counts apply to the selected file, not the whole commit. Each count column fits its widest value. Merge counts are relative to the first parent. The author column is clipped and padded to `author_width`, so subjects start in one column.
+Move the cursor in the top pane to highlight the selected commit and its connections to visible parents.
 
 ## Keys
 
@@ -67,6 +68,9 @@ Defaults; every one is configurable through `setup{ keymaps = { ... } }`.
 | `[c` | content | jump to the start of the previous change block; no wrapping |
 | `h` | all three | show the shortcut popup; dismiss it with `<Esc>` or `q` |
 | `q` | all three (and the commit tab) | close the view and restore the previous layout |
+
+In the commit details opened with `o`, `]c` / `[c` jump between diff hunks.
+Hunks start open; use `zc` to fold one, `zo` to reopen it, or `za` to toggle it.
 
 `p` at a root commit and `P` at the newest commit do nothing but tell you why. When the
 parent exists in the repository but outside the simplified file history, the view says so
@@ -93,7 +97,7 @@ require('gitblame').setup({
 ```
 
 Highlights to override if the defaults do not fit your colorscheme:
-`GitBlameFocus`, `GitBlameIndicator`, `GitBlameGraph`, `GitBlameHash`, `GitBlameAuthor`,
+`GitBlameFocus`, `GitBlameIndicator`, `GitBlameGraph`, `GitBlameGraphSelected`, `GitBlameHash`, `GitBlameAuthor`,
 `GitBlameDate`, `GitBlameAdded`, `GitBlameAddedLine`, `GitBlameRemoved`, `GitBlameRemovedLine`,
 `GitBlameModified`, `GitBlameModifiedLine`.
 

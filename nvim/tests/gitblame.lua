@@ -126,6 +126,7 @@ package.path = table.concat({
   plugin_dir .. '/lua/?/init.lua',
   package.path,
 }, ';')
+vim.api.nvim_set_hl(0, 'Comment', { fg = '#778899', italic = true })
 vim.cmd('runtime plugin/gitblame.lua')
 
 local notices = {}
@@ -278,7 +279,34 @@ for _, sha in ipairs(listed) do
 end
 assert(row_shas[1] == head, 'the first graph row must be the commit HEAD points at')
 assert(merge_rows == 1, 'the merge commit must be listed with two parents')
-assert(table.concat(lines(st.bufs.graph), '\n'):find('|\\'), 'merge/branch glyphs must be rendered')
+local graph_text = table.concat(lines(st.bufs.graph), '\n')
+assert(graph_text:find('├─┐', 1, true) and graph_text:find('●', 1, true),
+  'merge lanes must use connected box-drawing junctions and commit dots')
+assert(not vim.api.nvim_get_hl(0, { name = 'GitBlameGraph', link = false }).italic,
+  'graph lanes must not inherit italic styling from Comment')
+
+local graph_ns = vim.api.nvim_get_namespaces()['gitblame.graph_selection']
+local function selected_graph_rows(sha)
+  vim.api.nvim_set_current_win(st.wins.graph)
+  vim.api.nvim_win_set_cursor(st.wins.graph, { st.index[sha], 0 })
+  vim.api.nvim_exec_autocmds('CursorMoved', { buffer = st.bufs.graph })
+  local selected = {}
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(st.bufs.graph, graph_ns, 0, -1, {})) do
+    selected[mark[2] + 1] = (selected[mark[2] + 1] or 0) + 1
+  end
+  return selected
+end
+local selected = selected_graph_rows(merge_commit)
+local merge_row = st.index[merge_commit]
+assert(selected[merge_row] == 1 and selected[merge_row + 1] >= 3,
+  'selecting a merge must highlight its dot and branching connection')
+for _, parent in ipairs(st.rows[merge_row].parents) do
+  assert(selected[st.index[parent]], 'each visible merge parent must be highlighted')
+end
+selected = selected_graph_rows(head)
+assert(selected[st.index[head]] == 1 and selected[merge_row] == 1 and not selected[merge_row + 1],
+  'moving off a merge must clear the old paths and highlight only the new direct connection')
+vim.api.nvim_set_current_win(st.wins.content)
 
 -- focus indicator: exactly one row, and it is the HEAD commit's row
 local focused = focus_line(st.bufs.graph)
@@ -720,9 +748,39 @@ local wide_row = wide_graph[wide_view.index[wide_view.focus]]
 local narrow_row = wide_graph[wide_view.index[head]]
 local _, wide_end = wide_row:find('+1000', 1, true)
 local _, narrow_end = narrow_row:find('+1', 1, true)
-assert(wide_end and wide_end == narrow_end, 'one- and four-digit counts must end in the same column')
+assert(wide_end and narrow_end and vim.fn.strdisplaywidth(wide_row:sub(1, wide_end))
+  == vim.fn.strdisplaywidth(narrow_row:sub(1, narrow_end)), 'one- and four-digit counts must align on screen')
 assert(wide_row:find(' | +1000 -0 | ', 1, true) and narrow_row:find(' |    +1 -0 | ', 1, true),
   'the additions column must grow without widening the deletions column')
+gb.close()
+
+-- The commit diff uses Git hunk boundaries, with independently foldable blocks.
+expanded[2], expanded[20] = 'first edit', 'second edit'
+vim.fn.writefile(expanded, repo .. '/' .. FILE)
+git('commit', '-am', 'two separate diff hunks')
+assert(gb.open(repo .. '/' .. FILE))
+assert(gb.open_commit())
+local diff_win = vim.api.nvim_get_current_win()
+local hunks = {}
+for i, line in ipairs(lines(vim.api.nvim_get_current_buf())) do
+  if line:match('^@@ ') then
+    hunks[#hunks + 1] = i
+  end
+end
+assert(#hunks == 2 and vim.fn.foldclosed(hunks[1]) == -1, 'diff hunks must start open')
+press(diff_win, ']c')
+assert(vim.api.nvim_win_get_cursor(diff_win)[1] == hunks[1], ']c must jump to the first hunk header')
+vim.cmd('normal! zc')
+assert(vim.fn.foldclosed(hunks[1] + 1) == hunks[1] and vim.fn.foldclosed(hunks[2]) == -1,
+  'closing one hunk must not close the next')
+press(diff_win, ']c')
+assert(vim.api.nvim_win_get_cursor(diff_win)[1] == hunks[2], ']c must jump over a folded hunk')
+vim.api.nvim_win_set_cursor(diff_win, { hunks[2] + 1, 0 })
+press(diff_win, '[c')
+assert(vim.api.nvim_win_get_cursor(diff_win)[1] == hunks[1], '[c must jump to the previous hunk from inside a block')
+vim.cmd('normal! zo')
+assert(vim.fn.foldclosed(hunks[1]) == -1, 'zo must reopen a diff hunk')
+press(diff_win, 'q')
 gb.close()
 
 -- Adjacent changed lines are one stop for ]c / [c.
@@ -798,15 +856,31 @@ local listed_rows = #tall_view.rows
 assert(vim.api.nvim_win_get_height(tall_view.wins.graph) == listed_rows,
   'a ratio bigger than the history must not leave empty rows above the graph')
 press(tall_view.wins.graph, 'F')
-assert(#tall_view.rows ~= listed_rows
+assert(vim.api.nvim_win_get_height(tall_view.wins.graph) == #tall_view.rows,
+  'toggling --follow must fit the graph pane to the resulting layout')
+local followed_rows = #tall_view.rows
+vim.fn.writefile({ 'one more line' }, repo .. '/' .. FILE, 'a')
+git('commit', '-am', 'extend the graph')
+assert(gb.refresh() and #tall_view.rows == followed_rows + 1
     and vim.api.nvim_win_get_height(tall_view.wins.graph) == #tall_view.rows,
-  'toggling --follow must re-fit the graph pane to the new history length')
+  'refresh must grow the graph pane when the layout gains a row')
 gb.close()
 gb.setup({ top_ratio = 0.02 })
 assert(gb.open(repo .. '/' .. FILE))
 assert(vim.api.nvim_win_get_height(gb.state().wins.graph) == 3, 'the graph pane keeps at least three rows')
 gb.close()
 gb.setup({})
+
+-- A link from b to d crosses the independent lane to c without joining it.
+local crossing = require('gitblame.graph').parse(table.concat({
+  '\31a\31b c d', '\31b\31d', '\31c\31', '\31d\31',
+}, '\n'))
+local crossing_row = crossing.rows[4]
+assert(crossing_row.child == 'b' and crossing_row.art == '└─│─┤',
+  'a crossing must draw only the vertical stroke, without changing real junctions')
+local vertical = crossing_row.segments[3]
+assert(vertical.target == 'c' and not vertical.branch,
+  'highlighting the horizontal link must not highlight the unrelated lane')
 
 os.remove(outside)
 vim.system({ '/bin/sh', '-c', 'rm -rf "$1"', 'sh', sandbox }):wait()

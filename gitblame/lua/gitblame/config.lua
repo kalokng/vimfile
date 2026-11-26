@@ -39,7 +39,6 @@ local opts = vim.deepcopy(defaults)
 function M.set_highlights()
   local links = {
     GitBlameIndicator = 'Special',
-    GitBlameGraph = 'Comment',
     GitBlameHash = 'Statement',
     GitBlameAuthor = 'Identifier',
     GitBlameDate = 'Comment',
@@ -52,6 +51,15 @@ function M.set_highlights()
   for name, link in pairs(links) do
     vim.api.nvim_set_hl(0, name, { default = true, link = link })
   end
+  local comment = vim.api.nvim_get_hl(0, { name = 'Comment', link = false })
+  vim.api.nvim_set_hl(0, 'GitBlameGraph', {
+    default = true, fg = comment.fg, ctermfg = comment.ctermfg, italic = false, cterm = { italic = false },
+  })
+  local special = vim.api.nvim_get_hl(0, { name = 'Special', link = false })
+  vim.api.nvim_set_hl(0, 'GitBlameGraphSelected', {
+    default = true, fg = special.fg, ctermfg = special.ctermfg, bold = true, italic = false,
+    cterm = { bold = true, italic = false },
+  })
   vim.api.nvim_set_hl(0, 'GitBlameFocus', { default = true, link = 'CursorLine' })
   vim.api.nvim_set_hl(0, 'GitBlameRemovedLine', {
     default = true, bg = '#652626', fg = '#ffffff', ctermbg = 1, ctermfg = 15,

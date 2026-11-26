@@ -14,6 +14,7 @@ local graph = require('gitblame.graph')
 local M = {}
 
 local ns = vim.api.nvim_create_namespace('gitblame')
+local graph_ns = vim.api.nvim_create_namespace('gitblame.graph_selection')
 local views = {} -- tabpage id -> view state
 local saved_scrollopt
 local close_help -- forward declared; defined with the shortcut popup below
@@ -84,7 +85,7 @@ local function wset(win, opts)
   end
 end
 
-local bind_all -- forward declared; defined with the keymaps below
+local bind, bind_all -- defined with the keymaps below
 
 local function path_at(state, sha)
   return state.paths[sha] or state.rel
@@ -107,6 +108,40 @@ end
 local function graph_height(state)
   local allowed = math.floor((vim.o.lines - 2) * config.get().top_ratio)
   return math.max(3, math.min(allowed, #state.rows))
+end
+
+local GRAPH_START = 2
+
+local function highlight_connection(state, line, force)
+  local row = state.rows[line]
+  local sha = row and (row.sha or row.child)
+  if not force and sha == state.graph_selection then return end
+  state.graph_selection = sha
+  local buf = state.bufs.graph
+  vim.api.nvim_buf_clear_namespace(buf, graph_ns, 0, -1)
+  local first = sha and state.index[sha]
+  if not first then return end
+
+  local targets, last = {}, first
+  for _, parent in ipairs(state.rows[first].parents) do
+    local parent_line = state.index[parent]
+    if parent_line and parent_line > first then
+      targets[parent] = parent_line
+      last = math.max(last, parent_line)
+    end
+  end
+  for i = first, last do
+    local graph_row = state.rows[i]
+    for _, segment in ipairs(graph_row.segments) do
+      local target = targets[segment.target]
+      if (i == first and segment.node) or (i > first and target and i <= target)
+        or (graph_row.child == sha and segment.branch) then
+        vim.api.nvim_buf_set_extmark(buf, graph_ns, i - 1, GRAPH_START + segment.start_col, {
+          end_col = GRAPH_START + segment.end_col, hl_group = 'GitBlameGraphSelected', priority = 120,
+        })
+      end
+    end
+  end
 end
 
 local function render_graph(state)
@@ -132,7 +167,7 @@ local function render_graph(state)
   end
   local lines, focus_row = {}, nil
   for i, row in ipairs(state.rows) do
-    local art = row.art .. string.rep(' ', state.art_width - #row.art)
+    local art = row.art .. string.rep(' ', state.art_width - row.cells)
     if row.kind == 'commit' then
       local focused = row.sha == state.focus
       if focused then
@@ -150,12 +185,12 @@ local function render_graph(state)
   end
   set_lines(buf, lines)
 
-  local art_start, hash_start
   for i, row in ipairs(state.rows) do
-    art_start = 2
-    hash_start = art_start + state.art_width + 1
-    vim.api.nvim_buf_set_extmark(buf, ns, i - 1, art_start, {
-      end_col = art_start + state.art_width,
+    -- Graph padding uses screen cells; extmark columns use bytes.
+    local art_end = GRAPH_START + #row.art + state.art_width - row.cells
+    local hash_start = art_end + 1
+    vim.api.nvim_buf_set_extmark(buf, ns, i - 1, GRAPH_START, {
+      end_col = art_end,
       hl_group = 'GitBlameGraph',
     })
     if row.kind == 'commit' then
@@ -202,6 +237,7 @@ local function render_graph(state)
   if focus_row and vim.api.nvim_win_is_valid(win) then
     pcall(vim.api.nvim_win_set_cursor, win, { focus_row, 0 })
   end
+  highlight_connection(state, focus_row or 1, true)
 end
 
 -- The left pane is a fixed grid: 2 change + 1 + 8 hash + 1 + author + 1 + 10 date.
@@ -610,6 +646,43 @@ function M.prev_change()
   return jump_change(state, -1)
 end
 
+local function setup_diff(buf, lines)
+  vim.wo.foldmethod = 'manual'
+  vim.wo.foldminlines = 0
+  vim.wo.foldenable = true
+  vim.cmd('normal! zE')
+  local hunks, first = {}, nil
+  for i = 1, #lines + 1 do
+    local line = lines[i]
+    local header = line and line:match('^@@ %-%d')
+    if not line or header or line:match('^diff %-%-git ') then
+      if first then
+        hunks[#hunks + 1] = { first, i - 1 }
+        vim.cmd(('%d,%dfold'):format(first, i - 1))
+      end
+      first = header and i or nil
+    end
+  end
+  vim.cmd('normal! zR')
+
+  local function jump(step)
+    local cursor = vim.api.nvim_win_get_cursor(0)[1]
+    local first_index, last_index = 1, #hunks
+    if step < 0 then
+      first_index, last_index = last_index, first_index
+    end
+    for i = first_index, last_index, step do
+      local hunk = hunks[i]
+      if (step > 0 and hunk[1] > cursor) or (step < 0 and hunk[2] < cursor) then
+        vim.api.nvim_win_set_cursor(0, { hunk[1], 0 })
+        return
+      end
+    end
+  end
+  bind(buf, 'next_change', function() jump(1) end, 'next diff hunk')
+  bind(buf, 'prev_change', function() jump(-1) end, 'previous diff hunk')
+end
+
 --- Open the commit header + file diff in a new tabpage.
 function M.open_commit(sha)
   local state, err = current()
@@ -632,6 +705,7 @@ function M.open_commit(sha)
   set_lines(dbuf, diff)
   vim.bo[dbuf].filetype = 'diff'
   vim.api.nvim_win_set_buf(0, dbuf)
+  setup_diff(dbuf, diff)
   pcall(vim.api.nvim_win_set_cursor, 0, { 1, 0 })
 
   local close = config.get().keymaps.close
@@ -780,6 +854,13 @@ function M.open(path)
   end
 
   state.augroup = vim.api.nvim_create_augroup('gitblame' .. seq, { clear = true })
+  vim.api.nvim_create_autocmd({ 'CursorMoved', 'BufEnter' }, {
+    buffer = state.bufs.graph,
+    group = state.augroup,
+    callback = function()
+      highlight_connection(state, vim.api.nvim_win_get_cursor(0)[1])
+    end,
+  })
   vim.api.nvim_create_autocmd('WinClosed', {
     group = state.augroup,
     callback = function(ev)
@@ -844,7 +925,7 @@ end
 
 -- ---------------------------------------------------------------- keymaps
 
-local function bind(buf, key_name, fn, desc)
+bind = function(buf, key_name, fn, desc)
   local key = config.get().keymaps[key_name]
   if not key or key == '' or not vim.api.nvim_buf_is_valid(buf) then
     return

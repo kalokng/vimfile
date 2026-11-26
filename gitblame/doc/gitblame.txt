@@ -46,7 +46,8 @@ Top pane (at most one third of the screen, and only as tall as the history): >
    * 676a1abf rename tracked to renamed
 <
   column 1   focus indicator (default '>')
-  column 2.. graph art from `git log --graph`, including merge forks
+  column 2.. Unicode graph lanes and merge junctions. The cursor highlights
+             the selected commit's links to its visible parents.
   next       short hash of the commit
   rest       commit date (YYYY-MM-DD), +added/-removed, author, and subject.
              Counts are for the selected file; each column fits its widest count.
@@ -115,6 +116,8 @@ is configurable, see |gitblame-config|.
                     No wrapping; when there is nothing left in that direction the
                     cursor stays and the reason is reported. The left pane cursor
                     follows so both panes mark the same line.
+                    Commit diff pane: jump between diff hunks without wrapping.
+                    Hunks start open. Use zc to fold, zo to open, or za to toggle.
 
                                                 *gitblame-h*
   h                 All three panes: show the active shortcuts. Press <Esc> or
@@ -145,7 +148,7 @@ is configurable, see |gitblame-config|.
   })
 <
 Highlight groups, all linked to sensible defaults and safe to override:
-GitBlameFocus, GitBlameIndicator, GitBlameGraph, GitBlameHash, GitBlameAuthor,
+GitBlameFocus, GitBlameIndicator, GitBlameGraph, GitBlameGraphSelected, GitBlameHash, GitBlameAuthor,
 GitBlameDate, GitBlameAdded, GitBlameAddedLine, GitBlameRemoved, GitBlameRemovedLine,
 GitBlameModified, GitBlameModifiedLine.
 
