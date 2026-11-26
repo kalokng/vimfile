@@ -44,9 +44,9 @@ Three panes:
 
 | pane | contents |
 | --- | --- |
-| top (~1/3 height) | `[focus][graph][short hash][subject]`, one row per commit of the file, merges and branch lanes included |
+| top (~1/3 height) | `[focus][graph][short hash][author][subject]`, one row per commit of the file, merges and branch lanes included |
 | left | per-line change marker, blame hash, author, date — line-for-line aligned with the content pane and scroll-locked to it |
-| content | the file as of the focused commit, with `+` / `~` markers in the sign column |
+| content | the file as of the focused commit, with `+` / `~` markers and inline `-` lines showing what the commit deleted |
 
 ## Keys
 
@@ -58,11 +58,12 @@ Defaults; every one is configurable through `setup{ keymaps = { ... } }`.
 | `<CR>` | meta | focus the commit that changed that line |
 | `p` | all three | focus the parent commit |
 | `P` | all three | focus the child commit |
-| `t` | all three | show / hide the focus commit's `+`/`-` change markers |
+| `t` | all three | show / hide change markers and deleted lines |
 | `F` | all three | toggle `--follow` (rename tracking) and re-read the history |
 | `o` | all three | open the full commit (header, message, file diff) in a new tab: the row under the cursor in the graph, the line under the cursor in the meta pane, the focused commit in the content pane |
 | `]c` | content | jump to the next change of the focus commit (added line, uncommitted line, or removal point); no wrapping |
 | `[c` | content | jump to the previous change of the focus commit; no wrapping |
+| `h` | all three | show the shortcut popup; dismiss it with `<Esc>` or `q` |
 | `q` | all three (and the commit tab) | close the view and restore the previous layout |
 
 `p` at a root commit and `P` at the newest commit do nothing but tell you why. When the
@@ -83,6 +84,7 @@ require('gitblame').setup({
   keymaps = {
     parent = 'p', child = 'P', toggle_changes = 't', toggle_follow = 'F',
     close = 'q', select = '<CR>', open_commit = 'o',
+    help = 'h',
     next_change = ']c', prev_change = '[c',
   },
 })
@@ -90,7 +92,7 @@ require('gitblame').setup({
 
 Highlights to override if the defaults do not fit your colorscheme:
 `GitBlameFocus`, `GitBlameIndicator`, `GitBlameGraph`, `GitBlameHash`, `GitBlameAuthor`,
-`GitBlameDate`, `GitBlameAdded`, `GitBlameAddedLine`, `GitBlameRemoved`,
+`GitBlameDate`, `GitBlameAdded`, `GitBlameAddedLine`, `GitBlameRemoved`, `GitBlameRemovedLine`,
 `GitBlameModified`, `GitBlameModifiedLine`.
 
 ## API

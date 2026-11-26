@@ -152,9 +152,10 @@ end
 
 --- Lines the commit added (new-file line numbers) and removed (count keyed by the new-file
 --- line the removal happened at), relative to its first parent.
----@return { added: table<integer,boolean>, removed: table<integer,integer> }
+--- `removed_text` is keyed by the new-file line before which the deleted text belongs.
+---@return { added: table<integer,boolean>, removed: table<integer,integer>, removed_text: table<integer,string[]> }
 function M.changed_lines(root, rev, path)
-  local added, removed = {}, {}
+  local added, removed, removed_text = {}, {}, {}
   local parents = M.parents(root, rev)
   local out
   if parents[1] then
@@ -163,21 +164,30 @@ function M.changed_lines(root, rev, path)
     out = M.run({ 'show', '--no-color', '--format=', '--unified=0', rev, '--', path }, root)
   end
   if not out then
-    return { added = added, removed = removed }
+    return { added = added, removed = removed, removed_text = removed_text }
   end
+  local deleted, remaining
   for _, line in ipairs(M.lines(out)) do
     local o_start, o_count, n_start, n_count = hunk(line)
     if o_start then
+      deleted, remaining = nil, o_count
       for i = n_start, n_start + n_count - 1 do
         added[i] = true
       end
       if o_count > 0 then
         local at = math.max(1, n_start)
         removed[at] = (removed[at] or 0) + o_count
+        -- With no new lines, Git reports the line *before* the deletion.
+        local before = n_start + (n_count == 0 and 1 or 0)
+        deleted = removed_text[before] or {}
+        removed_text[before] = deleted
       end
+    elseif deleted and remaining > 0 and line:sub(1, 1) == '-' then
+      deleted[#deleted + 1] = line
+      remaining = remaining - 1
     end
   end
-  return { added = added, removed = removed }
+  return { added = added, removed = removed, removed_text = removed_text }
 end
 
 --- Line numbers of the `rev` version that differ in the working tree (uncommitted edits).

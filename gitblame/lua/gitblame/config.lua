@@ -23,6 +23,7 @@ local defaults = {
     toggle_changes = 't',
     toggle_follow = 'F',
     close = 'q',
+    help = 'h',
     select = '<CR>', -- graph row / meta line -> focus that commit
     open_commit = 'o', -- open the full commit in a new tab
     next_change = ']c', -- content pane: next change of the focus commit
@@ -49,6 +50,9 @@ function M.set_highlights()
     vim.api.nvim_set_hl(0, name, { default = true, link = link })
   end
   vim.api.nvim_set_hl(0, 'GitBlameFocus', { default = true, link = 'CursorLine' })
+  vim.api.nvim_set_hl(0, 'GitBlameRemovedLine', {
+    default = true, bg = '#652626', fg = '#ffffff', ctermbg = 1, ctermfg = 15,
+  })
 end
 
 ---@param user table?

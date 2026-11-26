@@ -48,7 +48,7 @@ Top pane (about one third of the screen by default): >
   column 1   focus indicator (default '>')
   column 2.. graph art from `git log --graph`, including merge forks
   next       short hash of the commit
-  rest       commit subject
+  rest       commit author and subject
 
 Main area, split left and right:
 
@@ -81,9 +81,9 @@ is configurable, see |gitblame-config|.
                     newest commit of the file nothing moves.
 
                                                 *gitblame-t*
-  t                 All three panes: show or hide the change markers of the
-                    focused commit. Line counts and pane alignment are
-                    unaffected, so your reading position is kept.
+  t                 All three panes: show or hide change markers and deleted
+                    lines. Deleted text is shown inline in the content pane
+                    without changing file line numbers or blame alignment.
 
                                                 *gitblame-F*
   F                 All three panes: toggle `--follow` (rename tracking) and
@@ -108,6 +108,10 @@ is configurable, see |gitblame-config|.
                     reason is reported. The left pane cursor follows so both panes
                     mark the same line.
 
+                                                *gitblame-h*
+  h                 All three panes: show the active shortcuts. Press <Esc> or
+                    q to close the popup and return to the pane.
+
                                                 *gitblame-q*
   q                 All three panes: close the view, wipe the plugin buffers and
                     restore the previous window layout and window options. In the
@@ -127,13 +131,14 @@ is configurable, see |gitblame-config|.
     keymaps = {
       parent = 'p', child = 'P', toggle_changes = 't', toggle_follow = 'F',
       close = 'q', select = '<CR>', open_commit = 'o',
+      help = 'h',
       next_change = ']c', prev_change = '[c',
     },
   })
 <
 Highlight groups, all linked to sensible defaults and safe to override:
 GitBlameFocus, GitBlameIndicator, GitBlameGraph, GitBlameHash, GitBlameAuthor,
-GitBlameDate, GitBlameAdded, GitBlameAddedLine, GitBlameRemoved,
+GitBlameDate, GitBlameAdded, GitBlameAddedLine, GitBlameRemoved, GitBlameRemovedLine,
 GitBlameModified, GitBlameModifiedLine.
 
 ==============================================================================

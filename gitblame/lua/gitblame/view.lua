@@ -105,7 +105,7 @@ local function render_graph(state)
         focus_row = i
       end
       lines[i] = (focused and opts.focus_sign or ' ') .. ' ' .. art .. ' '
-        .. short(row.sha) .. ' ' .. row.subject
+        .. short(row.sha) .. ' ' .. row.author .. ' | ' .. row.subject
     else
       lines[i] = '  ' .. art
     end
@@ -125,6 +125,12 @@ local function render_graph(state)
         end_col = hash_start + #short(row.sha),
         hl_group = 'GitBlameHash',
       })
+      if row.author ~= '' then
+        local author_start = hash_start + #short(row.sha) + 1
+        vim.api.nvim_buf_set_extmark(buf, ns, i - 1, author_start, {
+          end_col = author_start + #row.author, hl_group = 'GitBlameAuthor',
+        })
+      end
       if row.sha == state.focus then
         vim.api.nvim_buf_set_extmark(buf, ns, i - 1, 0, { line_hl_group = 'GitBlameFocus' })
         vim.api.nvim_buf_set_extmark(buf, ns, i - 1, 0, { end_col = 1, hl_group = 'GitBlameIndicator' })
@@ -207,7 +213,7 @@ local function render_main(state)
   local path = path_at(state, state.focus)
   local text, err = git.show_file(state.root, state.focus, path)
   if not text then
-    state.changes, state.touched, state.blame = { added = {}, removed = {} }, {}, {}
+    state.changes, state.touched, state.blame = { added = {}, removed = {}, removed_text = {} }, {}, {}
     state.line_count = 1
     state.message = 'file did not exist at ' .. short(state.focus) .. ' (' .. path .. ')'
     set_lines(cbuf, { state.message })
@@ -248,6 +254,20 @@ local function render_main(state)
   end
 
   render_meta(state, #lines)
+
+  if state.show_changes then
+    for before, deleted in pairs(state.changes.removed_text) do
+      local content_rows, meta_rows = {}, {}
+      for i, line in ipairs(deleted) do
+        content_rows[i] = { { line, 'GitBlameRemovedLine' } }
+        meta_rows[i] = { { '' } }
+      end
+      -- Pad both panes without changing file line numbers or blame indices.
+      local row = math.max(0, before - 2)
+      vim.api.nvim_buf_set_extmark(cbuf, ns, row, 0, { virt_lines = content_rows, virt_lines_above = before == 1 })
+      vim.api.nvim_buf_set_extmark(mbuf, ns, row, 0, { virt_lines = meta_rows, virt_lines_above = before == 1 })
+    end
+  end
 
   for name, win in pairs({ meta = state.wins.meta, content = state.wins.content }) do
     if vim.api.nvim_win_is_valid(win) and keep[name] then
@@ -611,7 +631,7 @@ function M.open(path)
       content = scratch_buf('gitblame://' .. seq .. '/content'),
     },
     blame = {},
-    changes = { added = {}, removed = {} },
+    changes = { added = {}, removed = {}, removed_text = {} },
     touched = {},
   }
   views[tabpage] = state
@@ -724,13 +744,53 @@ local function bind(buf, key_name, fn, desc)
     desc = 'gitblame: ' .. desc })
 end
 
+local function show_help(state)
+  local prefix, entries = 'gitblame: ', {}
+  for _, buf in pairs(state.bufs) do
+    for _, map in ipairs(vim.api.nvim_buf_get_keymap(buf, 'n')) do
+      if map.desc and vim.startswith(map.desc, prefix) then
+        entries[map.lhs .. '  ' .. map.desc:sub(#prefix + 1)] = true
+      end
+    end
+  end
+  local lines = vim.tbl_keys(entries)
+  table.sort(lines)
+  lines[#lines + 1] = ''
+  lines[#lines + 1] = '<Esc>  close this popup'
+
+  local width = 0
+  for _, line in ipairs(lines) do
+    width = math.max(width, vim.fn.strdisplaywidth(line))
+  end
+  width = math.max(1, math.min(width, vim.o.columns - 2))
+  local rows = vim.o.lines - vim.o.cmdheight
+  local height = math.max(1, math.min(#lines, rows - 2))
+  local buf = scratch_buf('gitblame://help')
+  set_lines(buf, lines)
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = 'editor', style = 'minimal', border = 'rounded', title = ' GitBlame shortcuts ',
+    width = width, height = height,
+    col = math.floor((vim.o.columns - width - 2) / 2),
+    row = math.max(0, math.floor((rows - height - 2) / 2)),
+  })
+  wset(win, { scrollbind = false, wrap = true })
+  local function close()
+    vim.api.nvim_win_close(win, true)
+  end
+  bind(buf, 'close', close, 'close this popup')
+  vim.keymap.set('n', '<Esc>', close, { buffer = buf, nowait = true, silent = true })
+end
+
 bind_all = function(state)
-  -- parent/child/toggles/close are available in all three panes
+  -- Shared mappings are available in all three panes.
   for _, buf in pairs(state.bufs) do
     bind(buf, 'parent', M.focus_parent, 'focus parent commit')
     bind(buf, 'child', M.focus_child, 'focus child commit')
-    bind(buf, 'toggle_changes', M.toggle_changes, 'toggle +/- change markers')
+    bind(buf, 'toggle_changes', M.toggle_changes, 'toggle change markers and deleted lines')
     bind(buf, 'toggle_follow', M.toggle_follow, 'toggle --follow (rename tracking)')
+    bind(buf, 'help', function()
+      show_help(state)
+    end, 'show this popup')
     -- wrapped so the keymap callback's argument is never taken for a tabpage id
     bind(buf, 'close', function()
       return M.close()
@@ -738,14 +798,14 @@ bind_all = function(state)
   end
   -- `o` is available in all three panes: the commit under the cursor (graph, meta)
   -- or the focused commit (content).
-  bind(state.bufs.graph, 'select', M.select, 'focus the commit under the cursor')
+  bind(state.bufs.graph, 'select', M.select, 'focus the commit under the cursor (graph)')
   bind(state.bufs.graph, 'open_commit', M.open_commit_at_cursor, 'show the full commit')
-  bind(state.bufs.meta, 'select', M.select, 'focus the commit of this line')
+  bind(state.bufs.meta, 'select', M.select, 'focus the commit of this line (meta)')
   bind(state.bufs.meta, 'open_commit', M.open_commit_at_cursor, 'show the full commit')
   bind(state.bufs.content, 'open_commit', M.open_commit_at_cursor, 'show the full commit')
   -- ]c / [c walk the focus commit's changes inside the content pane
-  bind(state.bufs.content, 'next_change', M.next_change, 'next change of the focus commit')
-  bind(state.bufs.content, 'prev_change', M.prev_change, 'previous change of the focus commit')
+  bind(state.bufs.content, 'next_change', M.next_change, 'next change of the focus commit (content)')
+  bind(state.bufs.content, 'prev_change', M.prev_change, 'previous change of the focus commit (content)')
 end
 
 return M

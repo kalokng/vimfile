@@ -7,6 +7,7 @@ gitblame-api	gitblame.txt	/*gitblame-api*
 gitblame-commands	gitblame.txt	/*gitblame-commands*
 gitblame-config	gitblame.txt	/*gitblame-config*
 gitblame-contents	gitblame.txt	/*gitblame-contents*
+gitblame-h	gitblame.txt	/*gitblame-h*
 gitblame-intro	gitblame.txt	/*gitblame-intro*
 gitblame-layout	gitblame.txt	/*gitblame-layout*
 gitblame-limits	gitblame.txt	/*gitblame-limits*
