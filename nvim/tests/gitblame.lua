@@ -61,8 +61,8 @@ printf 'l1\nl2\nl3\nmain\nfeature\nresolved\n' > renamed.txt
 git add -A
 git commit -qm 'merge feature resolved'
 printf 'l1\nl2\nl3\nmain\nfeature\nresolved\nextra\n' > renamed.txt
-printf 'unrelated\n' > other.txt
-git add other.txt
+printf 'unrelated\n' > 'other $file.txt'
+git add 'other $file.txt'
 git commit -qam 'add extra line' --author='Head Author <head@example.com>' --date='2024-02-04T12:00:00Z'
 printf 'scratch\n' > untracked.txt
 ]]
@@ -627,7 +627,23 @@ for i, line in ipairs(all_diff_lines) do
 end
 assert(#file_headers == 2 and second_hunk > file_headers[2] and all_diff_lines[second_hunk]:match('^@@ '),
   'diff navigation must jump between files in the full commit')
+press(full_diff_win, '[c') -- the other file sorts before renamed.txt
+press(full_diff_win, 'o')
+assert(#vim.api.nvim_list_tabpages() == tabs_before + 2 and gb.state().rel == 'other $file.txt',
+  'o must open blame for the file in the current hunk in a new tab, preserving literal names')
+gb.close()
+vim.cmd.tabclose()
+assert(vim.api.nvim_get_current_win() == full_diff_win, 'closing the new tab must return to commit details')
 press(full_diff_win, 'q')
+
+assert(gb.open_commit(rename_commit))
+local rename_diff_win = vim.api.nvim_get_current_win()
+press(rename_diff_win, 'o')
+assert(#vim.api.nvim_list_tabpages() == tabs_before + 2 and gb.state().rel == FILE,
+  'o on a rename-only diff must open the destination file even without a hunk')
+gb.close()
+vim.cmd.tabclose()
+press(rename_diff_win, 'q')
 
 -- ------------------------------------------------------------------ teardown
 gb.focus_commit(head)
@@ -872,6 +888,16 @@ assert(lines(gone_view.bufs.content)[1]
     == 'file did not exist at ' .. gone_commit:sub(1, 8) .. ' (' .. FILE .. ')',
   'the content pane must say why it shows nothing')
 assert(#lines(gone_view.bufs.meta) == 1, 'the left pane collapses to one row when the file is gone')
+assert(gb.open_commit())
+local deleted_diff_win = vim.api.nvim_get_current_win()
+local n_tabs = #vim.api.nvim_list_tabpages()
+-- Remove only the worktree copy to exercise a file that cannot be opened now.
+vim.fn.delete(repo .. '/' .. FILE)
+press(deleted_diff_win, 'o')
+assert(#vim.api.nvim_list_tabpages() == n_tabs and last_notice():match('not available in the working tree'),
+  'a file missing from the worktree must not leave an empty tab')
+press(deleted_diff_win, 'q')
+vim.fn.writefile({}, repo .. '/' .. FILE)
 -- an emptied file still deleted lines, so ]c must not claim the commit changed nothing
 local empty_commit = git('log', '--format=%H', '-1', '--grep', 'empty the file', '--', FILE)
 assert(gb.focus_commit(empty_commit), 'the commit that emptied the file must not throw')

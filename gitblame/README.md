@@ -73,6 +73,8 @@ Defaults; every one is configurable through `setup{ keymaps = { ... } }`.
 | `q` | all three (and the commit tab) | close the view and restore the previous layout |
 
 In the commit details opened with `o`, `]c` / `[c` jump between diff hunks.
+Press `o` in the diff to open the changed file under the cursor in a new GitBlame tab.
+The file must still be available in the working tree.
 Hunks start open; use `zc` to fold one, `zo` to reopen it, or `za` to toggle it.
 
 `p` at a root commit and `P` at the newest commit do nothing but tell you why. When the

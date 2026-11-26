@@ -111,6 +111,8 @@ is configurable, see |gitblame-config|.
                     message on top and the diff for all changed files below. Top pane: the
                     row under the cursor. Left pane: the line under the cursor.
                     Content pane: the focused commit.
+                    Commit diff pane: open GitBlame for the changed file under
+                    the cursor in a new tab, if the file is in the working tree.
 
                                                 *gitblame-]c* *gitblame-[c*
   ]c  [c            Left and content panes: jump to the next / previous change

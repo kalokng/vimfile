@@ -6,8 +6,9 @@ local BASE = { 'git', '--no-pager', '-c', 'color.ui=false', '-c', 'core.quotepat
 --- Run git in `cwd` and return stdout, or nil plus an error message.
 ---@param args string[]
 ---@param cwd string?
+---@param raw boolean? Preserve bytes for NUL-delimited Git output.
 ---@return string? out, string? err
-function M.run(args, cwd)
+function M.run(args, cwd, raw)
   local cmd = {}
   for _, a in ipairs(BASE) do
     cmd[#cmd + 1] = a
@@ -15,7 +16,7 @@ function M.run(args, cwd)
   for _, a in ipairs(args) do
     cmd[#cmd + 1] = a
   end
-  local ok, obj = pcall(vim.system, cmd, { text = true, cwd = cwd })
+  local ok, obj = pcall(vim.system, cmd, { text = not raw, cwd = cwd })
   if not ok then
     return nil, tostring(obj)
   end
@@ -278,8 +279,22 @@ end
 
 --- Full commit diff, against the first parent (or the empty tree for a root commit).
 function M.commit_diff(root, rev)
-  return M.run({ 'show', '--no-color', '--format=', '--patch', '--diff-merges=first-parent',
-    '--end-of-options', rev, '--' }, root)
+  local raw, err = M.run({ 'show', '--no-color', '--no-ext-diff', '--submodule=short', '--format=',
+    '--patch-with-raw', '-z', '--diff-merges=first-parent', '--end-of-options', rev, '--' }, root, true)
+  if not raw then return nil, nil, err end
+  local split = raw:find('\0\0', 1, true)
+  if not split then return raw, {} end
+
+  -- The raw records and patch sections share the same order. NULs preserve quoted names.
+  local fields = vim.split(raw:sub(1, split - 1), '\0', { plain = true })
+  local paths, i = {}, 1
+  while i < #fields do
+    local status = fields[i]:match(' ([A-Z])%d*$')
+    i = i + ((status == 'R' or status == 'C') and 2 or 1)
+    paths[#paths + 1] = fields[i]
+    i = i + 1
+  end
+  return raw:sub(split + 2), paths
 end
 
 return M

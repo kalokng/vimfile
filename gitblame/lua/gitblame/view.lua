@@ -670,16 +670,18 @@ function M.prev_change()
   return jump_change(state, -1)
 end
 
-local function setup_diff(buf, lines)
+local function setup_diff(buf, lines, root, paths)
   vim.wo.foldmethod = 'manual'
   vim.wo.foldminlines = 0
   vim.wo.foldenable = true
   vim.cmd('normal! zE')
-  local hunks, first = {}, nil
+  local hunks, sections, first = {}, {}, nil
   for i = 1, #lines + 1 do
     local line = lines[i]
     local header = line and line:match('^@@ %-%d')
-    if not line or header or line:match('^diff %-%-git ') then
+    local file_header = line and line:match('^diff %-%-git ')
+    if file_header then sections[#sections + 1] = i end
+    if not line or header or file_header then
       if first then
         hunks[#hunks + 1] = { first, i - 1 }
         vim.cmd(('%d,%dfold'):format(first, i - 1))
@@ -705,6 +707,24 @@ local function setup_diff(buf, lines)
   end
   bind(buf, 'next_change', function() jump(1) end, 'next diff hunk')
   bind(buf, 'prev_change', function() jump(-1) end, 'previous diff hunk')
+  bind(buf, 'open_commit', function()
+    local cursor = vim.api.nvim_win_get_cursor(0)[1]
+    for i = #sections, 1, -1 do
+      if sections[i] <= cursor then
+        local path = #sections == #paths and paths[i]
+        if not path then return fail('could not identify the file under the cursor') end
+        local file = root .. '/' .. path
+        if vim.fn.filereadable(file) ~= 1 then
+          return fail('file is not available in the working tree: ' .. path)
+        end
+        vim.cmd('tabnew')
+        vim.api.nvim_win_set_buf(0, vim.fn.bufadd(file))
+        if not M.open(file, true) then vim.cmd('tabclose') end
+        return
+      end
+    end
+    return say(nil, 'no changed file under the cursor')
+  end, 'open blame for this changed file')
 end
 
 --- Open the commit header and full repository diff in a new tabpage.
@@ -715,7 +735,9 @@ function M.open_commit(sha)
   end
   sha = sha or state.focus
   local header = git.lines(git.commit_text(state.root, sha) or ('no such commit: ' .. sha))
-  local diff = git.lines(git.commit_diff(state.root, sha) or '')
+  local patch, paths, diff_err = git.commit_diff(state.root, sha)
+  if not patch then return fail(diff_err) end
+  local diff = git.lines(patch)
 
   vim.cmd('tabnew')
   seq = seq + 1
@@ -728,7 +750,7 @@ function M.open_commit(sha)
   set_lines(dbuf, diff)
   vim.bo[dbuf].filetype = 'diff'
   vim.api.nvim_win_set_buf(0, dbuf)
-  setup_diff(dbuf, diff)
+  setup_diff(dbuf, diff, state.root, paths)
   pcall(vim.api.nvim_win_set_cursor, 0, { 1, 0 })
 
   local close = config.get().keymaps.close
@@ -778,7 +800,7 @@ end
 -- ---------------------------------------------------------------- open/close
 
 --- Open (or replace) the blame view. `path` nil or '' means the current buffer's file.
-function M.open(path)
+function M.open(path, literal_path)
   local opts = config.get()
   config.set_highlights()
 
@@ -789,7 +811,7 @@ function M.open(path)
       return fail('the current buffer has no file name')
     end
   end
-  file = vim.fn.fnamemodify(vim.fn.expand(file), ':p')
+  file = vim.fn.fnamemodify(literal_path and file or vim.fn.expand(file), ':p')
   if vim.fn.filereadable(file) ~= 1 then
     return fail('not a readable file: ' .. file)
   end
