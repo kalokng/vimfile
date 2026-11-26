@@ -42,8 +42,10 @@ return {
 	end
 
 	local function file_directory(opts)
-	  local name = opts.__CTX.bname
-	  return name ~= "" and vim.fn.fnamemodify(name, ":p:h") or opts.cwd or vim.uv.cwd()
+	  local ctx = opts.__CTX
+	  if ctx.bname ~= "" then return vim.fn.fnamemodify(ctx.bname, ":p:h") end
+	  local tabnr, winnr = unpack(vim.fn.win_id2tabwin(ctx.winid))
+	  return vim.fn.getcwd(winnr, tabnr)
 	end
 
 	local function change_directory(opts, cwd)
