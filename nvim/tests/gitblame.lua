@@ -178,6 +178,11 @@ local function focus_line(buf)
   return nil
 end
 
+--- The graph pane pads the author to author_width cells, like the pane renders it.
+local function graph_author(name)
+  local width = require('gitblame.config').get().author_width
+  return name .. string.rep(' ', width - vim.fn.strdisplaywidth(name))
+end
 -- --------------------------------------------------------------- error paths
 vim.cmd('set lines=50 columns=180')
 
@@ -245,10 +250,12 @@ end
 assert(neighbour_buf('h') == st.bufs.meta, 'meta pane must sit left of the content pane')
 assert(neighbour_buf('k') == st.bufs.graph, 'graph pane must sit above the content pane')
 
+-- the top pane fits the history: the smaller of the configured share and the row count
 local graph_height = vim.api.nvim_win_get_height(st.wins.graph)
-local want_height = math.floor((vim.o.lines - 2) * 0.34)
-assert(math.abs(graph_height - want_height) <= 1,
-  ('top pane should be ~1/3 of the screen: got %d, want ~%d'):format(graph_height, want_height))
+local screen_share = math.floor((vim.o.lines - 2) * 0.34)
+assert(graph_height == math.max(3, math.min(screen_share, #st.rows)),
+  ('top pane should fit %d rows in a %d-row share: got %d'):format(#st.rows, screen_share, graph_height))
+assert(graph_height < screen_share, 'a short history must not waste a third of the screen')
 
 -- commit rows: same set as `git log -- <file>`, first row is the file's HEAD commit
 local row_shas, merge_rows = {}, 0
@@ -277,9 +284,9 @@ assert(table.concat(lines(st.bufs.graph), '\n'):find('|\\'), 'merge/branch glyph
 local focused = focus_line(st.bufs.graph)
 assert(focused, 'a focused commit row is expected on open')
 assert(focused:find(head:sub(1, 8), 1, true), 'the default focus must be the HEAD commit of the file')
-assert(focused:find('2024-02-04 | +1 -0 | Head Author | add extra line', 1, true),
+assert(focused:find('2024-02-04 | +1 -0 | ' .. graph_author('Head Author') .. ' | add extra line', 1, true),
   'the graph must show the date, author, and counts for this file only')
-assert(lines(st.bufs.graph)[st.index[merge_commit]]:find('+2 -0 | Tester | merge feature resolved', 1, true),
+assert(lines(st.bufs.graph)[st.index[merge_commit]]:find('+2 -0 | ' .. graph_author('Tester') .. ' | merge feature resolved', 1, true),
   'merge counts must be relative to the first parent')
 assert(vim.api.nvim_win_get_cursor(st.wins.graph)[1] == st.index[head],
   'the graph cursor must sit on the focused row')
@@ -330,7 +337,7 @@ assert(st.focus == rename_commit, '<CR> on a graph row must focus that commit')
 assert(focus_line(st.bufs.graph):find(rename_commit:sub(1, 8), 1, true),
   'the focus indicator must move to the selected row')
 local rename_date = git('show', '-s', '--date=short', '--format=%ad', rename_commit)
-assert(focus_line(st.bufs.graph):find(rename_date .. ' | +4 -0 | Tester | rename tracked to renamed', 1, true),
+assert(focus_line(st.bufs.graph):find(rename_date .. ' | +4 -0 | ' .. graph_author('Tester') .. ' | rename tracked to renamed', 1, true),
   'the graph must show the date and author of each commit')
 assert(table.concat(lines(st.bufs.content), '\n')
     == table.concat(to_lines(git('show', rename_commit .. ':' .. FILE)), '\n'),
@@ -423,15 +430,14 @@ press(st.wins.content, ']c')
 assert(vim.api.nvim_win_get_cursor(st.wins.content)[1] == merge_added[1], ']c must jump to the first change')
 assert(vim.api.nvim_win_get_cursor(st.wins.meta)[1] == merge_added[1],
   'the meta pane cursor must follow to the same line')
+-- the merge commit adds two adjacent lines: they are one stop, not two
 press(st.wins.content, ']c')
-assert(vim.api.nvim_win_get_cursor(st.wins.content)[1] == merge_added[2], ']c must jump to the next change')
-press(st.wins.content, ']c')
-assert(vim.api.nvim_win_get_cursor(st.wins.content)[1] == merge_added[2], ']c must not wrap past the last change')
+assert(vim.api.nvim_win_get_cursor(st.wins.content)[1] == merge_added[1],
+  ']c must jump over the rest of an adjacent block instead of to its second line')
 assert(last_notice():match('no next change'), last_notice())
 press(st.wins.content, '[c')
-assert(vim.api.nvim_win_get_cursor(st.wins.content)[1] == merge_added[1], '[c must step back to the previous change')
-press(st.wins.content, '[c')
-assert(vim.api.nvim_win_get_cursor(st.wins.content)[1] == merge_added[1], '[c must not wrap before the first change')
+assert(vim.api.nvim_win_get_cursor(st.wins.content)[1] == merge_added[1],
+  '[c must not wrap before the first change block')
 assert(last_notice():match('no previous change'), last_notice())
 
 -- --------------------------------------------------------------- F: --follow
@@ -456,9 +462,9 @@ for _, pane in ipairs({ 'graph', 'meta', 'content' }) do
   assert(count == #followed and count ~= #listed,
     ('%s: --follow must list %d commits, listed %d'):format(pane, #followed, count))
   local followed_graph = lines(st.bufs.graph)
-  assert(followed_graph[st.index[rename_commit]]:find('+0 -0 | Tester | rename tracked to renamed', 1, true),
+  assert(followed_graph[st.index[rename_commit]]:find('+0 -0 | ' .. graph_author('Tester') .. ' | rename tracked to renamed', 1, true),
     'following a pure rename must not count the file as new')
-  assert(followed_graph[st.index[head]]:find('+1 -0 | Head Author | add extra line', 1, true),
+  assert(followed_graph[st.index[head]]:find('+1 -0 | ' .. graph_author('Head Author') .. ' | add extra line', 1, true),
     'following renames must still exclude changes to other files')
   assert(set[root_commit] and set[second_commit],
     pane .. ': --follow must list the pre-rename commits')
@@ -583,8 +589,16 @@ local popup = vim.api.nvim_get_current_win()
 local shown = '\n' .. table.concat(lines(vim.api.nvim_win_get_buf(popup)), '\n')
 assert(shown:find('\ngp  ', 1, true) and shown:find('\n?  ', 1, true), 'help must list remapped keys')
 assert(not shown:find('\nP  ', 1, true), 'help must omit disabled mappings')
-press(popup, '<Esc>')
+-- the popup belongs to the view: a second h replaces it, and the view closing closes it
+vim.api.nvim_set_current_win(st2.wins.graph)
+press(st2.wins.graph, '?')
+assert(#vim.api.nvim_list_wins() == 4, 'a second h must replace the open popup, not stack another window')
+assert(vim.api.nvim_get_current_win() ~= popup, 'the replacement popup is a fresh window')
 gb.close()
+assert(#vim.api.nvim_list_wins() == 1, 'closing the view must close its shortcut popup')
+for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+  assert(not vim.api.nvim_buf_get_name(buf):match('^gitblame://'), 'the popup buffer must go with the view')
+end
 
 -- Removed text renders at the diff positions without shifting real lines.
 local remaining = { 'l2', 'l3', 'changed', 'feature', 'resolved' }
@@ -643,8 +657,15 @@ vim.api.nvim_win_set_cursor(removed_view.wins.content, { 3, 0 })
 press(removed_view.wins.content, ']c')
 assert(vim.api.nvim_win_get_cursor(removed_view.wins.content)[1] == #remaining,
   'a deletion after EOF must be reachable on the last real line')
+-- t only redraws: the file, blame and diffs must stay cached
+local git_api = require('gitblame.git')
+local saved_show = git_api.show_file
+git_api.show_file = function() error('t must redraw from the cache, not read git again') end
 press(removed_view.wins.content, 't')
 assert(#virtual_rows(cb) == 0 and #virtual_rows(mb) == 0, 't must hide the deleted rows in both panes')
+press(removed_view.wins.content, 't')
+assert(#virtual_rows(cb) == 3 and #virtual_rows(mb) == 3, 't must bring the deleted rows back from the cache')
+git_api.show_file = saved_show
 gb.close()
 
 -- An off-branch deletion has no graph row, but still has commit metadata.
@@ -703,6 +724,89 @@ assert(wide_end and wide_end == narrow_end, 'one- and four-digit counts must end
 assert(wide_row:find(' | +1000 -0 | ', 1, true) and narrow_row:find(' |    +1 -0 | ', 1, true),
   'the additions column must grow without widening the deletions column')
 gb.close()
+
+-- Adjacent changed lines are one stop for ]c / [c.
+vim.fn.writefile({ 'a', 'b', 'c', 'd', 'e', 'f', 'g' }, repo .. '/' .. FILE)
+git('commit', '-am', 'baseline for change blocks')
+vim.fn.writefile({ 'a', 'B', 'C', 'd', 'e', 'F', 'g' }, repo .. '/' .. FILE)
+git('commit', '-am', 'two adjacent changes and one later')
+assert(gb.open(repo .. '/' .. FILE))
+local block_view = gb.state()
+assert(block_view.focus == git('rev-parse', 'HEAD'), 'the view must focus the commit just made')
+vim.api.nvim_win_set_cursor(block_view.wins.content, { 1, 0 })
+press(block_view.wins.content, ']c')
+assert(vim.api.nvim_win_get_cursor(block_view.wins.content)[1] == 2, ']c must jump to the first changed line')
+press(block_view.wins.content, ']c')
+assert(vim.api.nvim_win_get_cursor(block_view.wins.content)[1] == 6,
+  ']c from inside a two-line block must go to the next block, not to its second line')
+press(block_view.wins.content, ']c')
+assert(vim.api.nvim_win_get_cursor(block_view.wins.content)[1] == 6
+    and last_notice():match('no next change'), ']c must not wrap past the last block')
+press(block_view.wins.content, '[c')
+assert(vim.api.nvim_win_get_cursor(block_view.wins.content)[1] == 2,
+  '[c must step back to the start of the previous block')
+press(block_view.wins.content, '[c')
+assert(vim.api.nvim_win_get_cursor(block_view.wins.content)[1] == 2
+    and last_notice():match('no previous change'), '[c must not wrap before the first block')
+gb.close()
+-- A commit where the file is gone, and one where it is empty.
+git('switch', '-qc', 'gone')
+vim.fn.delete(repo .. '/' .. FILE)
+git('commit', '-qam', 'delete the file', '--date=2024-03-01T12:00:00Z')
+local gone_commit = git('rev-parse', 'HEAD')
+vim.fn.writefile({ 'back' }, repo .. '/' .. FILE)
+git('add', FILE)
+git('commit', '-qm', 'bring it back', '--date=2024-03-02T12:00:00Z')
+vim.fn.writefile({}, repo .. '/' .. FILE)
+git('commit', '-qam', 'empty the file', '--date=2024-03-03T12:00:00Z')
+assert(gb.open(repo .. '/' .. FILE))
+local gone_view = gb.state()
+assert(gb.focus_commit(gone_commit), 'a commit without the file must not throw')
+assert(lines(gone_view.bufs.content)[1]
+    == 'file did not exist at ' .. gone_commit:sub(1, 8) .. ' (' .. FILE .. ')',
+  'the content pane must say why it shows nothing')
+assert(#lines(gone_view.bufs.meta) == 1, 'the left pane collapses to one row when the file is gone')
+-- an emptied file still deleted lines, so ]c must not claim the commit changed nothing
+local empty_commit = git('log', '--format=%H', '-1', '--grep', 'empty the file', '--', FILE)
+assert(gb.focus_commit(empty_commit), 'the commit that emptied the file must not throw')
+assert(gone_view.line_count == 0, 'an emptied file has no lines')
+press(gone_view.wins.content, ']c')
+assert(not last_notice():match('changed no lines'),
+  'a commit that deleted every line must not report that it changed nothing: ' .. last_notice())
+local nil_ok, nil_err = gb.focus_commit(nil)
+assert(not nil_ok and tostring(nil_err):match('no commit given'), 'focus_commit(nil) must refuse, not throw')
+gb.close()
+
+-- the left pane keeps its width: 8 hash digits, and the author shrinks to fit
+vim.fn.writefile({ 'one', 'two', 'three' }, repo .. '/' .. FILE)
+git('commit', '-am', 'content again')
+gb.setup({ hash_length = 12 })
+assert(gb.open(repo .. '/' .. FILE))
+local wide_hash = gb.state()
+local pane_width = vim.api.nvim_win_get_width(wide_hash.wins.meta)
+local blame_row = lines(wide_hash.bufs.meta)[1]
+assert(pane_width == 37, 'the left pane keeps meta_width whatever hash_length says')
+assert(blame_row:sub(4, 11):match('^%x%x%x%x%x%x%x%x$'), 'the left pane always shows 8 hash digits: ' .. blame_row)
+assert(vim.fn.strdisplaywidth(blame_row) == pane_width, 'a blame row fills its pane exactly: ' .. blame_row)
+gb.close()
+gb.setup({})
+-- the top pane takes the history, the ratio caps it, and three rows are the floor
+gb.setup({ top_ratio = 0.9 })
+assert(gb.open(repo .. '/' .. FILE))
+local tall_view = gb.state()
+local listed_rows = #tall_view.rows
+assert(vim.api.nvim_win_get_height(tall_view.wins.graph) == listed_rows,
+  'a ratio bigger than the history must not leave empty rows above the graph')
+press(tall_view.wins.graph, 'F')
+assert(#tall_view.rows ~= listed_rows
+    and vim.api.nvim_win_get_height(tall_view.wins.graph) == #tall_view.rows,
+  'toggling --follow must re-fit the graph pane to the new history length')
+gb.close()
+gb.setup({ top_ratio = 0.02 })
+assert(gb.open(repo .. '/' .. FILE))
+assert(vim.api.nvim_win_get_height(gb.state().wins.graph) == 3, 'the graph pane keeps at least three rows')
+gb.close()
+gb.setup({})
 
 os.remove(outside)
 vim.system({ '/bin/sh', '-c', 'rm -rf "$1"', 'sh', sandbox }):wait()

@@ -16,6 +16,7 @@ local M = {}
 local ns = vim.api.nvim_create_namespace('gitblame')
 local views = {} -- tabpage id -> view state
 local saved_scrollopt
+local close_help -- forward declared; defined with the shortcut popup below
 local seq = 0
 
 -- Window-local options saved from the user's window so `q` can restore them.
@@ -91,6 +92,23 @@ end
 
 -- ---------------------------------------------------------------- rendering
 
+--- Pad or clip `author` to `width` display cells: a long name must not push the columns.
+local function author_column(author, width)
+  local cells = vim.fn.strdisplaywidth(author)
+  while cells > width do
+    author = vim.fn.strcharpart(author, 0, vim.fn.strchars(author, true) - 1, true)
+    cells = vim.fn.strdisplaywidth(author)
+  end
+  return author .. string.rep(' ', width - cells)
+end
+
+--- Height of the graph pane: all of the history when it fits, otherwise the configured
+--- share of the screen, and never less than three rows.
+local function graph_height(state)
+  local allowed = math.floor((vim.o.lines - 2) * config.get().top_ratio)
+  return math.max(3, math.min(allowed, #state.rows))
+end
+
 local function render_graph(state)
   local opts = config.get()
   local buf, win = state.bufs.graph, state.wins.graph
@@ -99,6 +117,19 @@ local function render_graph(state)
   end
   local added_width, removed_width = unpack(state.count_widths)
   local counts_format = ('%%%ds %%%ds'):format(added_width, removed_width)
+  -- memoised author fields: one call per distinct name, reused by the highlight pass
+  local authors = {}
+  local function author_field(name)
+    if name == '' then
+      return ''
+    end
+    local field = authors[name]
+    if not field then
+      field = author_column(name, opts.author_width)
+      authors[name] = field
+    end
+    return field
+  end
   local lines, focus_row = {}, nil
   for i, row in ipairs(state.rows) do
     local art = row.art .. string.rep(' ', state.art_width - #row.art)
@@ -112,7 +143,7 @@ local function render_graph(state)
       local binary = count and count.binary and ' binary' or ''
       lines[i] = (focused and opts.focus_sign or ' ') .. ' ' .. art .. ' '
         .. short(row.sha) .. ' ' .. row.date .. ' | ' .. counts .. binary
-        .. ' | ' .. row.author .. ' | ' .. row.subject
+        .. ' | ' .. author_field(row.author) .. ' | ' .. row.subject
     else
       lines[i] = '  ' .. art
     end
@@ -145,11 +176,12 @@ local function render_graph(state)
       vim.api.nvim_buf_set_extmark(buf, ns, i - 1, removed_start, {
         end_col = removed_end, hl_group = 'GitBlameRemoved',
       })
-      if row.author ~= '' then
+      local author = author_field(row.author)
+      if author ~= '' then
         local count = state.counts[row.sha]
         local author_start = removed_end + (count and count.binary and #' binary' or 0) + 3
         vim.api.nvim_buf_set_extmark(buf, ns, i - 1, author_start, {
-          end_col = author_start + #row.author, hl_group = 'GitBlameAuthor',
+          end_col = author_start + #author, hl_group = 'GitBlameAuthor',
         })
       end
       if row.sha == state.focus then
@@ -159,22 +191,33 @@ local function render_graph(state)
     end
   end
 
+  -- the pane follows the history length, so F and refresh re-fit it as the list changes
+  if vim.api.nvim_win_is_valid(win) then
+    local wanted = graph_height(state)
+    if vim.api.nvim_win_get_height(win) ~= wanted then
+      pcall(vim.api.nvim_win_set_height, win, wanted)
+    end
+  end
+
   if focus_row and vim.api.nvim_win_is_valid(win) then
     pcall(vim.api.nvim_win_set_cursor, win, { focus_row, 0 })
   end
 end
 
-local function author_column(author, width)
-  local cells = vim.fn.strdisplaywidth(author)
-  while cells > width do
-    author = vim.fn.strcharpart(author, 0, vim.fn.strchars(author, true) - 1, true)
-    cells = vim.fn.strdisplaywidth(author)
-  end
-  return author .. string.rep(' ', width - cells)
+-- The left pane is a fixed grid: 2 change + 1 + 8 hash + 1 + author + 1 + 10 date.
+-- The hash always shows 8 digits and the author takes whatever width is left, so a long
+-- name or a larger hash_length can never push the date out of the pane.
+local META_HASH_DIGITS = 8
+local META_DATE_CELLS = 10
+
+local function meta_author_cells(opts)
+  local fixed = 2 + 1 + META_HASH_DIGITS + 1 + 1 + META_DATE_CELLS
+  return math.max(1, opts.meta_width - fixed)
 end
 
 local function render_meta(state, line_count)
   local opts = config.get()
+  local author_cells = meta_author_cells(opts) -- the author column absorbs the pane width
   local buf = state.bufs.meta
   if not vim.api.nvim_buf_is_valid(buf) then
     return
@@ -195,20 +238,20 @@ local function render_meta(state, line_count)
       end
     end
     local sha = entry and entry.sha or ''
-    local hash = sha ~= '' and sha:sub(1, opts.hash_length) or string.rep('-', opts.hash_length)
+    local hash = sha ~= '' and sha:sub(1, META_HASH_DIGITS) or string.rep('-', META_HASH_DIGITS)
     if sha ~= '' and sha:match('^0+$') then
       hash = 'WORKTREE'
     end
-    local prefix = string.format('%-2s %-' .. opts.hash_length .. 's ', mark, hash)
+    local prefix = string.format('%-2s %-' .. META_HASH_DIGITS .. 's ', mark, hash)
     local name = entry and entry.author or ''
-    local author = authors[name] or author_column(name, opts.author_width)
+    local author = authors[name] or author_column(name, author_cells)
     authors[name] = author
     author_ends[i] = #prefix + #author
     lines[i] = prefix .. author .. ' ' .. (entry and entry.date or '')
   end
   set_lines(buf, lines)
 
-  local hash_start, author_start = 3, 3 + opts.hash_length + 1
+  local hash_start, author_start = 3, 3 + META_HASH_DIGITS + 1
   for i = 1, line_count do
     local entry = state.blame[i]
     local mark = lines[i]:sub(1, 1)
@@ -220,7 +263,7 @@ local function render_meta(state, line_count)
     end
     if entry and entry.sha ~= '' then
       vim.api.nvim_buf_set_extmark(buf, ns, i - 1, hash_start, {
-        end_col = hash_start + opts.hash_length, hl_group = 'GitBlameHash',
+        end_col = hash_start + META_HASH_DIGITS, hl_group = 'GitBlameHash',
       })
       vim.api.nvim_buf_set_extmark(buf, ns, i - 1, author_start, {
         end_col = author_ends[i], hl_group = 'GitBlameAuthor',
@@ -233,7 +276,9 @@ local function render_meta(state, line_count)
   end
 end
 
-local function render_main(state)
+--- Draw the content and meta panes. `redraw_only` reuses the cached fetch and blame,
+--- so toggling markers costs no git calls at all.
+local function render_main(state, redraw_only)
   local cbuf, mbuf = state.bufs.content, state.bufs.meta
   if not vim.api.nvim_buf_is_valid(cbuf) or not vim.api.nvim_buf_is_valid(mbuf) then
     return
@@ -246,27 +291,34 @@ local function render_main(state)
     end
   end
 
-  local path = path_at(state, state.focus)
-  local text, err = git.show_file(state.root, state.focus, path)
-  if not text then
-    state.changes, state.touched, state.blame = { added = {}, removed = {}, removed_text = {} }, {}, {}
-    state.line_count = 1
-    state.message = 'file did not exist at ' .. short(state.focus) .. ' (' .. path .. ')'
-    set_lines(cbuf, { state.message })
-    set_lines(mbuf, { '' })
-    return
+  local lines
+  if redraw_only then
+    -- only what we draw has changed: reuse the cached file, blame and change maps
+    lines = state.lines or {}
+    vim.api.nvim_buf_clear_namespace(cbuf, ns, 0, -1)
+  else
+    local path = path_at(state, state.focus)
+    local text = git.show_file(state.root, state.focus, path)
+    if not text then
+      state.changes, state.touched, state.blame = { added = {}, removed = {}, removed_text = {} }, {}, {}
+      state.line_count, state.lines = 1, {}
+      state.message = 'file did not exist at ' .. short(state.focus) .. ' (' .. path .. ')'
+      set_lines(cbuf, { state.message })
+      set_lines(mbuf, { '' })
+      return
+    end
+    lines = git.lines(text)
+    state.lines = lines
+    set_lines(cbuf, lines)
+    local ft = vim.filetype.match({ filename = path })
+    vim.bo[cbuf].filetype = ft or ''
+
+    state.changes = git.changed_lines(state.root, state.focus, path)
+    state.touched = (state.focus == state.head and path == state.rel)
+        and git.worktree_touched(state.root, state.focus, state.rel) or {}
+    state.blame = git.blame(state.root, state.focus, path) or {}
+    state.line_count = #lines
   end
-
-  local lines = git.lines(text)
-  set_lines(cbuf, lines)
-  local ft = vim.filetype.match({ filename = path })
-  vim.bo[cbuf].filetype = ft or ''
-
-  state.changes = git.changed_lines(state.root, state.focus, path)
-  state.touched = (state.focus == state.head and path == state.rel)
-      and git.worktree_touched(state.root, state.focus, state.rel) or {}
-  state.blame = git.blame(state.root, state.focus, path) or {}
-  state.line_count = #lines
 
   -- Change markers are sign-column extmarks: they never add or shift a line, so the
   -- meta pane stays line-for-line aligned with the content pane. set_lines() clears
@@ -296,8 +348,8 @@ local function render_main(state)
     local commit = state.rows[state.index[state.focus]] or git.commit_author_date(state.root, state.focus)
     local deleted_by = {
       { '-  ', 'GitBlameRemoved' },
-      { short(state.focus), 'GitBlameHash' },
-      { ' ' .. author_column(commit.author, config.get().author_width) .. ' ', 'GitBlameAuthor' },
+      { state.focus:sub(1, META_HASH_DIGITS), 'GitBlameHash' },
+      { ' ' .. author_column(commit.author, meta_author_cells(config.get())) .. ' ', 'GitBlameAuthor' },
       { commit.date, 'GitBlameDate' },
     }
     for before, deleted in pairs(changes.removed_text) do
@@ -318,9 +370,6 @@ local function render_main(state)
       local lnum = math.min(keep[name][1], math.max(1, #lines))
       pcall(vim.api.nvim_win_set_cursor, win, { lnum, keep[name][2] })
     end
-  end
-  if err then
-    state.message = err
   end
 end
 
@@ -370,6 +419,9 @@ function M.focus_commit(sha)
   local state, err = current()
   if not state then
     return fail(err)
+  end
+  if not sha then
+    return fail('no commit given')
   end
   return set_focus(state, sha)
 end
@@ -422,7 +474,7 @@ function M.toggle_changes()
     return fail(err)
   end
   state.show_changes = not state.show_changes
-  render_main(state)
+  render_main(state, true) -- the data is unchanged; only the drawing is
   return say(state, 'change markers: ' .. (state.show_changes and 'on' or 'off'))
 end
 
@@ -432,11 +484,7 @@ function M.toggle_follow()
     return fail(err)
   end
   state.follow = not state.follow
-  local before = state.focus
-  rebuild(state)
-  if state.index[before] then
-    state.focus = before
-  end
+  rebuild(state) -- keeps the focused commit when it is still listed
   render_all(state)
   return say(state, '--follow: ' .. (state.follow and 'on' or 'off'))
 end
@@ -474,31 +522,42 @@ function M.focus_line_commit()
   return set_focus(state, entry.sha)
 end
 
---- Content lines the focus commit touched, sorted: added lines, lines the working tree
---- changed since that commit, and the positions where lines were removed.
-local function change_lines(state)
-  local seen, out = {}, {}
+--- Start lines of the focus commit's change blocks: added lines, lines the working tree
+--- changed since that commit, and removal points, with runs of adjacent lines merged
+--- into one stop, so `]c` walks hunks instead of single lines.
+local function change_blocks(state)
+  local limit = math.max(1, state.line_count or 0)
+  local seen, lines = {}, {}
   for _, counts in ipairs({ state.changes.added, state.touched, state.changes.removed }) do
     for position in pairs(counts or {}) do
-      local lnum = counts == state.changes.removed and math.min(position, state.line_count) or position
-      if not seen[lnum] and lnum >= 1 and lnum <= (state.line_count or 0) then
+      -- a removal after the last line of the file belongs to that last line
+      local lnum = math.min(position, limit)
+      if lnum >= 1 and not seen[lnum] then
         seen[lnum] = true
-        out[#out + 1] = lnum
+        lines[#lines + 1] = lnum
       end
     end
   end
-  table.sort(out)
-  return out
+  table.sort(lines)
+  local blocks, previous = {}, nil
+  for _, lnum in ipairs(lines) do
+    if not previous or lnum > previous + 1 then
+      blocks[#blocks + 1] = lnum
+    end
+    previous = lnum
+  end
+  return blocks
 end
 
---- Jump the content pane to the next (step > 0) or previous (step < 0) change of the
---- focus commit. No wrapping, like Vim's ]c / [c.
+--- Jump the content pane to the next (step > 0) or previous (step < 0) change block of
+--- the focus commit. A run of adjacent changed lines is one stop, so `]c` from the first
+--- line of a two-line addition goes to the next block, not to its second line. No wrapping.
 local function jump_change(state, step)
   local win = state.wins.content
   if not vim.api.nvim_win_is_valid(win) then
     return fail('the content pane is gone')
   end
-  local changes = change_lines(state)
+  local changes = change_blocks(state)
   if #changes == 0 then
     return say(state, 'the focus commit changed no lines in this view')
   end
@@ -583,8 +642,6 @@ function M.open_commit(sha)
       end, { buffer = buf, nowait = true, silent = true, desc = 'gitblame: close commit tab' })
     end
   end
-  state.commit_tabs = state.commit_tabs or {}
-  table.insert(state.commit_tabs, vim.api.nvim_get_current_tabpage())
   return say(state, 'opened commit ' .. short(sha))
 end
 
@@ -712,8 +769,7 @@ function M.open(path)
       foldcolumn = saved.win.foldcolumn,
     })
 
-    pcall(vim.api.nvim_win_set_height, graph_win,
-      math.max(4, math.floor((vim.o.lines - 2) * opts.top_ratio)))
+    pcall(vim.api.nvim_win_set_height, graph_win, graph_height(state))
     pcall(vim.api.nvim_win_set_width, meta_win, opts.meta_width)
     render_all(state)
     bind_all(state)
@@ -751,6 +807,7 @@ function M.close(tabpage)
   end
   state.closing = true
   views[state.tabpage] = nil
+  close_help(state) -- the shortcut popup belongs to the view, not to the tabpage
   if state.augroup then
     pcall(vim.api.nvim_del_augroup_by_id, state.augroup)
   end
@@ -796,7 +853,18 @@ local function bind(buf, key_name, fn, desc)
     desc = 'gitblame: ' .. desc })
 end
 
+--- Close the shortcut popup of this view, if it is open. The view owns the popup: it
+--- must not outlive `q`, a reopen, or a second `h`.
+close_help = function(state)
+  local win = state.help_win
+  state.help_win = nil
+  if win and vim.api.nvim_win_is_valid(win) then
+    pcall(vim.api.nvim_win_close, win, true)
+  end
+end
+
 local function show_help(state)
+  close_help(state) -- one popup per view: another `h` replaces the open one
   local prefix, entries = 'gitblame: ', {}
   for _, buf in pairs(state.bufs) do
     for _, map in ipairs(vim.api.nvim_buf_get_keymap(buf, 'n')) do
@@ -817,7 +885,7 @@ local function show_help(state)
   width = math.max(1, math.min(width, vim.o.columns - 2))
   local rows = vim.o.lines - vim.o.cmdheight
   local height = math.max(1, math.min(#lines, rows - 2))
-  local buf = scratch_buf('gitblame://help')
+  local buf = scratch_buf('gitblame://help/' .. tostring(state.tabpage))
   set_lines(buf, lines)
   local win = vim.api.nvim_open_win(buf, true, {
     relative = 'editor', style = 'minimal', border = 'rounded', title = ' GitBlame shortcuts ',
@@ -826,8 +894,10 @@ local function show_help(state)
     row = math.max(0, math.floor((rows - height - 2) / 2)),
   })
   wset(win, { scrollbind = false, wrap = true })
+  state.help_win = win
+
   local function close()
-    vim.api.nvim_win_close(win, true)
+    close_help(state)
   end
   bind(buf, 'close', close, 'close this popup')
   vim.keymap.set('n', '<Esc>', close, { buffer = buf, nowait = true, silent = true })

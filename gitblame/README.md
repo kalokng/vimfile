@@ -44,11 +44,11 @@ Three panes:
 
 | pane | contents |
 | --- | --- |
-| top (~1/3 height) | `[focus][graph][short hash][date][+added -removed][author][subject]`, one row per commit of the file, merges and branch lanes included |
-| left | per-line change marker, blame hash, author, date; deleted lines show the hash, author, and date of the commit that deleted them |
+| top (up to 1/3 height) | `[focus][graph][short hash][date][+added -removed][author][subject]`, one row per commit of the file, merges and branch lanes included; the pane is only as tall as the history needs |
+| left | per-line change marker, 8-digit blame hash, author, date — the pane is `meta_width` wide, so the author is shortened to keep the date visible; deleted lines show the hash, author, and date of the commit that deleted them |
 | content | the file as of the focused commit, with `+` / `~` markers and inline `-` lines showing what the commit deleted |
 
-Counts apply to the selected file, not the whole commit. Each count column fits its widest value. Merge counts are relative to the first parent.
+Counts apply to the selected file, not the whole commit. Each count column fits its widest value. Merge counts are relative to the first parent. The author column is clipped and padded to `author_width`, so subjects start in one column.
 
 ## Keys
 
@@ -63,8 +63,8 @@ Defaults; every one is configurable through `setup{ keymaps = { ... } }`.
 | `t` | all three | show / hide change markers and deleted lines |
 | `F` | all three | toggle `--follow` (rename tracking) and re-read the history |
 | `o` | all three | open the full commit (header, message, file diff) in a new tab: the row under the cursor in the graph, the line under the cursor in the meta pane, the focused commit in the content pane |
-| `]c` | content | jump to the next change of the focus commit (added line, uncommitted line, or removal point); no wrapping |
-| `[c` | content | jump to the previous change of the focus commit; no wrapping |
+| `]c` | content | jump to the next change block of the focus commit (added lines, uncommitted lines, or removal points); adjacent changed lines count as one block, so a two-line addition is one stop; no wrapping |
+| `[c` | content | jump to the start of the previous change block; no wrapping |
 | `h` | all three | show the shortcut popup; dismiss it with `<Esc>` or `q` |
 | `q` | all three (and the commit tab) | close the view and restore the previous layout |
 
@@ -78,11 +78,11 @@ instead of jumping.
 require('gitblame').setup({
   follow = false,          -- start with --follow on
   show_changes = true,     -- start with change markers visible
-  top_ratio = 0.34,        -- top pane height as a fraction of the screen
-  meta_width = 37,         -- left pane width
+  top_ratio = 0.34,        -- maximum top pane height as a fraction of the screen
+  meta_width = 37,         -- left pane width; fixed, the author column shrinks to fit
   focus_sign = '>',        -- marker in the left-most column of the focused row
-  hash_length = 8,         -- characters of the hash shown
-  author_width = 14,       -- author column width in the meta pane
+  hash_length = 8,         -- hash characters in the graph pane; the left pane always shows 8
+  author_width = 14,       -- author column width in the graph pane
   keymaps = {
     parent = 'p', child = 'P', toggle_changes = 't', toggle_follow = 'F',
     close = 'q', select = '<CR>', open_commit = 'o',

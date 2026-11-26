@@ -6,7 +6,6 @@
 local candidates = {
   vim.fn.fnamemodify(vim.fn.resolve(vim.fn.stdpath('config')), ':h') .. '/gitblame',
   vim.fn.fnamemodify(debug.getinfo(1, 'S').source:sub(2), ':p:h:h:h:h') .. '/gitblame',
-  vim.fn.fnamemodify(vim.fn.stdpath('config'), ':h') .. '/gitblame',
 }
 local dir = candidates[1]
 for _, candidate in ipairs(candidates) do

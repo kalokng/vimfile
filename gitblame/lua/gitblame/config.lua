@@ -6,15 +6,18 @@ local defaults = {
   follow = false,
   -- Start with the focus commit's +/- change markers visible.
   show_changes = true,
-  -- Height of the top commit-graph pane as a ratio of the editor height.
+  -- Maximum height of the top commit-graph pane, as a ratio of the editor height.
+  -- The pane shrinks to the number of commits, so a short history never wastes rows.
   top_ratio = 0.34,
-  -- Width of the left blame-meta pane.
+  -- Width of the left blame-meta pane. It is fixed: the pane always shows an 8-digit
+  -- hash and the full date, and the author column takes the space that is left over.
   meta_width = 37,
   -- Marker written in the left-most column of the focused commit row.
   focus_sign = '>',
-  -- How many characters of the commit hash are shown.
+  -- How many characters of the commit hash are shown in the graph pane.
+  -- The left pane always shows 8.
   hash_length = 8,
-  -- Column width reserved for the author name in the meta pane.
+  -- Column width reserved for the author name in the graph pane.
   author_width = 14,
   keymaps = {
     -- parent / child / toggles are bound in all three panes

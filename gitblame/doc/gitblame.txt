@@ -36,7 +36,7 @@ an error message and leaves the layout untouched.
 ==============================================================================
 3. LAYOUT                                                     *gitblame-layout*
 
-Top pane (about one third of the screen by default): >
+Top pane (at most one third of the screen, and only as tall as the history): >
 
   >  *   9f2c1ab4 merge feature resolved
      |\
@@ -50,11 +50,14 @@ Top pane (about one third of the screen by default): >
   next       short hash of the commit
   rest       commit date (YYYY-MM-DD), +added/-removed, author, and subject.
              Counts are for the selected file; each column fits its widest count.
-             Merges use the first parent.
+             Merges use the first parent. The author is clipped and padded to
+             author_width, so subjects start in one column.
 
 Main area, split left and right:
 
-  left       one row per content line: change marker, blame hash, author, date.
+  left       one row per content line: change marker, 8-digit blame hash, author,
+             date. The pane keeps meta_width: the author is clipped and padded to
+             the space left by the hash and the date, so the date is never cut off.
              Deleted lines show the hash, author, and date of the deleting commit.
              Scroll-bound to the content pane, so the two never drift apart.
   content    the file as of the focused commit, read-only. The sign column shows
@@ -104,12 +107,14 @@ is configurable, see |gitblame-config|.
                     Content pane: the focused commit.
 
                                                 *gitblame-]c* *gitblame-[c*
-  ]c  [c            Content pane: jump to the next / previous change of the focused
-                    commit, i.e. a line it added, a line your working tree changed
-                    since, or the position where it removed lines. No wrapping; when
-                    there is nothing left in that direction the cursor stays and the
-                    reason is reported. The left pane cursor follows so both panes
-                    mark the same line.
+  ]c  [c            Content pane: jump to the start of the next / previous change
+                    block of the focused commit, i.e. lines it added, lines your
+                    working tree changed since, or where it removed lines. Lines
+                    next to each other form one block, so a two-line addition is
+                    one stop and ]c on its first line goes to the next block.
+                    No wrapping; when there is nothing left in that direction the
+                    cursor stays and the reason is reported. The left pane cursor
+                    follows so both panes mark the same line.
 
                                                 *gitblame-h*
   h                 All three panes: show the active shortcuts. Press <Esc> or
@@ -126,11 +131,11 @@ is configurable, see |gitblame-config|.
   require('gitblame').setup({
     follow = false,          -- start with --follow on
     show_changes = true,     -- start with change markers visible
-    top_ratio = 0.34,        -- top pane height as a fraction of the screen
-    meta_width = 37,         -- left pane width
+    top_ratio = 0.34,        -- maximum top pane height as a fraction of the screen
+    meta_width = 37,         -- left pane width; fixed, the author column shrinks
     focus_sign = '>',        -- marker in the left-most column of the focus row
-    hash_length = 8,         -- characters of the hash shown
-    author_width = 14,       -- author column width in the left pane
+    hash_length = 8,         -- hash characters in the graph pane (left: always 8)
+    author_width = 14,       -- author column width in the graph pane
     keymaps = {
       parent = 'p', child = 'P', toggle_changes = 't', toggle_follow = 'F',
       close = 'q', select = '<CR>', open_commit = 'o',

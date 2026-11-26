@@ -17,14 +17,7 @@ function M.parse(raw)
     if sep then
       local head = line:sub(1, sep - 1)
       local fields = vim.split(line:sub(sep + 1), SEP, { plain = true })
-      local art, sha = head, fields[1]
-      if not (sha and #sha == 40) then
-        -- fallback for formats where the hash sits right after the graph art
-        local split_art, split_sha = head:match('^(.-)(%x40)$')
-        if split_art then
-          art, sha = split_art, split_sha
-        end
-      end
+      local art, sha = head, fields[1] -- the format always puts the 40-char hash first
       local parents = {}
       for parent in (fields[2] or ''):gmatch('%x+') do
         parents[#parents + 1] = parent
