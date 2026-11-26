@@ -1,0 +1,173 @@
+*gitblame.txt*  A zero-dependency git blame browser
+
+Author: local plugin in this vimfile repository
+License: same as the repository
+
+==============================================================================
+CONTENTS                                                    *gitblame-contents*
+
+  1. Introduction .................. |gitblame-intro|
+  2. Commands ...................... |gitblame-commands|
+  3. Layout ........................ |gitblame-layout|
+  4. Mappings ...................... |gitblame-mappings|
+  5. Configuration ................. |gitblame-config|
+  6. Lua API ....................... |gitblame-api|
+  7. Limits ........................ |gitblame-limits|
+
+==============================================================================
+1. INTRODUCTION                                                *gitblame-intro*
+
+gitblame opens a read-only browser over the history of one file: a commit graph
+with parent/child/merge lanes on top, the file as of the focused commit below,
+and the blame metadata of every visible line in a left column.
+
+It shells out to `git` through |vim.system| only. No plenary, no libgit2, and no
+git command that writes to the repository.
+
+==============================================================================
+2. COMMANDS                                                 *gitblame-commands*
+
+:GitBlame                Browse the file of the current buffer.
+:GitBlame {file}         Browse {file}. The file must be readable and tracked.
+
+An unnamed buffer, a file outside a git work tree, or an untracked file produces
+an error message and leaves the layout untouched.
+
+==============================================================================
+3. LAYOUT                                                     *gitblame-layout*
+
+Top pane (about one third of the screen by default): >
+
+  >  *   9f2c1ab4 merge feature resolved
+     |\
+     | * dfd16aa2 feature: add line
+   * | cedb84d06 main: add line
+   |/
+   * 676a1abf rename tracked to renamed
+<
+  column 1   focus indicator (default '>')
+  column 2.. graph art from `git log --graph`, including merge forks
+  next       short hash of the commit
+  rest       commit subject
+
+Main area, split left and right:
+
+  left       one row per content line: change marker, blame hash, author, date.
+             Scroll-bound to the content pane, so the two never drift apart.
+  content    the file as of the focused commit, read-only. The sign column shows
+             '+' for lines the focus commit added and '~' for lines your working
+             tree changed since that commit.
+
+On open the cursor lands in the content pane at its first line; the graph pane cursor
+sits on the focused commit row.
+
+The focused commit is the single source of truth: anything that changes it
+re-renders all three panes.
+
+==============================================================================
+4. MAPPINGS                                                 *gitblame-mappings*
+
+Buffer-local normal-mode maps, installed on all three plugin buffers. Every one
+is configurable, see |gitblame-config|.
+
+                                                *gitblame-p*
+  p                 All three panes: focus the parent of the focused commit.
+                    At a root commit nothing moves and the reason is reported.
+                    When the parent exists but is outside the simplified file
+                    history, nothing moves and that is reported too.
+
+                                                *gitblame-P*
+  P                 All three panes: focus a child of the focused commit. At the
+                    newest commit of the file nothing moves.
+
+                                                *gitblame-t*
+  t                 All three panes: show or hide the change markers of the
+                    focused commit. Line counts and pane alignment are
+                    unaffected, so your reading position is kept.
+
+                                                *gitblame-F*
+  F                 All three panes: toggle `--follow` (rename tracking) and
+                    re-read the commit list. The focused commit is kept when it
+                    is still in the list.
+
+                                                *gitblame-CR*
+  <CR>              Top pane: focus the commit on the row under the cursor.
+                    Left pane: focus the commit that last changed that line.
+
+                                                *gitblame-o*
+  o                 All three panes: open a new tabpage with the commit header and
+                    message on top and that commit's file diff below. Top pane: the
+                    row under the cursor. Left pane: the line under the cursor.
+                    Content pane: the focused commit.
+
+                                                *gitblame-]c* *gitblame-[c*
+  ]c  [c            Content pane: jump to the next / previous change of the focused
+                    commit, i.e. a line it added, a line your working tree changed
+                    since, or the position where it removed lines. No wrapping; when
+                    there is nothing left in that direction the cursor stays and the
+                    reason is reported. The left pane cursor follows so both panes
+                    mark the same line.
+
+                                                *gitblame-q*
+  q                 All three panes: close the view, wipe the plugin buffers and
+                    restore the previous window layout and window options. In the
+                    commit tab it closes that tab.
+
+==============================================================================
+5. CONFIGURATION                                             *gitblame-config*
+>
+  require('gitblame').setup({
+    follow = false,          -- start with --follow on
+    show_changes = true,     -- start with change markers visible
+    top_ratio = 0.34,        -- top pane height as a fraction of the screen
+    meta_width = 36,         -- left pane width
+    focus_sign = '>',        -- marker in the left-most column of the focus row
+    hash_length = 8,         -- characters of the hash shown
+    author_width = 14,       -- author column width in the left pane
+    keymaps = {
+      parent = 'p', child = 'P', toggle_changes = 't', toggle_follow = 'F',
+      close = 'q', select = '<CR>', open_commit = 'o',
+      next_change = ']c', prev_change = '[c',
+    },
+  })
+<
+Highlight groups, all linked to sensible defaults and safe to override:
+GitBlameFocus, GitBlameIndicator, GitBlameGraph, GitBlameHash, GitBlameAuthor,
+GitBlameDate, GitBlameAdded, GitBlameAddedLine, GitBlameRemoved,
+GitBlameModified, GitBlameModifiedLine.
+
+==============================================================================
+6. LUA API                                                       *gitblame-api*
+>
+  local gb = require('gitblame')
+
+  gb.open({path})        -- nil path = current buffer. true, state | nil, err
+  gb.close()             -- restore the previous layout
+  gb.refresh()           -- re-read the history
+  gb.focus_commit(sha)   -- focus an arbitrary commit
+  gb.focus_parent()      -- same as p
+  gb.focus_child()       -- same as P
+  gb.focus_line_commit() -- same as <CR> in the left pane
+  gb.select()            -- same as <CR>
+  gb.toggle_changes()    -- same as t
+  gb.toggle_follow()     -- same as F
+  gb.open_commit(sha)    -- same as o
+  gb.next_change()       -- same as ]c
+  gb.prev_change()       -- same as [c
+  gb.state()             -- live view state (root, rel, focus, rows, blame, ...)
+<
+==============================================================================
+7. LIMITS                                                     *gitblame-limits*
+
+  * The content pane shows the committed version of the file, never your live
+    buffer. Lines your working tree changed since the focused commit are marked
+    '~' in the left pane and the sign column.
+  * Deleted lines cannot be shown in the content pane, because they do not exist
+    in that revision. The left pane marks the position with '-<count>'.
+  * Only the history of one path is listed. `git log -- <path>` simplifies
+    history, so a merge that did not change the file is not listed, and the
+    oldest listed commit may look parentless. `F`/`--follow` trades some merge
+    rows for commits from before a rename.
+  * One view per tabpage.
+
+ vim:tw=78:ts=8:ft=help:norl:
