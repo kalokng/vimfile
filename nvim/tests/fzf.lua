@@ -93,3 +93,43 @@ act("alt-r", "fuzzy text")
 assert(last.opts.cwd == root and last.provider == "grep" and last.opts.query == "fuzzy text")
 assert(last.opts.search == "search text")
 print("PASS: Alt-R uses the Git root and preserves picker mode and query")
+
+local original_input = vim.ui.input
+local response, prompt_default
+vim.ui.input = function(opts, callback)
+  prompt_default = opts.default
+  callback(response)
+end
+local function filter_files(value, opts)
+  response = value
+  opts = opts or last.opts
+  opts.rg_opts = "--files --color=never"
+  opts.__call_opts = vim.deepcopy(opts)
+  setup_opts.actions.files["alt-t"].fn({}, opts)
+  return last.opts
+end
+query = "main"
+local filtered = filter_files("lua, .vim", { cwd = subdir, hidden = true, no_ignore = true, follow = true })
+assert(last.provider == "files" and filtered.cwd == subdir and filtered.query == "main")
+assert(filtered.hidden and filtered.no_ignore and filtered.follow)
+assert(filtered.filetypes == "lua, .vim" and filtered.cmd:find("--glob '*.lua'", 1, true))
+assert(vim.fn.writefile({}, subdir .. "/main.lua") == 0)
+assert(vim.fn.writefile({}, subdir .. "/other.vim") == 0)
+assert(vim.fn.writefile({}, subdir .. "/excluded.txt") == 0)
+local result = vim.system({ "sh", "-c", filtered.cmd }, { cwd = subdir, text = true }):wait()
+assert(result.code == 0, result.stderr)
+local files = vim.split(vim.trim(result.stdout), "\n")
+table.sort(files)
+assert(vim.deep_equal(files, { "main.lua", "other.vim" }), "filetype globs must filter real file listings")
+setup_opts.actions.files["ctrl-p"]({}, { cwd = subdir, __call_opts = filtered, __resume_key = "files" })
+assert(last.opts.cwd == root and last.opts.cmd == filtered.cmd, "directory changes must retain filters")
+local cancelled = filter_files(nil)
+assert(prompt_default == "lua, .vim" and cancelled.cmd == filtered.cmd, "cancel must retain the filter")
+local cleared = filter_files("  ")
+assert(cleared.cmd == nil and cleared.query == "main", "empty input must clear the filter, not the search")
+local unsafe = filter_files("*.lua'; echo injected; #", { cwd = subdir })
+local expected = "rg --files --color=never --glob " .. vim.fn.shellescape("*.lua'; echo injected; #")
+assert(unsafe.cmd == expected, "filetype input must be shell escaped")
+vim.ui.input = original_input
+assert(vim.fn.delete(outside, "rf") == 0)
+print("PASS: files Alt-T filters filetypes, preserves query/options/directory, handles cancel/clear and escapes input")

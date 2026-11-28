@@ -73,6 +73,8 @@ return {
 		  new_opts.query = fuzzy_query
 		end
 	  else
+		new_opts = vim.deepcopy(opts.__call_opts or {})
+		new_opts.cwd = cwd
 		new_opts.query = last_query
 	  end
 
@@ -96,12 +98,59 @@ return {
 	  change_directory(opts, git_root_or_cwd(opts.cwd or vim.uv.cwd()))
 	end
 
+	local function parse_filetypes(value, opts)
+	  local args = {}
+	  local globs = {}
+
+	  for filter in value:gmatch("[^,]+") do
+		filter = vim.trim(filter)
+		if filter ~= "" then
+		  local glob
+		  if filter:sub(1, 1) == "." then
+			glob = "*" .. filter
+		  elseif not filter:find(".", 1, true)
+			  and not filter:find("*", 1, true)
+			  and not filter:find("?", 1, true)
+			  and not filter:find("/", 1, true)
+			  and not filter:find("\\", 1, true) then
+			glob = "*." .. filter
+		  else
+			glob = filter
+		  end
+		  table.insert(globs, glob)
+		  table.insert(args, opts.glob_flag .. " " .. vim.fn.shellescape(glob))
+		end
+	  end
+
+	  return table.concat(args, " "), globs
+	end
+
+	local function filter_files(_, opts)
+	  local query = fzf.get_last_query()
+	  vim.ui.input({ prompt = "Filetypes (lua, .vim, *.ts; empty clears): ", default = opts.filetypes or "" }, function(value)
+		local new_opts = vim.deepcopy(opts.__call_opts or {})
+		new_opts.cwd, new_opts.query = opts.cwd, query
+		new_opts.hidden, new_opts.no_ignore, new_opts.follow = opts.hidden, opts.no_ignore, opts.follow
+		if value ~= nil then
+		  new_opts.filetypes = value
+		  local args = parse_filetypes(value, { glob_flag = "--glob" })
+		  if args ~= "" then
+			new_opts.cmd = "rg " .. (opts.rg_opts or "--files --color=never") .. " " .. args
+		  else
+			new_opts.cmd = nil
+		  end
+		end
+		fzf.files(new_opts)
+	  end)
+	end
+
 	local custom_actions = {
 	  files = {
 		["default"] = fzf.actions.file_edit_or_qf,
 		["ctrl-s"]  = actions.file_split,
 		["ctrl-v"]  = actions.file_vsplit,
 		["ctrl-t"]  = actions.file_tabedit,
+		["alt-t"]   = { fn = filter_files, header = "filter filetypes" },
 		["alt-q"]   = actions.file_sel_to_qf,
 		["alt-Q"]   = actions.file_sel_to_ll,
 		["alt-i"]   = actions.toggle_ignore,
@@ -148,33 +197,6 @@ return {
 	  local function last_query(fallback)
 		local query = fzf.get_last_query()
 		return type(query) == "string" and query or fallback
-	  end
-
-	  local function parse_filetypes(value, opts)
-		local args = {}
-		local globs = {}
-
-		for filter in value:gmatch("[^,]+") do
-		  filter = vim.trim(filter)
-		  if filter ~= "" then
-			local glob
-			if filter:sub(1, 1) == "." then
-			  glob = "*" .. filter
-			elseif not filter:find(".", 1, true)
-				and not filter:find("*", 1, true)
-				and not filter:find("?", 1, true)
-				and not filter:find("/", 1, true)
-				and not filter:find("\\", 1, true) then
-			  glob = "*." .. filter
-			else
-			  glob = filter
-			end
-			table.insert(globs, glob)
-			table.insert(args, opts.glob_flag .. " " .. vim.fn.shellescape(glob))
-		  end
-		end
-
-		return table.concat(args, " "), globs
 	  end
 
 	  local function grep_glob_fn(query, opts)
