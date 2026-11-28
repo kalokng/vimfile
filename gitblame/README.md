@@ -65,7 +65,7 @@ Defaults; every one is configurable through `setup{ keymaps = { ... } }`.
 | `P` | all three | focus the child commit |
 | `t` | all three | show / hide change markers and deleted lines |
 | `F` | all three | toggle `--follow` (rename tracking) and re-read the history |
-| `o` | all three | open the full commit (header, message, diff for all changed files) in a new tab: the row under the cursor in the graph, the line under the cursor in the meta pane, the focused commit in the content pane |
+| `o` | all three | open the full commit in a new tab: the commit under the cursor in the graph, or the commit that last changed the line in either lower pane |
 | `]c` | left, content | jump to the next change block of the focus commit (added lines, uncommitted lines, or removal points); adjacent changed lines count as one block, so a two-line addition is one stop; no wrapping |
 | `[c` | left, content | jump to the start of the previous change block; no wrapping |
 | `h` | all three | show the shortcut popup; dismiss it with `<Esc>` or `q` |

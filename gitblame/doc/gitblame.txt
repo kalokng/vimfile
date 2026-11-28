@@ -107,10 +107,9 @@ is configurable, see |gitblame-config|.
                     clipboard is available, paste from the unnamed register.
 
                                                 *gitblame-o*
-  o                 All three panes: open a new tabpage with the commit header and
-                    message on top and the diff for all changed files below. Top pane: the
-                    row under the cursor. Left pane: the line under the cursor.
-                    Content pane: the focused commit.
+  o                 Open the full commit diff in a new tab. Top pane: the commit
+                    under the cursor. Left and content panes: the commit that
+                    last changed the line under the cursor.
                     Commit diff pane: open GitBlame for the changed file under
                     the cursor in a new tab, if the file is in the working tree.
 

@@ -36,7 +36,6 @@ vim.fn.mkdir(sandbox, 'p')
 
 local setup = [[
 set -e
-rm -rf "$1"
 mkdir -p "$1"
 cd "$1"
 git init -q -b main .
@@ -66,8 +65,8 @@ git add 'other $file.txt'
 git commit -qam 'add extra line' --author='Head Author <head@example.com>' --date='2024-02-04T12:00:00Z'
 printf 'scratch\n' > untracked.txt
 ]]
-assert(vim.system({ '/bin/sh', '-c', setup, 'sh', repo }, { text = true }):wait().code == 0,
-  'could not build the test repository')
+local fixture = vim.system({ '/bin/sh', '-c', setup, 'sh', repo }, { text = true }):wait()
+assert(fixture.code == 0, 'could not build the test repository: ' .. fixture.stderr)
 
 local function git(...)
   local quoted = {}
@@ -569,6 +568,9 @@ assert(st.focus == main_commit and last_notice():match('no next focused commit')
 local tabs_before = #vim.api.nvim_list_tabpages()
 press(st.wins.meta, 'o')
 local commit_win = vim.api.nvim_get_current_win()
+for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+  assert(not vim.wo[win].scrollbind, 'commit description and diff must scroll independently')
+end
 assert(#vim.api.nvim_list_tabpages() == tabs_before + 1, 'o must open the commit in a new tab')
 local commit_bufs = vim.api.nvim_list_bufs()
 local header_text, diff_text = {}, {}
@@ -589,6 +591,20 @@ assert(table.concat(diff_text, '\n'):find('@@', 1, true)
 -- the cursor must be in the commit tab for its own `q` mapping to fire
 press(commit_win, 'q')
 assert(#vim.api.nvim_list_tabpages() == tabs_before, 'q must close the commit tab')
+
+-- Both lower panes use the blame on the cursor line, not the current focus.
+gb.focus_commit(head)
+for _, pane in ipairs({ 'meta', 'content' }) do
+  local win = st.wins[pane]
+  vim.api.nvim_win_set_cursor(win, { line_of_main, 0 })
+  press(win, 'o')
+  local diff_win = vim.api.nvim_get_current_win()
+  local header_win = vim.fn.win_getid(vim.fn.winnr('k'))
+  assert(table.concat(lines(vim.api.nvim_win_get_buf(header_win)), '\n'):find(main_commit, 1, true),
+    pane .. ': o must open the line commit even when a different commit is focused')
+  press(diff_win, 'q')
+  assert(st.focus == head, 'opening commit details must not change blame focus')
+end
 
 -- `o` in the top pane opens the commit on the row under the cursor, not the focused one
 gb.focus_commit(head)
@@ -959,6 +975,6 @@ assert(vertical.target == 'c' and not vertical.branch,
   'highlighting the horizontal link must not highlight the unrelated lane')
 
 os.remove(outside)
-vim.system({ '/bin/sh', '-c', 'rm -rf "$1"', 'sh', sandbox }):wait()
+vim.fn.delete(sandbox, 'rf')
 
 print('gitblame: all assertions passed')

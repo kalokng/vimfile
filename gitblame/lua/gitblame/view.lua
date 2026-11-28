@@ -745,6 +745,7 @@ function M.open_commit(sha)
   set_lines(hbuf, header)
   vim.bo[hbuf].filetype = 'gitcommit'
   vim.api.nvim_win_set_buf(0, hbuf)
+  vim.wo.scrollbind = false -- the diff split inherits this window's options
   vim.cmd('belowright split')
   local dbuf = scratch_buf('gitblame://' .. seq .. '/diff')
   set_lines(dbuf, diff)
@@ -764,7 +765,7 @@ function M.open_commit(sha)
   return say(state, 'opened commit ' .. short(sha))
 end
 
---- `o`: full commit for the line under the cursor (meta) or the focus commit.
+--- `o`: open the commit under the cursor, falling back to the focused commit.
 function M.open_commit_at_cursor()
   local state, err = current()
   if not state then
@@ -772,7 +773,7 @@ function M.open_commit_at_cursor()
   end
   local win = vim.api.nvim_get_current_win()
   local sha = state.focus
-  if win == state.wins.meta then
+  if win == state.wins.meta or win == state.wins.content then
     local entry = state.blame[vim.api.nvim_win_get_cursor(0)[1]]
     if entry and entry.sha ~= '' then
       sha = entry.sha
@@ -1047,8 +1048,6 @@ bind_all = function(state)
       return M.close()
     end, 'close the blame view')
   end
-  -- `o` is available in all three panes: the commit under the cursor (graph, meta)
-  -- or the focused commit (content).
   bind(state.bufs.graph, 'select', M.select, 'focus the commit under the cursor (graph)')
   bind(state.bufs.graph, 'jump_to_focus', function()
     local line = state.index[state.focus]
